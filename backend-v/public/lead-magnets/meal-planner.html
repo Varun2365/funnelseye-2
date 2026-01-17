@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal Planner - Free Meal Planning Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #1a202c;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #f97316;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(249, 115, 22, 0.4);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Meal Planner</h1>
+        <p class="subtitle">Create your personalized weekly meal plan</p>
+        
+        <form id="mealForm">
+            <div class="form-group">
+                <label>Dietary Preference</label>
+                <select name="diet" required>
+                    <option value="">Select...</option>
+                    <option value="none">No Restrictions</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="keto">Keto</option>
+                    <option value="paleo">Paleo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Daily Calorie Goal</label>
+                <input type="number" name="calories" required min="1200" max="4000" step="100">
+            </div>
+            <div class="form-group">
+                <label>Number of Meals per Day</label>
+                <select name="meals" required>
+                    <option value="3">3 Meals</option>
+                    <option value="4">4 Meals</option>
+                    <option value="5">5 Meals</option>
+                    <option value="6">6 Meals</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Email (to receive your meal plan)</label>
+                <input type="email" name="email" required>
+            </div>
+            <button type="submit">Generate Meal Plan</button>
+        </form>
+        
+        <div id="result" class="result">
+            <h2>Your Meal Plan</h2>
+            <div id="planContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const coachId = window.location.pathname.split('/').pop();
+        
+        document.getElementById('mealForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/lead-magnets/meal-planner`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coachId, preferences: data })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('planContent').innerHTML = '<p>Your personalized meal plan has been sent to your email!</p>';
+                    document.getElementById('result').classList.add('show');
+                }
+            } catch (error) {
+                alert('Error generating meal plan. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
+

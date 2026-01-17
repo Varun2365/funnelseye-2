@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Calculator - Training Metrics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #1a202c;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: #dc2626;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(220, 38, 38, 0.4);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+        .metric {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💪 Workout Calculator</h1>
+        <p class="subtitle">Calculate your training zones, 1RM, and more</p>
+        
+        <form id="workoutForm">
+            <div class="form-group">
+                <label>Exercise</label>
+                <select name="exercise" required>
+                    <option value="">Select...</option>
+                    <option value="bench-press">Bench Press</option>
+                    <option value="squat">Squat</option>
+                    <option value="deadlift">Deadlift</option>
+                    <option value="overhead-press">Overhead Press</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Weight Lifted (kg)</label>
+                <input type="number" name="weight" required min="1" max="500" step="0.5">
+            </div>
+            <div class="form-group">
+                <label>Reps Completed</label>
+                <input type="number" name="reps" required min="1" max="20">
+            </div>
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number" name="age" required min="18" max="100">
+            </div>
+            <div class="form-group">
+                <label>Resting Heart Rate (bpm)</label>
+                <input type="number" name="restingHR" min="40" max="100">
+            </div>
+            <button type="submit">Calculate Metrics</button>
+        </form>
+        
+        <div id="result" class="result">
+            <h2>Your Workout Metrics</h2>
+            <div id="metricsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const coachId = window.location.pathname.split('/').pop();
+        
+        document.getElementById('workoutForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/lead-magnets/workout-calculator`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coachId, workoutData: data })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    const metrics = result.data || {};
+                    let html = '';
+                    if (metrics.oneRM) html += `<div class="metric"><strong>1RM:</strong> ${metrics.oneRM} kg</div>`;
+                    if (metrics.targetHeartRate) html += `<div class="metric"><strong>Target Heart Rate:</strong> ${metrics.targetHeartRate} bpm</div>`;
+                    if (metrics.calorieBurn) html += `<div class="metric"><strong>Estimated Calorie Burn:</strong> ${metrics.calorieBurn} kcal</div>`;
+                    document.getElementById('metricsContent').innerHTML = html || '<p>Calculations complete!</p>';
+                    document.getElementById('result').classList.add('show');
+                }
+            } catch (error) {
+                alert('Error calculating metrics. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,5586 @@
+{
+  "info": {
+    "name": "Central Messaging API v1",
+    "description": "Complete API collection for Central Messaging System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "host",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "coachToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "Get available variables for template creation (with selectable UI format)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/variables",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "variables"
+              ]
+            },
+            "description": "Get available variables for template creation (with selectable UI format)"
+          }
+        },
+        {
+          "name": "Get templates available to coach (from subscription + own templates)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/my-templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "my-templates"
+              ]
+            },
+            "description": "Get templates available to coach (from subscription + own templates)"
+          }
+        },
+        {
+          "name": "Create template (Admin or Coach) with variable selection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/create",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "create"
+              ]
+            },
+            "description": "Create template (Admin or Coach) with variable selection",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Preview template with actual data",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/preview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "preview"
+              ]
+            },
+            "description": "Preview template with actual data"
+          }
+        },
+        {
+          "name": "Check if template can be used (24hr window check)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/{{templateId}}/check-usage",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "{{templateId}}",
+                "check-usage"
+              ]
+            },
+            "description": "Check if template can be used (24hr window check)"
+          }
+        },
+        {
+          "name": "Distribute template to specific subscriptions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/distribute",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "distribute"
+              ]
+            },
+            "description": "Distribute template to specific subscriptions"
+          }
+        },
+        {
+          "name": "Get templates (Meta + Local) - Legacy endpoint",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates"
+              ]
+            },
+            "description": "Get templates (Meta + Local) - Legacy endpoint"
+          }
+        },
+        {
+          "name": "Create template - Legacy endpoint",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates"
+              ]
+            },
+            "description": "Create template - Legacy endpoint"
+          }
+        },
+        {
+          "name": "Get Meta templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/whatsapp/templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "whatsapp",
+                "templates"
+              ]
+            },
+            "description": "Get Meta templates"
+          }
+        },
+        {
+          "name": "Sync templates from Meta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/whatsapp/templates/sync",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "whatsapp",
+                "templates",
+                "sync"
+              ]
+            },
+            "description": "Sync templates from Meta"
+          }
+        },
+        {
+          "name": "Create WhatsApp Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates"
+              ]
+            },
+            "description": "Create WhatsApp Template"
+          }
+        },
+        {
+          "name": "Get All Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates"
+              ]
+            },
+            "description": "Get All Templates"
+          }
+        },
+        {
+          "name": "Sync Templates from Meta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/sync",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "sync"
+              ]
+            },
+            "description": "Sync Templates from Meta"
+          }
+        },
+        {
+          "name": "Get Available Templates (Coach)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates"
+              ]
+            },
+            "description": "Get Available Templates (Coach)"
+          }
+        },
+        {
+          "name": "Get available templates for coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "templates"
+              ]
+            },
+            "description": "Get available templates for coach"
+          }
+        },
+        {
+          "name": "Preview template with sample data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/templates/{{templateId}}/preview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "templates",
+                "{{templateId}}",
+                "preview"
+              ]
+            },
+            "description": "Preview template with sample data"
+          }
+        },
+        {
+          "name": "Get available template parameters from database",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/templates/parameters",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "templates",
+                "parameters"
+              ]
+            },
+            "description": "Get available template parameters from database"
+          }
+        },
+        {
+          "name": "Get all templates across all coaches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "templates"
+              ]
+            },
+            "description": "Get all templates across all coaches"
+          }
+        },
+        {
+          "name": "Create global template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "templates"
+              ]
+            },
+            "description": "Create global template"
+          }
+        },
+        {
+          "name": "Update global template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/templates/{{templateId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": "Update global template"
+          }
+        },
+        {
+          "name": "Delete global template",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/templates/{{templateId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "templates",
+                "{{templateId}}"
+              ]
+            },
+            "description": "Delete global template"
+          }
+        },
+        {
+          "name": "Create message template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates"
+              ]
+            },
+            "description": "Create message template"
+          }
+        },
+        {
+          "name": "Get coach message templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates"
+              ]
+            },
+            "description": "Get coach message templates"
+          }
+        },
+        {
+          "name": "Get pre-built templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/pre-built",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "pre-built"
+              ]
+            },
+            "description": "Get pre-built templates"
+          }
+        },
+        {
+          "name": "Get template categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/categories",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "categories"
+              ]
+            },
+            "description": "Get template categories"
+          }
+        },
+        {
+          "name": "Get template types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/types",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "types"
+              ]
+            },
+            "description": "Get template types"
+          }
+        },
+        {
+          "name": "Get common template variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/variables",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "variables"
+              ]
+            },
+            "description": "Get common template variables"
+          }
+        },
+        {
+          "name": "Seed pre-built templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/seed",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "seed"
+              ]
+            },
+            "description": "Seed pre-built templates"
+          }
+        },
+        {
+          "name": "Get specific template",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "Get specific template"
+          }
+        },
+        {
+          "name": "Update message template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "Update message template"
+          }
+        },
+        {
+          "name": "Delete message template",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "{{id}}"
+              ]
+            },
+            "description": "Delete message template"
+          }
+        },
+        {
+          "name": "Duplicate template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/{{id}}/duplicate",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "{{id}}",
+                "duplicate"
+              ]
+            },
+            "description": "Duplicate template"
+          }
+        },
+        {
+          "name": "Render template with variables",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//templates/message-templates/{{id}}/render",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "templates",
+                "message-templates",
+                "{{id}}",
+                "render"
+              ]
+            },
+            "description": "Render template with variables"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credits",
+      "item": [
+        {
+          "name": "Get credit balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/balance",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "balance"
+              ]
+            },
+            "description": "Get credit balance"
+          }
+        },
+        {
+          "name": "Get available credit packages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/packages",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "packages"
+              ]
+            },
+            "description": "Get available credit packages"
+          }
+        },
+        {
+          "name": "Purchase credits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/purchase",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "purchase"
+              ]
+            },
+            "description": "Purchase credits"
+          }
+        },
+        {
+          "name": "Get credit transaction history",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/transactions",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "transactions"
+              ]
+            },
+            "description": "Get credit transaction history"
+          }
+        },
+        {
+          "name": "Get Credit Rates and Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credit-settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credit-settings"
+              ]
+            },
+            "description": "Get Credit Rates and Settings"
+          }
+        },
+        {
+          "name": "Update Credit Rates and Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credit-settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credit-settings"
+              ]
+            },
+            "description": "Update Credit Rates and Settings"
+          }
+        },
+        {
+          "name": "Update credit rates for messaging",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/credit-rates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "credit-rates"
+              ]
+            },
+            "description": "Update credit rates for messaging"
+          }
+        },
+        {
+          "name": "Get coach's credit balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/balance",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "balance"
+              ]
+            },
+            "description": "Get coach's credit balance"
+          }
+        },
+        {
+          "name": "Check if user can send messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/check",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "check"
+              ]
+            },
+            "description": "Check if user can send messages"
+          }
+        },
+        {
+          "name": "Get available credit packages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/packages",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "packages"
+              ]
+            },
+            "description": "Get available credit packages"
+          }
+        },
+        {
+          "name": "Purchase credits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/purchase",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "purchase"
+              ]
+            },
+            "description": "Purchase credits"
+          }
+        },
+        {
+          "name": "Get credit transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credits/transactions",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credits",
+                "transactions"
+              ]
+            },
+            "description": "Get credit transactions"
+          }
+        },
+        {
+          "name": "Get system credit rates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/credit-rates",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "credit-rates"
+              ]
+            },
+            "description": "Get system credit rates"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inbox Management",
+      "item": [
+        {
+          "name": "Get unified inbox (role-based access)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get unified inbox (role-based access)"
+          }
+        },
+        {
+          "name": "Get inbox for staff (filtered by assigned leads)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//staff/inbox",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "staff",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get inbox for staff (filtered by assigned leads)"
+          }
+        },
+        {
+          "name": "Get inbox messages for user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get inbox messages for user"
+          }
+        },
+        {
+          "name": "Get conversation messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/conversation/{{conversationId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "conversation",
+                "{{conversationId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get conversation messages"
+          }
+        },
+        {
+          "name": "Send message from inbox",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/send",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "send"
+              ]
+            },
+            "description": "Send message from inbox",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark message as read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/messages/{{messageId}}/read",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "messages",
+                "{{messageId}}",
+                "read"
+              ]
+            },
+            "description": "Mark message as read"
+          }
+        },
+        {
+          "name": "Assign message to user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/messages/{{messageId}}/assign",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "messages",
+                "{{messageId}}",
+                "assign"
+              ]
+            },
+            "description": "Assign message to user"
+          }
+        },
+        {
+          "name": "Archive message",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/messages/{{messageId}}/archive",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "messages",
+                "{{messageId}}",
+                "archive"
+              ]
+            },
+            "description": "Archive message"
+          }
+        },
+        {
+          "name": "Get inbox statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get inbox statistics"
+          }
+        },
+        {
+          "name": "Get inbox messages for coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/inbox",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get inbox messages for coach"
+          }
+        },
+        {
+          "name": "Get conversation with specific contact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/inbox/conversation/{{contactId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "inbox",
+                "conversation",
+                "{{contactId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get conversation with specific contact"
+          }
+        },
+        {
+          "name": "Send message from inbox",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/inbox/send",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "inbox",
+                "send"
+              ]
+            },
+            "description": "Send message from inbox",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Mark message as read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/inbox/messages/{{messageId}}/read",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "inbox",
+                "messages",
+                "{{messageId}}",
+                "read"
+              ]
+            },
+            "description": "Mark message as read"
+          }
+        },
+        {
+          "name": "Get all inbox messages across coaches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/inbox",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "inbox"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all inbox messages across coaches"
+          }
+        },
+        {
+          "name": "Get conversation with specific contact (admin view)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/inbox/conversation/{{contactId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "inbox",
+                "conversation",
+                "{{contactId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get conversation with specific contact (admin view)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "Debug QR setup page",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//debug/qr-setup/{{deviceId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "debug",
+                "qr-setup",
+                "{{deviceId}}"
+              ]
+            },
+            "description": "Debug QR setup page"
+          }
+        },
+        {
+          "name": "Create a new WhatsApp device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/devices",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "devices"
+              ]
+            },
+            "description": "Create a new WhatsApp device"
+          }
+        },
+        {
+          "name": "Get all WhatsApp devices for coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/devices",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "devices"
+              ]
+            },
+            "description": "Get all WhatsApp devices for coach"
+          }
+        },
+        {
+          "name": "Update WhatsApp device",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/devices/{{deviceId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "devices",
+                "{{deviceId}}"
+              ]
+            },
+            "description": "Update WhatsApp device"
+          }
+        },
+        {
+          "name": "Delete WhatsApp device",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/devices/{{deviceId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "devices",
+                "{{deviceId}}"
+              ]
+            },
+            "description": "Delete WhatsApp device"
+          }
+        },
+        {
+          "name": "Get device status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/devices/{{deviceId}}/status",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "devices",
+                "{{deviceId}}",
+                "status"
+              ]
+            },
+            "description": "Get device status"
+          }
+        },
+        {
+          "name": "Switch WhatsApp device",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/devices/{{deviceId}}/switch",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "devices",
+                "{{deviceId}}",
+                "switch"
+              ]
+            },
+            "description": "Switch WhatsApp device"
+          }
+        },
+        {
+          "name": "Get all WhatsApp devices across coaches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/devices",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "devices"
+              ]
+            },
+            "description": "Get all WhatsApp devices across coaches"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Knowledge",
+      "item": [
+        {
+          "name": "Create AI Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge"
+              ]
+            },
+            "description": "Create AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Get all AI Knowledge Bases",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge"
+              ]
+            },
+            "description": "Get all AI Knowledge Bases"
+          }
+        },
+        {
+          "name": "Get single AI Knowledge Base",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}"
+              ]
+            },
+            "description": "Get single AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Update AI Knowledge Base",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}"
+              ]
+            },
+            "description": "Update AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Delete AI Knowledge Base",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}"
+              ]
+            },
+            "description": "Delete AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Set default AI Knowledge Base",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}/set-default",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}",
+                "set-default"
+              ]
+            },
+            "description": "Set default AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Test AI Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}/test",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}",
+                "test"
+              ]
+            },
+            "description": "Test AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Get AI Knowledge Base statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}",
+                "stats"
+              ]
+            },
+            "description": "Get AI Knowledge Base statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get Credit Rates and Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credit-settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credit-settings"
+              ]
+            },
+            "description": "Get Credit Rates and Settings"
+          }
+        },
+        {
+          "name": "Update Credit Rates and Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//credit-settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "credit-settings"
+              ]
+            },
+            "description": "Update Credit Rates and Settings"
+          }
+        },
+        {
+          "name": "Get Complete Admin Settings Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//settings-overview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "settings-overview"
+              ]
+            },
+            "description": "Get Complete Admin Settings Overview"
+          }
+        },
+        {
+          "name": "Get coach's WhatsApp settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings"
+              ]
+            },
+            "description": "Get coach's WhatsApp settings"
+          }
+        },
+        {
+          "name": "Create or update coach's WhatsApp settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings"
+              ]
+            },
+            "description": "Create or update coach's WhatsApp settings"
+          }
+        },
+        {
+          "name": "Customize specific field in coach settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/customize",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "customize"
+              ]
+            },
+            "description": "Customize specific field in coach settings"
+          }
+        },
+        {
+          "name": "Remove customization for specific field",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/customize/{{fieldPath}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "customize",
+                "{{fieldPath}}"
+              ]
+            },
+            "description": "Remove customization for specific field"
+          }
+        },
+        {
+          "name": "Set coach settings as default",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/set-default",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "set-default"
+              ]
+            },
+            "description": "Set coach settings as default"
+          }
+        },
+        {
+          "name": "Get coach's effective settings (with inheritance applied)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/effective",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "effective"
+              ]
+            },
+            "description": "Get coach's effective settings (with inheritance applied)"
+          }
+        },
+        {
+          "name": "Test coach's AI settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/test-ai",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "test-ai"
+              ]
+            },
+            "description": "Test coach's AI settings"
+          }
+        },
+        {
+          "name": "Get coach's WhatsApp analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/analytics",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "analytics"
+              ]
+            },
+            "description": "Get coach's WhatsApp analytics"
+          }
+        },
+        {
+          "name": "Reset coach settings to inherit from parent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/reset",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "reset"
+              ]
+            },
+            "description": "Reset coach settings to inherit from parent"
+          }
+        },
+        {
+          "name": "Clone settings from another coach",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/clone",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "clone"
+              ]
+            },
+            "description": "Clone settings from another coach"
+          }
+        },
+        {
+          "name": "Get all admin WhatsApp settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings"
+              ]
+            },
+            "description": "Get all admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Get specific admin WhatsApp settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}"
+              ]
+            },
+            "description": "Get specific admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Get default admin WhatsApp settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/default",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "default"
+              ]
+            },
+            "description": "Get default admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Create new admin WhatsApp settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings"
+              ]
+            },
+            "description": "Create new admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Update admin WhatsApp settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}"
+              ]
+            },
+            "description": "Update admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Set admin settings as default",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}/set-default",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}",
+                "set-default"
+              ]
+            },
+            "description": "Set admin settings as default"
+          }
+        },
+        {
+          "name": "Delete admin WhatsApp settings",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}"
+              ]
+            },
+            "description": "Delete admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Test admin AI settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}/test-ai",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}",
+                "test-ai"
+              ]
+            },
+            "description": "Test admin AI settings"
+          }
+        },
+        {
+          "name": "Get admin WhatsApp analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/analytics",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "analytics"
+              ]
+            },
+            "description": "Get admin WhatsApp analytics"
+          }
+        },
+        {
+          "name": "Clone admin settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}/clone",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}",
+                "clone"
+              ]
+            },
+            "description": "Clone admin settings"
+          }
+        },
+        {
+          "name": "Apply settings to all coaches",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/{{id}}/apply-to-coaches",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "{{id}}",
+                "apply-to-coaches"
+              ]
+            },
+            "description": "Apply settings to all coaches"
+          }
+        },
+        {
+          "name": "Get settings usage statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/usage-stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "usage-stats"
+              ]
+            },
+            "description": "Get settings usage statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Handle automation webhook events",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//automation/webhook",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "automation",
+                "webhook"
+              ]
+            },
+            "description": "Handle automation webhook events"
+          }
+        },
+        {
+          "name": "Handle WhatsApp webhook from Meta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//webhook",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "webhook"
+              ]
+            },
+            "description": "Handle WhatsApp webhook from Meta"
+          }
+        },
+        {
+          "name": "Get webhook status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//webhook/status",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "webhook",
+                "status"
+              ]
+            },
+            "description": "Get webhook status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get messaging analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//analytics",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "analytics"
+              ]
+            },
+            "description": "Get messaging analytics"
+          }
+        },
+        {
+          "name": "Get system-wide messaging statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "stats"
+              ]
+            },
+            "description": "Get system-wide messaging statistics"
+          }
+        },
+        {
+          "name": "Get WhatsApp Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//analytics",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "analytics"
+              ]
+            },
+            "description": "Get WhatsApp Analytics"
+          }
+        },
+        {
+          "name": "Get inbox statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//inbox/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "inbox",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get inbox statistics"
+          }
+        },
+        {
+          "name": "Get AI Knowledge Base statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//ai-knowledge/{{id}}/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "ai-knowledge",
+                "{{id}}",
+                "stats"
+              ]
+            },
+            "description": "Get AI Knowledge Base statistics"
+          }
+        },
+        {
+          "name": "Get coach's WhatsApp analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/settings/analytics",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "settings",
+                "analytics"
+              ]
+            },
+            "description": "Get coach's WhatsApp analytics"
+          }
+        },
+        {
+          "name": "Get admin WhatsApp analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/analytics",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "analytics"
+              ]
+            },
+            "description": "Get admin WhatsApp analytics"
+          }
+        },
+        {
+          "name": "Get settings usage statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/settings/usage-stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "settings",
+                "usage-stats"
+              ]
+            },
+            "description": "Get settings usage statistics"
+          }
+        },
+        {
+          "name": "Get messaging statistics for coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "stats"
+              ]
+            },
+            "description": "Get messaging statistics for coach"
+          }
+        },
+        {
+          "name": "Get system-wide messaging statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "stats"
+              ]
+            },
+            "description": "Get system-wide messaging statistics"
+          }
+        },
+        {
+          "name": "Get RabbitMQ queue statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/queue-stats",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "queue-stats"
+              ]
+            },
+            "description": "Get RabbitMQ queue statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Other",
+      "item": [
+        {
+          "name": "Get available template variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//variables",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "variables"
+              ]
+            },
+            "description": "Get available template variables"
+          }
+        },
+        {
+          "name": "Preview template with variables",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//variables/preview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "variables",
+                "preview"
+              ]
+            },
+            "description": "Preview template with variables"
+          }
+        },
+        {
+          "name": "Send message (WhatsApp or Email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//send",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "send"
+              ]
+            },
+            "description": "Send message (WhatsApp or Email)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get all contacts with 24hr window info",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//contacts",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "contacts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all contacts with 24hr window info"
+          }
+        },
+        {
+          "name": "Get messaging configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "config"
+              ]
+            },
+            "description": "Get messaging configuration"
+          }
+        },
+        {
+          "name": "Update messaging configuration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "config"
+              ]
+            },
+            "description": "Update messaging configuration"
+          }
+        },
+        {
+          "name": "Get system overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/overview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "overview"
+              ]
+            },
+            "description": "Get system overview"
+          }
+        },
+        {
+          "name": "Get conversation with contact",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//conversation/{{contactId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "conversation",
+                "{{contactId}}"
+              ]
+            },
+            "description": "Get conversation with contact"
+          }
+        },
+        {
+          "name": "Send bulk messages",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//bulk",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "bulk"
+              ]
+            },
+            "description": "Send bulk messages"
+          }
+        },
+        {
+          "name": "Get email configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "config"
+              ]
+            },
+            "description": "Get email configuration"
+          }
+        },
+        {
+          "name": "Setup email configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/setup",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "setup"
+              ]
+            },
+            "description": "Setup email configuration",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send test email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/test",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "test"
+              ]
+            },
+            "description": "Send test email"
+          }
+        },
+        {
+          "name": "Get WhatsApp configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/whatsapp/config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "whatsapp",
+                "config"
+              ]
+            },
+            "description": "Get WhatsApp configuration"
+          }
+        },
+        {
+          "name": "Setup WhatsApp configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/whatsapp/setup",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "whatsapp",
+                "setup"
+              ]
+            },
+            "description": "Setup WhatsApp configuration",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send test WhatsApp message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/whatsapp/test",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "whatsapp",
+                "test"
+              ]
+            },
+            "description": "Send test WhatsApp message"
+          }
+        },
+        {
+          "name": "Get leads assigned to staff member",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//staff/assigned-leads",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "staff",
+                "assigned-leads"
+              ]
+            },
+            "description": "Get leads assigned to staff member"
+          }
+        },
+        {
+          "name": "Get contacts from assigned leads only",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//staff/contacts",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "staff",
+                "contacts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get contacts from assigned leads only"
+          }
+        },
+        {
+          "name": "Preview message before sending",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//preview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "preview"
+              ]
+            },
+            "description": "Preview message before sending"
+          }
+        },
+        {
+          "name": "Get contacts within Meta 24-hour window",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//24hr-window",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "24hr-window"
+              ]
+            },
+            "description": "Get contacts within Meta 24-hour window"
+          }
+        },
+        {
+          "name": "Send message via automation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//automation/send",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "automation",
+                "send"
+              ]
+            },
+            "description": "Send message via automation",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Debug admin authentication",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//debug-auth",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "debug-auth"
+              ]
+            },
+            "description": "Debug admin authentication"
+          }
+        },
+        {
+          "name": "Setup Central WhatsApp Configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//setup",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "setup"
+              ]
+            },
+            "description": "Setup Central WhatsApp Configuration",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Central WhatsApp Configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "config"
+              ]
+            },
+            "description": "Get Central WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Update Central WhatsApp Configuration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "config"
+              ]
+            },
+            "description": "Update Central WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Health Check for Central WhatsApp",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//health",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "health"
+              ]
+            },
+            "description": "Health Check for Central WhatsApp"
+          }
+        },
+        {
+          "name": "Get Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//contacts",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "contacts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Contacts"
+          }
+        },
+        {
+          "name": "Send Test Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//test-message",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "test-message"
+              ]
+            },
+            "description": "Send Test Message"
+          }
+        },
+        {
+          "name": "Get All WhatsApp Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//messages",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get All WhatsApp Messages"
+          }
+        },
+        {
+          "name": "Get Conversation Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//messages/conversation/{{conversationId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "messages",
+                "conversation",
+                "{{conversationId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Conversation Messages"
+          }
+        },
+        {
+          "name": "Get Messages by Coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//messages/coach/{{coachId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "messages",
+                "coach",
+                "{{coachId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Messages by Coach"
+          }
+        },
+        {
+          "name": "Get Messages by Lead",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//messages/lead/{{leadId}}",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "messages",
+                "lead",
+                "{{leadId}}"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Messages by Lead"
+          }
+        },
+        {
+          "name": "Test WhatsApp Configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//test-config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "test-config"
+              ]
+            },
+            "description": "Test WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Update Contact Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//contacts/update",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "contacts",
+                "update"
+              ]
+            },
+            "description": "Update Contact Name",
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Get Coach's Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//contacts",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "contacts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get Coach's Contacts"
+          }
+        },
+        {
+          "name": "Get Central WhatsApp Status (Coach)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//status",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "status"
+              ]
+            },
+            "description": "Get Central WhatsApp Status (Coach)"
+          }
+        },
+        {
+          "name": "Get central email configuration",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "config"
+              ]
+            },
+            "description": "Get central email configuration"
+          }
+        },
+        {
+          "name": "Setup central email configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/setup",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "setup"
+              ]
+            },
+            "description": "Setup central email configuration",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Test central email configuration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/test-config",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "test-config"
+              ]
+            },
+            "description": "Test central email configuration"
+          }
+        },
+        {
+          "name": "Get central email status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/status",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "status"
+              ]
+            },
+            "description": "Get central email status"
+          }
+        },
+        {
+          "name": "Send test email via central email system",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/email/send-test",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "email",
+                "send-test"
+              ]
+            },
+            "description": "Send test email via central email system",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send single message (text, template, or media)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/send",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "send"
+              ]
+            },
+            "description": "Send single message (text, template, or media)",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send bulk messages to multiple contacts",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/send-bulk",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "send-bulk"
+              ]
+            },
+            "description": "Send bulk messages to multiple contacts",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get coach's contacts (leads only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/contacts",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "contacts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get coach's contacts (leads only)"
+          }
+        },
+        {
+          "name": "Search contacts by name, phone, or email",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//coach/contacts/search",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "coach",
+                "contacts",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search contacts by name, phone, or email"
+          }
+        },
+        {
+          "name": "Get all contacts across all coaches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/contacts",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "contacts"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all contacts across all coaches"
+          }
+        },
+        {
+          "name": "Search all contacts by name, phone, or email",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/contacts/search",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "contacts",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Search all contacts by name, phone, or email"
+          }
+        },
+        {
+          "name": "Send message as admin to any contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/send",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "send"
+              ]
+            },
+            "description": "Send message as admin to any contact",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send bulk messages as admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/send-bulk",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "send-bulk"
+              ]
+            },
+            "description": "Send bulk messages as admin",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get messages for specific coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/coaches/{{coachId}}/messages",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "coaches",
+                "{{coachId}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get messages for specific coach"
+          }
+        },
+        {
+          "name": "Get unified messaging system overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/overview",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "overview"
+              ]
+            },
+            "description": "Get unified messaging system overview"
+          }
+        },
+        {
+          "name": "Get all messages across coaches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/messages",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all messages across coaches"
+          }
+        },
+        {
+          "name": "Get messages for specific coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/coaches/{{coachId}}/messages",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "coaches",
+                "{{coachId}}",
+                "messages"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get messages for specific coach"
+          }
+        },
+        {
+          "name": "Send broadcast message to multiple coaches",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//admin/broadcast",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "admin",
+                "broadcast"
+              ]
+            },
+            "description": "Send broadcast message to multiple coaches"
+          }
+        },
+        {
+          "name": "Get available parameters for template assignment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{coachToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1//parameter-options",
+              "host": [
+                "{{host}}"
+              ],
+              "path": [
+                "central-messaging",
+                "v1",
+                "",
+                "parameter-options"
+              ]
+            },
+            "description": "Get available parameters for template assignment"
+          }
+        }
+      ]
+    }
+  ]
+}

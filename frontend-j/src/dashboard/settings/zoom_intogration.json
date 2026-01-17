@@ -1,0 +1,707 @@
+{
+    "info": {
+      "name": "🔗 Zoom Integration - Complete API Collection",
+      "description": "Comprehensive Postman collection for Zoom integration features including setup, appointment booking, meeting management, and staff transfer functionality.",
+      "version": "1.0.0",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+      "type": "bearer",
+      "bearer": [
+        {
+          "key": "token",
+          "value": "{{auth_token}}",
+          "type": "string"
+        }
+      ]
+    },
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "http://localhost:5000/api",
+        "type": "string"
+      },
+      {
+        "key": "auth_token",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "coach_id",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "staff_id",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "appointment_id",
+        "value": "",
+        "type": "string"
+      },
+      {
+        "key": "lead_id",
+        "value": "",
+        "type": "string"
+      }
+    ],
+    "item": [
+      {
+        "name": "📚 Setup & Configuration",
+        "description": "Initial setup and configuration endpoints for Zoom integration",
+        "item": [
+          {
+            "name": "📖 Get Zoom API Setup Guide (Public)",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/setup-guide",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "setup-guide"]
+              },
+              "description": "Public endpoint to get step-by-step guide for setting up Zoom API keys and OAuth credentials."
+            },
+            "response": []
+          },
+          {
+            "name": "🔧 Setup Zoom Integration",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"clientId\": \"your_zoom_oauth_client_id\",\n  \"clientSecret\": \"your_zoom_oauth_client_secret\",\n  \"zoomEmail\": \"your_zoom_account_email@example.com\",\n  \"zoomAccountId\": \"your_zoom_account_id\",\n  \"meetingSettings\": {\n    \"defaultDuration\": 60,\n    \"defaultType\": \"scheduled\",\n    \"settings\": {\n      \"hostVideo\": true,\n      \"participantVideo\": true,\n      \"joinBeforeHost\": false,\n      \"muteUponEntry\": true,\n      \"watermark\": false,\n      \"usePersonalMeetingId\": false,\n      \"waitingRoom\": true,\n      \"autoRecording\": \"none\"\n    }\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/setup",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "setup"]
+              },
+              "description": "Setup Zoom integration for a coach with OAuth credentials and meeting settings."
+            },
+            "response": []
+          },
+          {
+            "name": "🔍 Get Integration Details",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration"]
+              },
+              "description": "Get current Zoom integration details and settings for the authenticated coach."
+            },
+            "response": []
+          },
+          {
+            "name": "⚙️ Update Integration Settings",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"meetingSettings\": {\n    \"defaultDuration\": 45,\n    \"settings\": {\n      \"hostVideo\": true,\n      \"participantVideo\": false,\n      \"joinBeforeHost\": true,\n      \"muteUponEntry\": true,\n      \"waitingRoom\": false,\n      \"autoRecording\": \"local\"\n    }\n  },\n  \"isActive\": true\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration"]
+              },
+              "description": "Update Zoom integration settings and meeting preferences."
+            },
+            "response": []
+          },
+          {
+            "name": "🧪 Test Connection",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/test",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "test"]
+              },
+              "description": "Test Zoom API connection and verify credentials are working."
+            },
+            "response": []
+          },
+          {
+            "name": "📊 Get Integration Status",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/status",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "status"]
+              },
+              "description": "Get integration status, health, and connection information."
+            },
+            "response": []
+          },
+          {
+            "name": "📈 Get Usage Statistics",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/usage",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "usage"]
+              },
+              "description": "Get Zoom account usage statistics and meeting metrics."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "📅 Meeting Templates",
+        "description": "Manage Zoom meeting templates for different session types",
+        "item": [
+          {
+            "name": "➕ Create Meeting Template",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"30-min Coaching Session\",\n  \"description\": \"Standard 30-minute coaching session with client\",\n  \"duration\": 30,\n  \"settings\": {\n    \"hostVideo\": true,\n    \"participantVideo\": true,\n    \"joinBeforeHost\": false,\n    \"muteUponEntry\": true,\n    \"waitingRoom\": true,\n    \"autoRecording\": \"none\"\n  },\n  \"isDefault\": true\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/meeting-templates",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "meeting-templates"]
+              },
+              "description": "Create a new meeting template with predefined settings for consistent meeting configurations."
+            },
+            "response": []
+          },
+          {
+            "name": "📋 Get Meeting Templates",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/meeting-templates",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "meeting-templates"]
+              },
+              "description": "Get all created meeting templates for the coach."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "📅 Appointment Booking",
+        "description": "Book appointments with automatic Zoom meeting creation",
+        "item": [
+          {
+            "name": "📝 Book Appointment (Coach)",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"startTime\": \"2024-12-20T10:00:00.000Z\",\n  \"duration\": 60,\n  \"summary\": \"Initial consultation session\",\n  \"notes\": \"First meeting with new client\",\n  \"timeZone\": \"America/New_York\",\n  \"appointmentType\": \"online\",\n  \"meetingSettings\": {\n    \"hostVideo\": true,\n    \"participantVideo\": true,\n    \"joinBeforeHost\": false,\n    \"waitingRoom\": true\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/coach-dashboard/appointments",
+                "host": ["{{base_url}}"],
+                "path": ["coach-dashboard", "appointments"]
+              },
+              "description": "Book a new appointment with automatic Zoom meeting creation for online sessions."
+            },
+            "response": []
+          },
+          {
+            "name": "📝 Book Appointment (Staff)",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"startTime\": \"2024-12-20T14:00:00.000Z\",\n  \"duration\": 45,\n  \"summary\": \"Follow-up session\",\n  \"notes\": \"Second meeting with client\",\n  \"timeZone\": \"America/New_York\",\n  \"appointmentType\": \"online\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/staff-enhanced/appointments",
+                "host": ["{{base_url}}"],
+                "path": ["staff-enhanced", "appointments"]
+              },
+              "description": "Book a new appointment as staff member with automatic Zoom meeting creation."
+            },
+            "response": []
+          },
+          {
+            "name": "📅 Get Available Time Slots",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/coach-dashboard/available-slots?date=2024-12-20&duration=60",
+                "host": ["{{base_url}}"],
+                "path": ["coach-dashboard", "available-slots"],
+                "query": [
+                  {
+                    "key": "date",
+                    "value": "2024-12-20"
+                  },
+                  {
+                    "key": "duration",
+                    "value": "60"
+                  }
+                ]
+              },
+              "description": "Get available time slots for booking appointments."
+            },
+            "response": []
+          },
+          {
+            "name": "📋 Get Upcoming Appointments",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/coach-dashboard/appointments/upcoming?limit=10&page=1",
+                "host": ["{{base_url}}"],
+                "path": ["coach-dashboard", "appointments", "upcoming"],
+                "query": [
+                  {
+                    "key": "limit",
+                    "value": "10"
+                  },
+                  {
+                    "key": "page",
+                    "value": "1"
+                  }
+                ]
+              },
+              "description": "Get upcoming appointments for the coach."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "🎥 Meeting Management",
+        "description": "Manage Zoom meetings and get meeting details",
+        "item": [
+          {
+            "name": "📋 Get All Coach Meetings",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/meetings",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "meetings"]
+              },
+              "description": "Get all Zoom meetings for the authenticated coach."
+            },
+            "response": []
+          },
+          {
+            "name": "🔍 Get Meeting for Specific Appointment",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/meetings/appointment/{{appointment_id}}",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "meetings", "appointment", "{{appointment_id}}"]
+              },
+              "description": "Get Zoom meeting details for a specific appointment."
+            },
+            "response": []
+          },
+          {
+            "name": "📅 Get Staff Appointments with Meetings",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/staff-dashboard/unified/appointments/staff/{{staff_id}}?includeMeetings=true",
+                "host": ["{{base_url}}"],
+                "path": ["staff-dashboard", "unified", "appointments", "staff", "{{staff_id}}"],
+                "query": [
+                  {
+                    "key": "includeMeetings",
+                    "value": "true"
+                  }
+                ]
+              },
+              "description": "Get staff appointments including Zoom meeting details."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "👥 Staff Management & Transfer",
+        "description": "Transfer appointments and meeting host permissions to staff",
+        "item": [
+          {
+            "name": "🔄 Transfer Appointment from Coach to Staff",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"staffId\": \"{{staff_id}}\",\n  \"hostPermissions\": {\n    \"hasHostAccess\": true,\n    \"canStartMeeting\": true,\n    \"canManageParticipants\": true,\n    \"canShareScreen\": true,\n    \"canRecordMeeting\": false\n  },\n  \"reason\": \"Coach unavailable, transferring to staff member\",\n  \"notes\": \"Staff has full meeting control and can manage the session\",\n  \"transferDate\": \"2024-12-20T10:00:00.000Z\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/staff-dashboard/unified/appointments/transfer-from-coach",
+                "host": ["{{base_url}}"],
+                "path": ["staff-dashboard", "unified", "appointments", "transfer-from-coach"]
+              },
+              "description": "Transfer appointment from coach to staff with full Zoom meeting host permissions."
+            },
+            "response": []
+          },
+          {
+            "name": "🔄 Transfer Appointment Between Staff",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"fromStaffId\": \"{{staff_id}}\",\n  \"toStaffId\": \"new_staff_id_here\",\n  \"reason\": \"Staff member unavailable\",\n  \"notes\": \"Transferring to backup staff member\",\n  \"transferDate\": \"2024-12-20T10:00:00.000Z\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/staff-dashboard/unified/appointments/transfer",
+                "host": ["{{base_url}}"],
+                "path": ["staff-dashboard", "unified", "appointments", "transfer"]
+              },
+              "description": "Transfer appointment between staff members with meeting host permissions."
+            },
+            "response": []
+          },
+          {
+            "name": "👤 Assign Appointment to Staff",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"staffId\": \"{{staff_id}}\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/staff-dashboard/unified/appointments/assign",
+                "host": ["{{base_url}}"],
+                "path": ["staff-dashboard", "unified", "appointments", "assign"]
+              },
+              "description": "Assign an existing appointment to a staff member."
+            },
+            "response": []
+          },
+          {
+            "name": "❌ Unassign Appointment from Staff",
+            "request": {
+              "method": "PUT",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/staff-dashboard/unified/appointments/{{appointment_id}}/unassign",
+                "host": ["{{base_url}}"],
+                "path": ["staff-dashboard", "unified", "appointments", "{{appointment_id}}", "unassign"]
+              },
+              "description": "Remove staff assignment from an appointment."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "🧹 Meeting Cleanup & Maintenance",
+        "description": "Manage automatic and manual cleanup of old Zoom meetings",
+        "item": [
+          {
+            "name": "🚀 Start Automatic Cleanup",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"retentionDays\": 2,\n  \"interval\": \"daily\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/cleanup/start",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "cleanup", "start"]
+              },
+              "description": "Start automatic cleanup of old Zoom meetings with specified retention period."
+            },
+            "response": []
+          },
+          {
+            "name": "⏹️ Stop Automatic Cleanup",
+            "request": {
+              "method": "POST",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/cleanup/stop",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "cleanup", "stop"]
+              },
+              "description": "Stop automatic cleanup process."
+            },
+            "response": []
+          },
+          {
+            "name": "🧹 Manual Cleanup",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"retentionDays\": 3\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/cleanup/manual",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "cleanup", "manual"]
+              },
+              "description": "Trigger manual cleanup of meetings older than specified days."
+            },
+            "response": []
+          },
+          {
+            "name": "📊 Get Cleanup Statistics",
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/cleanup/stats",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "cleanup", "stats"]
+              },
+              "description": "Get cleanup statistics and status information."
+            },
+            "response": []
+          },
+          {
+            "name": "⚙️ Update Retention Period",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"retentionDays\": 7\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/cleanup/retention",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "cleanup", "retention"]
+              },
+              "description": "Update the retention period for automatic cleanup."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "🔧 Integration Management",
+        "description": "Manage and maintain Zoom integration",
+        "item": [
+          {
+            "name": "🗑️ Delete Zoom Integration",
+            "request": {
+              "method": "DELETE",
+              "header": [],
+              "url": {
+                "raw": "{{base_url}}/zoom-integration",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration"]
+              },
+              "description": "Delete Zoom integration and remove all associated data."
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "📚 Documentation & Examples",
+        "description": "Documentation and example requests",
+        "item": [
+          {
+            "name": "📖 Complete Setup Example",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"clientId\": \"abcd1234efgh5678ijkl9012mnop3456\",\n  \"clientSecret\": \"qrst7890uvwx1234yzab5678cdef9012\",\n  \"zoomEmail\": \"coach@example.com\",\n  \"zoomAccountId\": \"abcdefghijklmnopqrstuvwx\",\n  \"meetingSettings\": {\n    \"defaultDuration\": 60,\n    \"defaultType\": \"scheduled\",\n    \"settings\": {\n      \"hostVideo\": true,\n      \"participantVideo\": true,\n      \"joinBeforeHost\": false,\n      \"muteUponEntry\": true,\n      \"watermark\": false,\n      \"usePersonalMeetingId\": false,\n      \"waitingRoom\": true,\n      \"autoRecording\": \"none\"\n    },\n    \"templates\": [\n      {\n        \"name\": \"30-min Session\",\n        \"description\": \"Quick 30-minute session\",\n        \"duration\": 30,\n        \"settings\": {\n          \"hostVideo\": true,\n          \"participantVideo\": true,\n          \"joinBeforeHost\": false,\n          \"waitingRoom\": true\n        },\n        \"isDefault\": true\n      },\n      {\n        \"name\": \"60-min Deep Dive\",\n        \"description\": \"Comprehensive 60-minute session\",\n        \"duration\": 60,\n        \"settings\": {\n          \"hostVideo\": true,\n          \"participantVideo\": true,\n          \"joinBeforeHost\": false,\n          \"waitingRoom\": true,\n          \"autoRecording\": \"local\"\n        },\n        \"isDefault\": false\n      }\n    ]\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/zoom-integration/setup",
+                "host": ["{{base_url}}"],
+                "path": ["zoom-integration", "setup"]
+              },
+              "description": "Complete example of setting up Zoom integration with multiple meeting templates."
+            },
+            "response": []
+          },
+          {
+            "name": "📖 Full Appointment Booking Example",
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"leadId\": \"64a1b2c3d4e5f6789012345\",\n  \"startTime\": \"2024-12-20T15:00:00.000Z\",\n  \"duration\": 60,\n  \"summary\": \"Initial consultation with new client\",\n  \"notes\": \"First meeting to discuss goals and create action plan\",\n  \"timeZone\": \"America/New_York\",\n  \"appointmentType\": \"online\",\n  \"meetingSettings\": {\n    \"hostVideo\": true,\n    \"participantVideo\": true,\n    \"joinBeforeHost\": false,\n    \"muteUponEntry\": true,\n    \"waitingRoom\": true,\n    \"autoRecording\": \"none\"\n  }\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/coach-dashboard/appointments",
+                "host": ["{{base_url}}"],
+                "path": ["coach-dashboard", "appointments"]
+              },
+              "description": "Complete example of booking an appointment with custom meeting settings."
+            },
+            "response": []
+          },
+          {
+            "name": "📖 Staff Transfer with Host Permissions Example",
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"appointmentId\": \"64a1b2c3d4e5f6789012346\",\n  \"staffId\": \"64a1b2c3d4e5f6789012347\",\n  \"hostPermissions\": {\n    \"hasHostAccess\": true,\n    \"canStartMeeting\": true,\n    \"canManageParticipants\": true,\n    \"canShareScreen\": true,\n    \"canRecordMeeting\": true,\n    \"transferredFromCoach\": true,\n    \"originalCoachId\": \"64a1b2c3d4e5f6789012348\"\n  },\n  \"reason\": \"Coach has emergency, transferring to senior staff member\",\n  \"notes\": \"Staff has full meeting control including recording permissions\",\n  \"transferDate\": \"2024-12-20T14:30:00.000Z\"\n}"
+              },
+              "url": {
+                "raw": "{{base_url}}/staff-dashboard/unified/appointments/transfer-from-coach",
+                "host": ["{{base_url}}"],
+                "path": ["staff-dashboard", "unified", "appointments", "transfer-from-coach"]
+              },
+              "description": "Complete example of transferring appointment from coach to staff with full host permissions."
+            },
+            "response": []
+          }
+        ]
+      }
+    ],
+    "event": [
+      {
+        "listen": "prerequest",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "// Auto-populate variables if not set",
+            "if (!pm.variables.get('base_url')) {",
+            "    pm.variables.set('base_url', 'http://localhost:5000/api');",
+            "}",
+            "",
+            "// Add timestamp for unique requests",
+            "pm.variables.set('timestamp', new Date().toISOString());"
+          ]
+        }
+      },
+      {
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "exec": [
+            "// Auto-extract IDs from responses",
+            "if (pm.response.code === 200 || pm.response.code === 201) {",
+            "    try {",
+            "        const responseJson = pm.response.json();",
+            "        ",
+            "        // Extract appointment ID",
+            "        if (responseJson.data && responseJson.data._id) {",
+            "            pm.variables.set('appointment_id', responseJson.data._id);",
+            "        }",
+            "        ",
+            "        // Extract meeting ID",
+            "        if (responseJson.data && responseJson.data.zoomMeeting && responseJson.data.zoomMeeting.meetingId) {",
+            "            pm.variables.set('meeting_id', responseJson.data.zoomMeeting.meetingId);",
+            "        }",
+            "        ",
+            "        // Extract integration ID",
+            "        if (responseJson.data && responseJson.data.integrationId) {",
+            "            pm.variables.set('integration_id', responseJson.data.integrationId);",
+            "        }",
+            "    } catch (e) {",
+            "        console.log('Could not parse response JSON');",
+            "    }",
+            "}"
+          ]
+        }
+      }
+    ]
+  }
+  

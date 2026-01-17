@@ -1,0 +1,935 @@
+{
+	"info": {
+		"name": "Central Messaging API",
+		"description": "Complete API collection for the Central Messaging System (WhatsApp + Email)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "prj_yct_messaging"
+	},
+	"item": [
+		{
+			"name": "Template Variables",
+			"item": [
+				{
+					"name": "Get Available Variables",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/variables",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "variables"]
+						},
+						"description": "Get all available template variables with UI format"
+					},
+					"response": []
+				},
+				{
+					"name": "Preview Variables",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"templateText\": \"Hello {{lead.name}}, your appointment with {{appointment.coachName}} is on {{appointment.dateTime}}\",\n  \"variables\": {\n    \"lead.name\": \"John Doe\",\n    \"appointment.coachName\": \"Jane Smith\",\n    \"appointment.dateTime\": \"1/20/2024, 10:00 AM\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "preview"]
+						},
+						"description": "Preview template with sample variables"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Template Management",
+			"item": [
+				{
+					"name": "Get My Templates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/my-templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "my-templates"]
+						},
+						"description": "Get templates available to coach (from subscription + own)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Local Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"appointment_reminder\",\n  \"description\": \"Reminder for upcoming appointment\",\n  \"type\": \"universal\",\n  \"category\": \"reminder\",\n  \"content\": {\n    \"body\": \"Hi {{lead.name}}, your appointment with {{appointment.coachName}} is on {{appointment.dateTime}}. Join: {{appointment.zoomLink}}\",\n    \"subject\": \"Appointment Reminder\"\n  },\n  \"selectedVariables\": [\n    \"lead.name\",\n    \"appointment.coachName\",\n    \"appointment.dateTime\",\n    \"appointment.zoomLink\"\n  ],\n  \"isMetaTemplate\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/create",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "create"]
+						},
+						"description": "Create a new template with variable selection"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Email Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"welcome_email\",\n  \"description\": \"Welcome new leads via email\",\n  \"type\": \"email\",\n  \"category\": \"welcome\",\n  \"content\": {\n    \"subject\": \"Welcome {{lead.name}} to {{system.platformName}}\",\n    \"body\": \"Hi {{lead.name}}, thanks for joining {{system.platformName}}! We're excited to help you reach your goals.\"\n  },\n  \"selectedVariables\": [\n    \"lead.name\",\n    \"system.platformName\"\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/create",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "create"]
+						},
+						"description": "Create an email template"
+					},
+					"response": []
+				},
+				{
+					"name": "Preview Template with Real Data",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"templateId\": \"template_id_here\",\n  \"leadId\": \"{{coach_id}}\",\n  \"appointmentId\": \"appointment_id_here\",\n  \"customVariables\": {\n    \"custom.discount\": \"20%\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/preview",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "preview"]
+						},
+						"description": "Preview template with actual database data"
+					},
+					"response": []
+				},
+				{
+					"name": "Check Template Usage",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/:templateId/check-usage?contactPhone=+1234567890",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", ":templateId", "check-usage"],
+							"query": [
+								{
+									"key": "contactPhone",
+									"value": "+1234567890"
+								}
+							]
+						},
+						"description": "Check if template can be used (24hr window)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Send Messages",
+			"item": [
+				{
+					"name": "Send WhatsApp Text",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello! This is a test message.\",\n  \"leadId\": \"{{coach_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "send"]
+						},
+						"description": "Send a simple WhatsApp text message"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"user@example.com\",\n  \"messageType\": \"email\",\n  \"subject\": \"Important Update\",\n  \"emailBody\": \"Hello! This is an important email update.\",\n  \"leadId\": \"{{coach_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "send"]
+						},
+						"description": "Send an email message"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Template Message (Meta)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"template\",\n  \"templateName\": \"welcome_message\",\n  \"templateParameters\": [\"John Doe\"],\n  \"leadId\": \"{{coach_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "send"]
+						},
+						"description": "Send WhatsApp template message (Meta approved)"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Template with Variables",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"template\",\n  \"templateName\": \"appointment_reminder\",\n  \"leadId\": \"{{coach_id}}\",\n  \"appointmentId\": \"appointment_123\",\n  \"variables\": {\n    \"custom.discount\": \"20%\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/send",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "send"]
+						},
+						"description": "Send message with template that uses variables from database"
+					},
+					"response": []
+				},
+				{
+					"name": "Send Bulk Messages",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"recipients\": [\"+1234567890\", \"+0987654321\"],\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Bulk message content\",\n  \"leadIds\": [\"lead_1\", \"lead_2\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/bulk",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "bulk"]
+						},
+						"description": "Send bulk messages to multiple recipients"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Inbox & Contacts",
+			"item": [
+				{
+					"name": "Get Unified Inbox",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/inbox?page=1&limit=20&type=whatsapp&within24Hours=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "inbox"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "type",
+									"value": "whatsapp"
+								},
+								{
+									"key": "within24Hours",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get unified inbox messages"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/contacts?page=1&limit=20&within24Hours=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "contacts"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "within24Hours",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Get all contacts with 24hr window info"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Conversation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/conversation/:contactId?page=1&limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "conversation", ":contactId"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get conversation history with a contact"
+					},
+					"response": []
+				},
+				{
+					"name": "Get 24hr Window Contacts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/24hr-window?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "24hr-window"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get contacts within Meta 24hr messaging window"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Analytics",
+			"item": [
+				{
+					"name": "Get Messaging Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/analytics?startDate=2024-01-01&endDate=2024-01-31",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "analytics"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-01-31"
+								}
+							]
+						},
+						"description": "Get messaging analytics"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Credits",
+			"item": [
+				{
+					"name": "Get Credit Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/credits/balance",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "credits", "balance"]
+						},
+						"description": "Get current credit balance"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Credit Packages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/credits/packages",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "credits", "packages"]
+						},
+						"description": "Get available credit packages"
+					},
+					"response": []
+				},
+				{
+					"name": "Purchase Credits",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"packageId\": \"package_123\",\n  \"amount\": 100\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/credits/purchase",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "credits", "purchase"]
+						},
+						"description": "Purchase credits"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Credit Transactions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/credits/transactions?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "credits", "transactions"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get credit transaction history"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Staff Routes",
+			"item": [
+				{
+					"name": "Get Assigned Leads",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/staff/assigned-leads",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "staff", "assigned-leads"]
+						},
+						"description": "Get leads assigned to staff member"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Staff Inbox",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/staff/inbox?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "staff", "inbox"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get staff inbox (filtered by assigned leads)"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin Routes",
+			"item": [
+				{
+					"name": "Get Configuration",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/config",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "config"]
+						},
+						"description": "Get messaging configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Get System Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/stats",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "stats"]
+						},
+						"description": "Get system-wide messaging statistics"
+					},
+					"response": []
+				},
+				{
+					"name": "Distribute Template",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"templateId\": \"template_123\",\n  \"subscriptionPlans\": [\"plan_basic\", \"plan_premium\", \"plan_pro\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/templates/distribute",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "templates", "distribute"]
+						},
+						"description": "Distribute template to specific subscriptions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Meta Templates",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/whatsapp/templates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "whatsapp", "templates"]
+						},
+						"description": "Get Meta WhatsApp templates"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync Meta Templates",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/whatsapp/templates/sync",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "whatsapp", "templates", "sync"]
+						},
+						"description": "Sync templates from Meta Business Manager"
+					},
+					"response": []
+				},
+				{
+					"name": "Setup Email Configuration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@funnelseye.com\",\n  \"password\": \"app_password\",\n  \"fromName\": \"FunnelsEye\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/email/setup",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "email", "setup"]
+						},
+						"description": "Setup central email configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"test@example.com\",\n  \"subject\": \"Test Email\",\n  \"body\": \"This is a test email\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/email/test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "email", "test"]
+						},
+						"description": "Send test email"
+					},
+					"response": []
+				},
+				{
+					"name": "Setup WhatsApp Configuration",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phoneNumberId\": \"123456789\",\n  \"accessToken\": \"your_meta_access_token\",\n  \"businessAccountId\": \"987654321\",\n  \"webhookVerifyToken\": \"your_webhook_token\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/whatsapp/setup",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "whatsapp", "setup"]
+						},
+						"description": "Setup WhatsApp configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Test WhatsApp",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Test WhatsApp message\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/central-messaging/v1/admin/whatsapp/test",
+							"host": ["{{base_url}}"],
+							"path": ["api", "central-messaging", "v1", "admin", "whatsapp", "test"]
+						},
+						"description": "Send test WhatsApp message"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "coach_id",
+			"value": "68e8d53a5594a4416f26f26a",
+			"type": "string"
+		},
+		{
+			"key": "coach_token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4ZThkNTNhNTU5NGE0NDE2ZjI2ZjI2YSIsInJvbGUiOiJjb2FjaCIsImlhdCI6MTc2MTU1Mjg4MiwiZXhwIjoxNzY0MTQ0ODgyfQ.VICqd-rI5tn-jASKM__o8YZ30F5E_HnoHAyvfHC3UD4",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "your_admin_token_here",
+			"type": "string"
+		},
+		{
+			"key": "staff_token",
+			"value": "your_staff_token_here",
+			"type": "string"
+		}
+	]
+}
+

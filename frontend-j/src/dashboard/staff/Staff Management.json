@@ -1,0 +1,1368 @@
+{
+	"info": {
+		"name": "Staff Management Testing",
+		"description": "Complete staff management testing collection for Coach and Staff",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "coach_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "staff_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "staff_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "coach_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. PUBLIC ROUTES (No Auth)",
+			"item": [
+				{
+					"name": "Get All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/public/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "public", "permissions"]
+						},
+						"description": "Get all 78 available permissions grouped by category"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has permissions data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.totalPermissions).to.be.above(70);",
+									"    pm.expect(jsonData.data.categories).to.be.an('object');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Permission Presets",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/public/permissions/presets",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "public", "permissions", "presets"]
+						},
+						"description": "Get all 9 permission presets"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has presets', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.totalPresets).to.eql(9);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			],
+			"description": "Public routes - No authentication required"
+		},
+		{
+			"name": "2. COACH - Staff CRUD",
+			"item": [
+				{
+					"name": "Coach - Get All Staff",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff"]
+						},
+						"description": "Coach views all staff members with full details"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has staff array', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Coach - Create Staff Member",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Test Staff Member\",\n    \"email\": \"teststaff@example.com\",\n    \"password\": \"TestPass123!\",\n    \"permissions\": [\n        \"dashboard:view\",\n        \"profile:view\",\n        \"profile:update\",\n        \"leads:view\",\n        \"leads:create\",\n        \"leads:update\",\n        \"messaging:view\",\n        \"messaging:send\",\n        \"calendar:view\",\n        \"calendar:book\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff"]
+						},
+						"description": "Create new staff member with basic permissions"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Staff created successfully', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data._id).to.exist;",
+									"    ",
+									"    // Save staff ID for later use",
+									"    pm.environment.set('staff_id', jsonData.data._id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Coach - Get Staff Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}"]
+						},
+						"description": "Get specific staff member details"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Update Staff Member",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Staff Name\",\n    \"distributionRatio\": 1.5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}"]
+						},
+						"description": "Update staff member information"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Delete Staff Member",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}"]
+						},
+						"description": "Delete staff member (use carefully!)"
+					},
+					"response": []
+				}
+			],
+			"description": "Coach manages staff CRUD operations"
+		},
+		{
+			"name": "3. COACH - Permission Management",
+			"item": [
+				{
+					"name": "Coach - Get Permissions List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "permissions"]
+						},
+						"description": "Get all available permissions grouped by category"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Get Permission Presets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/presets",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "presets"]
+						},
+						"description": "Get available permission presets"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Update Staff Permissions",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"permissions\": [\n        \"dashboard:view\",\n        \"profile:view\",\n        \"profile:update\",\n        \"leads:view\",\n        \"leads:create\",\n        \"leads:update\",\n        \"leads:delete\",\n        \"leads:assign\",\n        \"leads:export\",\n        \"funnels:view\",\n        \"funnels:create\",\n        \"messaging:view\",\n        \"messaging:send\",\n        \"messaging:reply\",\n        \"calendar:view\",\n        \"calendar:book\",\n        \"calendar:create\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permissions"]
+						},
+						"description": "Update staff permissions with custom array"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Assign Permission Preset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"presetName\": \"Lead Manager\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permission-group",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permission-group"]
+						},
+						"description": "Assign a preset to staff (Sales Representative, Lead Manager, etc.)"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Toggle Staff Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/toggle-status",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "toggle-status"]
+						},
+						"description": "Activate or deactivate staff member"
+					},
+					"response": []
+				}
+			],
+			"description": "Coach manages staff permissions"
+		},
+		{
+			"name": "4. COACH - Staff Performance & Tasks",
+			"item": [
+				{
+					"name": "Coach - Get Staff Performance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/performance",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "performance"]
+						},
+						"description": "Get staff performance summary (legacy endpoint)"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Get Staff Metrics (Performance Score)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/metrics",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "metrics"]
+						},
+						"description": "Get detailed performance score (0-100) with breakdown"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Get Staff Tasks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "tasks"]
+						},
+						"description": "Get all tasks assigned to this staff member"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Get Staff Assigned Leads",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/leads",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "leads"]
+						},
+						"description": "Get all leads assigned to this staff member"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Get Team Performance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/team-performance",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "team-performance"]
+						},
+						"description": "Get team leaderboard with all staff performance"
+					},
+					"response": []
+				}
+			],
+			"description": "Coach views staff performance, tasks, and metrics"
+		},
+		{
+			"name": "5. COACH - Lead Distribution",
+			"item": [
+				{
+					"name": "Coach - Get Lead Distribution Settings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/lead-distribution",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "lead-distribution"]
+						},
+						"description": "Get distribution ratios for all staff"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Update Lead Distribution",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"distributions\": [\n        {\n            \"staffId\": \"{{staff_id}}\",\n            \"ratio\": 2\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/lead-distribution",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "lead-distribution"]
+						},
+						"description": "Update distribution ratios (Coach only)"
+					},
+					"response": []
+				}
+			],
+			"description": "Coach manages automatic lead distribution settings"
+		},
+		{
+			"name": "6. STAFF - View Team",
+			"item": [
+				{
+					"name": "Staff - Get All Staff (Basic Info)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff"]
+						},
+						"description": "Staff views team members (basic info only, no permissions/ratios)"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Staff can see basic team info', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data).to.be.an('array');",
+									"    ",
+									"    // Staff should not see other staff permissions",
+									"    if (jsonData.data.length > 0) {",
+									"        pm.expect(jsonData.data[0].permissions).to.not.exist;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Staff - Get Team Performance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/team-performance",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "team-performance"]
+						},
+						"description": "Staff views team leaderboard and their rank"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has team leaderboard', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.teamLeaderboard).to.be.an('array');",
+									"    pm.expect(jsonData.data.myRank).to.exist;",
+									"    ",
+									"    // Check for current user flag",
+									"    var currentUser = jsonData.data.teamLeaderboard.find(s => s.isCurrentUser);",
+									"    pm.expect(currentUser).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			],
+			"description": "Staff views team information and performance"
+		},
+		{
+			"name": "7. STAFF - Own Data Access",
+			"item": [
+				{
+					"name": "Staff - Get Own Tasks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "tasks"]
+						},
+						"description": "Staff views their own tasks"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has task data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.total).to.exist;",
+									"    pm.expect(jsonData.data.allTasks).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Staff - Get Own Metrics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/metrics",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "metrics"]
+						},
+						"description": "Staff views their own performance metrics and score"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has performance score', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.performanceScore).to.exist;",
+									"    pm.expect(jsonData.data.performanceScore.overallScore).to.exist;",
+									"    pm.expect(jsonData.data.performanceScore.rating).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Staff - Get Own Assigned Leads",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/leads",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "leads"]
+						},
+						"description": "Staff views all leads assigned to them"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has leads data', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.data.total).to.exist;",
+									"    pm.expect(jsonData.data.leads).to.be.an('array');",
+									"    pm.expect(jsonData.data.leadsByStatus).to.exist;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Staff - Try to View Other Staff Tasks (Should Fail)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/other_staff_id_here/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "other_staff_id_here", "tasks"]
+						},
+						"description": "Staff tries to view another staff's tasks (should get 403)"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('Access denied message', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('own tasks');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			],
+			"description": "Staff accesses their own data (tasks, metrics, leads)"
+		},
+		{
+			"name": "8. STAFF - Lead Distribution (Should Fail)",
+			"item": [
+				{
+					"name": "Staff - Try to Get Distribution (Should Fail)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/lead-distribution",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "lead-distribution"]
+						},
+						"description": "Staff tries to view lead distribution (Coach only - should fail)"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});",
+									"",
+									"pm.test('Coach only message', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(false);",
+									"    pm.expect(jsonData.message).to.include('Only coaches');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Staff - Try to Update Distribution (Should Fail)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"distributions\": []\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/lead-distribution",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "lead-distribution"]
+						},
+						"description": "Staff tries to update distribution (Coach only - should fail)"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			],
+			"description": "Staff cannot access lead distribution (Coach only)"
+		},
+		{
+			"name": "9. PERMISSION TESTING - Staff With Limited Permissions",
+			"item": [
+				{
+					"name": "Coach - Create Staff with Limited Permissions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Limited Staff\",\n    \"email\": \"limited@example.com\",\n    \"password\": \"LimitedPass123!\",\n    \"permissions\": [\n        \"dashboard:view\",\n        \"profile:view\",\n        \"messaging:view\",\n        \"messaging:send\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff"]
+						},
+						"description": "Create staff with only messaging permissions (NO leads, funnels, etc.)"
+					},
+					"response": []
+				},
+				{
+					"name": "Staff - Get Permissions List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "permissions"]
+						},
+						"description": "Staff can view available permissions"
+					},
+					"response": []
+				},
+				{
+					"name": "Staff - Get Permission Presets",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/presets",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "presets"]
+						},
+						"description": "Staff can view permission presets"
+					},
+					"response": []
+				}
+			],
+			"description": "Test staff with limited permissions to verify filtering"
+		},
+		{
+			"name": "10. FULL ACCESS TESTING",
+			"item": [
+				{
+					"name": "Coach - Create Full Access Staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Full Access Staff\",\n    \"email\": \"fullaccess@example.com\",\n    \"password\": \"FullPass123!\",\n    \"permissions\": [\n        \"dashboard:view\",\n        \"profile:view\",\n        \"profile:update\",\n        \"leads:view\",\n        \"leads:create\",\n        \"leads:update\",\n        \"leads:delete\",\n        \"leads:assign\",\n        \"leads:export\",\n        \"leads:manage_all\",\n        \"leads:manage\",\n        \"funnels:view\",\n        \"funnels:create\",\n        \"funnels:update\",\n        \"funnels:delete\",\n        \"funnels:publish\",\n        \"funnels:view_analytics\",\n        \"funnels:manage\",\n        \"messaging:view\",\n        \"messaging:send\",\n        \"messaging:reply\",\n        \"messaging:delete\",\n        \"messaging:manage\",\n        \"calendar:view\",\n        \"calendar:create\",\n        \"calendar:update\",\n        \"calendar:delete\",\n        \"calendar:book\",\n        \"calendar:reschedule\",\n        \"calendar:manage\",\n        \"marketing:view\",\n        \"marketing:create_campaign\",\n        \"marketing:manage\",\n        \"automation:view\",\n        \"automation:create\",\n        \"automation:manage\",\n        \"templates:view\",\n        \"templates:create\",\n        \"templates:update\",\n        \"staff:view\",\n        \"staff:create\",\n        \"staff:update\"\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff"]
+						},
+						"description": "Create staff with extensive permissions"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Assign 'Full Access' Preset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"presetName\": \"Full Access\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permission-group",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permission-group"]
+						},
+						"description": "Assign Full Access preset (all 78 permissions)"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Assign 'Sales Representative' Preset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"presetName\": \"Sales Representative\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permission-group",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permission-group"]
+						},
+						"description": "Assign Sales Representative preset"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Assign 'Lead Manager' Preset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"presetName\": \"Lead Manager\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permission-group",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permission-group"]
+						},
+						"description": "Assign Lead Manager preset"
+					},
+					"response": []
+				},
+				{
+					"name": "Coach - Assign 'Team Lead' Preset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"presetName\": \"Team Lead\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permission-group",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permission-group"]
+						},
+						"description": "Assign Team Lead preset (includes staff management)"
+					},
+					"response": []
+				}
+			],
+			"description": "Test different permission presets"
+		},
+		{
+			"name": "11. STAFF PERMISSION VERIFICATION",
+			"item": [
+				{
+					"name": "Staff With leads:view - Get Leads (Should Work)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/leads",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "leads"]
+						},
+						"description": "Staff with leads:view can see assigned leads"
+					},
+					"response": []
+				},
+				{
+					"name": "Staff With funnels:view - Get Funnels (Should Work)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/funnels/coach/{{coach_id}}/funnels",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "funnels", "coach", "{{coach_id}}", "funnels"]
+						},
+						"description": "Staff with funnels:view can see all coach funnels"
+					},
+					"response": []
+				},
+				{
+					"name": "Staff Without Permission - Get Funnels (Should Fail)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/funnels/coach/{{coach_id}}/funnels",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "funnels", "coach", "{{coach_id}}", "funnels"]
+						},
+						"description": "Staff WITHOUT funnels:view permission should get 403"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				}
+			],
+			"description": "Verify permissions are enforced correctly"
+		},
+		{
+			"name": "12. BULK OPERATIONS",
+			"item": [
+				{
+					"name": "Coach - Bulk Update Permissions",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"staffUpdates\": [\n        {\n            \"staffId\": \"{{staff_id}}\",\n            \"permissions\": [\n                \"dashboard:view\",\n                \"leads:view\",\n                \"leads:create\",\n                \"messaging:view\"\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/bulk-permissions",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "bulk-permissions"]
+						},
+						"description": "Update permissions for multiple staff at once"
+					},
+					"response": []
+				}
+			],
+			"description": "Bulk operations for efficiency"
+		},
+		{
+			"name": "13. TESTING WORKFLOW",
+			"item": [
+				{
+					"name": "Step 1 - Coach Creates Staff",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Workflow Test Staff\",\n    \"email\": \"workflow@example.com\",\n    \"password\": \"WorkflowPass123!\",\n    \"permissions\": [\"dashboard:view\", \"profile:view\"]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 2 - Coach Assigns Lead Manager Preset",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{coach_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"presetName\": \"Lead Manager\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/permission-group",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "permission-group"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 3 - Staff Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"workflow@example.com\",\n    \"password\": \"WorkflowPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/staffv2/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "staffv2", "auth", "login"]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Login successful', function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.eql(true);",
+									"    pm.expect(jsonData.token).to.exist;",
+									"    ",
+									"    // Save staff token",
+									"    pm.environment.set('staff_token', jsonData.token);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Step 4 - Staff Gets Leads (Should Work)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/leads",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "leads"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 5 - Staff Gets Team Performance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/team-performance",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "team-performance"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 6 - Staff Gets Own Tasks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "tasks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Step 7 - Staff Gets Own Metrics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{staff_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/coach/staff/{{staff_id}}/metrics",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "coach", "staff", "{{staff_id}}", "metrics"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Complete workflow: Create staff → Assign permissions → Test access"
+		}
+	]
+}
+

@@ -1,0 +1,2641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subscription Plans - FunnelsEye</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+            color: #1c1d1f;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 18px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .btn-login {
+            padding: 11px 24px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 24px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            max-width: 900px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-section h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .hero-section p {
+            font-size: 1.375rem;
+            opacity: 0.95;
+            margin-bottom: 0;
+            font-weight: 400;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 80px 32px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .section-title {
+            font-size: 2.75rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            font-size: 1.25rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Plans Grid */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 32px;
+            margin-bottom: 100px;
+            align-items: stretch;
+        }
+
+        @media (min-width: 1400px) {
+            .plans-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 1800px) {
+            .plans-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .plans-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+
+        .plan-card {
+            background: #ffffff;
+            border: 1px solid #dfe3ea;
+            border-radius: 2px;
+            padding: 0;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+            min-height: 620px;
+        }
+
+        .plan-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(135deg, #e2e8f0, #f1f5f9);
+        }
+
+        .plan-card:hover {
+            border-color: #1d4ed8;
+            box-shadow: 0 32px 70px rgba(15, 23, 42, 0.16);
+            transform: translateY(-6px);
+        }
+
+        .plan-card.popular {
+            border-color: #1d4ed8;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+            box-shadow: 0 32px 70px rgba(37, 99, 235, 0.18);
+        }
+
+        .plan-card.popular::before {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+
+        .plan-header {
+            padding: 36px 32px 28px;
+            background: #ffffff;
+            border-bottom: 1px solid #edf2f7;
+            position: relative;
+        }
+
+        .plan-card.popular .plan-header {
+            background: #f3f6ff;
+            border-bottom-color: #dbeafe;
+        }
+
+        .plan-badge {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .plan-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+            font-weight: 700;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
+        }
+
+        .plan-name {
+            font-size: 2.1rem;
+            font-weight: 800;
+            margin-bottom: 18px;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+            line-height: 1.15;
+        }
+
+        .plan-description {
+            font-size: 0.95rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 0;
+        }
+
+        .plan-price-section {
+            padding: 28px 32px;
+            background: #fcfdff;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .plan-price-wrapper {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .plan-price {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            letter-spacing: -1px;
+        }
+
+        .plan-currency {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .plan-billing {
+            font-size: 0.95rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .plan-features-section {
+            padding: 32px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+            background: #ffffff;
+        }
+
+        .features-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex-grow: 1;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .plan-features::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .plan-features::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .plan-features::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .plan-features::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .feature-item {
+            padding: 14px 0;
+            color: #334155;
+            display: flex;
+            align-items: flex-start;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .feature-item:last-child {
+            border-bottom: none;
+        }
+
+        .feature-item::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 700;
+            margin-right: 14px;
+            font-size: 1.125rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+            background: #d1fae5;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+        }
+
+        .plan-card.popular .feature-item::before {
+            background: #10b981;
+            color: white;
+        }
+
+        .plan-footer {
+            padding: 24px 32px 32px;
+            background: #f8fafc;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .plan-card.popular .plan-footer {
+            background: linear-gradient(135deg, #eff6ff 0%, #f8faff 100%);
+        }
+
+        .btn-select {
+            width: 100%;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35);
+            letter-spacing: 0.2px;
+        }
+
+        .btn-select:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 32px rgba(37, 99, 235, 0.45);
+        }
+
+        .plan-card.popular .btn-select {
+            box-shadow: 0 16px 32px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-select:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #2563eb;
+        }
+
+        .spinner {
+            border: 3px solid rgba(37, 99, 235, 0.2);
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 28px;
+            color: #9ca3af;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #f3f4f6;
+            color: #1a202c;
+        }
+
+        .modal-header {
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            color: #718096;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: white;
+            cursor: pointer;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .required {
+            color: #ef4444;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px 24px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn-submit:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-submit:disabled {
+            background: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success {
+            background: #d1fae5;
+            color: #059669;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .modal-footer {
+            text-align: center;
+            margin-top: 24px;
+            color: #718096;
+            font-size: 0.875rem;
+        }
+
+        .modal-footer a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .modal-footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Feature Groups */
+        .feature-group {
+            margin-bottom: 24px;
+        }
+
+        .feature-group-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin: 20px 0 12px 0;
+            padding: 0;
+            list-style: none;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .feature-group-title:first-child {
+            margin-top: 0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 24px;
+            color: #64748b;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 24px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .plans-grid {
+                grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+                gap: 28px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 60px 24px 50px;
+            }
+
+            .hero-section h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero-section p {
+                font-size: 1.125rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .section-subtitle {
+                font-size: 1rem;
+            }
+
+            .plans-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .plan-card.popular {
+                transform: none;
+            }
+
+            .plan-card.popular:hover {
+                transform: translateY(-8px);
+            }
+
+            .container {
+                padding: 50px 20px;
+            }
+
+            .plan-header,
+            .plan-price-section,
+            .plan-features-section,
+            .plan-footer {
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+        }
+
+        .unlimited {
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        /* Smooth animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .plan-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .plan-card:nth-child(1) { animation-delay: 0.1s; }
+        .plan-card:nth-child(2) { animation-delay: 0.2s; }
+        .plan-card:nth-child(3) { animation-delay: 0.3s; }
+        .plan-card:nth-child(4) { animation-delay: 0.4s; }
+        .plan-card:nth-child(5) { animation-delay: 0.5s; }
+        .plan-card:nth-child(6) { animation-delay: 0.6s; }
+
+        /* Compact Plan Cards */
+        .plan-card-compact {
+            background: #ffffff;
+            border: 1px solid #dfe3ea;
+            border-radius: 2px;
+            padding: 0;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.07);
+            min-height: 320px;
+            overflow: hidden;
+        }
+
+        .plan-card-compact::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 24px;
+            right: 24px;
+            height: 3px;
+            border-radius: 999px;
+            background: #e4e7ec;
+            z-index: 2;
+        }
+
+        .plan-card-compact:hover {
+            border-color: #1d4ed8;
+            box-shadow: 0 28px 60px rgba(15, 23, 42, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .plan-card-compact.popular {
+            border-color: #1d4ed8;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+            box-shadow: 0 30px 65px rgba(37, 99, 235, 0.2);
+        }
+
+        .plan-card-compact.popular::before {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        .plan-card-compact.popular::after {
+            content: 'Most Popular';
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            box-shadow: 0 10px 25px rgba(30, 64, 175, 0.35);
+            z-index: 3;
+        }
+
+        .plan-card-compact-header-wrapper {
+            position: relative;
+            padding: 24px 24px 20px 24px;
+            padding-top: 48px;
+        }
+
+        .plan-compact-checkbox-wrapper {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+        }
+
+        .plan-compact-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #2563eb;
+            margin: 0;
+        }
+
+        .plan-compact-checkbox:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .plan-compact-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .plan-compact-info {
+            flex: 1;
+            padding-right: 20px;
+            min-width: 0;
+        }
+
+        .plan-compact-name {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+            word-wrap: break-word;
+        }
+
+        .plan-compact-description {
+            font-size: 0.9rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 14px;
+            word-wrap: break-word;
+        }
+
+        .plan-compact-specialties {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .specialty-badge {
+            background: #eef2ff;
+            color: #312e81;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            border: 1px solid #c7d2fe;
+            box-shadow: 0 6px 16px rgba(79, 70, 229, 0.18);
+            white-space: nowrap;
+        }
+
+        .plan-compact-price {
+            text-align: right;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .plan-compact-price-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .plan-compact-price-currency {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #475569;
+            margin-bottom: 4px;
+        }
+
+        .plan-compact-price-amount {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            margin-bottom: 4px;
+            letter-spacing: -1px;
+        }
+
+        .plan-compact-price-cycle {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .plan-compact-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px 24px 24px 24px;
+            border-top: 1px solid #edf2f7;
+            background: #f9fafb;
+        }
+
+        .btn-compact {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-preview {
+            background: #ffffff;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+            order: 2;
+        }
+
+        .btn-preview:hover:not(:disabled) {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #334155;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .btn-select-compact {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+            order: 1;
+        }
+
+        .btn-select-compact:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+        }
+
+        .btn-select-compact:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            opacity: 0.7;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-select-compact.current-plan {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+
+        /* Compare Bar */
+        .compare-bar {
+            position: sticky;
+            top: 80px;
+            background: white;
+            border: 2px solid #2563eb;
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.15);
+            z-index: 10;
+        }
+
+        .compare-bar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .compare-count {
+            font-weight: 700;
+            color: #2563eb;
+            font-size: 1rem;
+        }
+
+        .compare-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-compare {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-compare:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-clear-compare {
+            padding: 10px 20px;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-clear-compare:hover {
+            background: #e2e8f0;
+        }
+
+        /* Large Modal */
+        .modal-large {
+            max-width: 800px;
+            max-height: 90vh;
+        }
+
+        .modal-extra-large {
+            max-width: 1200px;
+            max-height: 90vh;
+        }
+
+        .modal-body {
+            max-height: calc(90vh - 200px);
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .comparison-table th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #0f172a;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .comparison-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .comparison-feature-name {
+            font-weight: 600;
+            color: #334155;
+            min-width: 200px;
+        }
+
+        .comparison-value {
+            text-align: center;
+            color: #64748b;
+        }
+
+        .comparison-value.yes {
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .comparison-value.no {
+            color: #ef4444;
+        }
+
+        .comparison-plan-header {
+            text-align: center;
+            font-weight: 800;
+            color: #0f172a;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">FunnelsEye</a>
+            <div class="header-actions">
+                <button class="btn-login" id="loginBtn" onclick="handleLoginButtonClick()">Sign up</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1>Choose Your Perfect Plan</h1>
+            <p>Unlock powerful features to grow your coaching business</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">Choose Your Plan</h2>
+            <p class="section-subtitle">Select the perfect subscription plan to scale your coaching business with powerful features and tools</p>
+        </div>
+
+        <!-- Current Subscription Status -->
+        <div id="subscriptionStatus" style="display: none;"></div>
+
+        <!-- Compare Plans Bar -->
+        <div class="compare-bar" id="compareBar" style="display: none;">
+            <div class="compare-bar-content">
+                <span class="compare-count" id="compareCount">0 plans selected</span>
+                <div class="compare-actions">
+                    <button class="btn-compare" onclick="showCompareModal()">Compare Plans</button>
+                    <button class="btn-clear-compare" onclick="clearCompare()">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 16px; font-weight: 500;">Loading plans...</p>
+        </div>
+
+        <div class="plans-grid" id="plansGrid">
+            <!-- Plans will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal">
+            <button class="modal-close" onclick="hideLoginModal()">×</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Log in to continue</h2>
+                <p class="modal-subtitle">Enter your credentials to subscribe to a plan</p>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="error" id="loginError"></div>
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="btn-submit">Log in</button>
+            </form>
+            <div class="modal-footer">
+                Don't have an account? <a href="#" onclick="hideLoginModal(); showSignupModal();">Sign up as Coach</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div class="modal-overlay" id="signupModal">
+        <div class="modal modal-large">
+            <button class="modal-close" onclick="hideSignupModal()">×</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Sign up as Coach</h2>
+                <p class="modal-subtitle">Create your account to get started with FunnelsEye</p>
+            </div>
+            <form id="signupForm" onsubmit="handleSignup(event)">
+                <div class="error" id="signupError"></div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupName">Full Name <span class="required">*</span></label>
+                        <input type="text" id="signupName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupEmail">Email Address <span class="required">*</span></label>
+                        <input type="email" id="signupEmail" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupPhone">Phone Number <span class="required">*</span></label>
+                        <input type="tel" id="signupPhone" required placeholder="e.g., +91 9876543210" pattern="[+]?[0-9\s-]{10,15}">
+                        <small class="form-hint">Required for payment processing</small>
+                    </div>
+                    <div class="form-group">
+                        <!-- Empty space for alignment -->
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupPassword">Password <span class="required">*</span></label>
+                        <input type="password" id="signupPassword" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signupConfirmPassword">Confirm Password <span class="required">*</span></label>
+                        <input type="password" id="signupConfirmPassword" required minlength="6">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="signupCoachId">Coach ID <span class="required">*</span></label>
+                        <input type="text" id="signupCoachId" required placeholder="e.g., COACH123">
+                        <small class="form-hint">Your unique Coach ID (must be unique)</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="signupCurrentLevel">Hierarchy Level <span class="required">*</span></label>
+                        <select id="signupCurrentLevel" required>
+                            <option value="">Loading levels...</option>
+                        </select>
+                        <small class="form-hint">Select your assigned hierarchy level</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="signupSponsorId">Sponsor (Optional)</label>
+                    <select id="signupSponsorId">
+                        <option value="">No Sponsor</option>
+                    </select>
+                    <small class="form-hint">Select a sponsor coach (optional)</small>
+                </div>
+                <button type="submit" class="btn-submit" id="signupSubmitBtn">Create Account</button>
+            </form>
+            <div class="modal-footer">
+                Already have an account? <a href="#" onclick="hideSignupModal(); showLoginModal();">Log in</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP Verification Modal -->
+    <div class="modal-overlay" id="otpModal">
+        <div class="modal">
+            <button class="modal-close" onclick="hideOtpModal()">×</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Verify Your Email</h2>
+                <p class="modal-subtitle">We've sent an OTP to <span id="otpEmail"></span></p>
+            </div>
+            <form id="otpForm" onsubmit="handleOtpVerification(event)">
+                <div class="error" id="otpError"></div>
+                <div class="form-group">
+                    <label for="otpCode">Enter OTP <span class="required">*</span></label>
+                    <input type="text" id="otpCode" required maxlength="6" placeholder="000000">
+                </div>
+                <button type="submit" class="btn-submit" id="otpSubmitBtn">Verify OTP</button>
+            </form>
+            <div class="modal-footer">
+                <a href="#" onclick="resendOtp()" id="resendOtpLink">Resend OTP</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Features Modal -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal modal-large">
+            <button class="modal-close" onclick="hidePreviewModal()">×</button>
+            <div class="modal-header">
+                <h2 class="modal-title" id="previewPlanName">Plan Features</h2>
+                <p class="modal-subtitle" id="previewPlanDescription"></p>
+            </div>
+            <div class="modal-body" id="previewModalBody">
+                <!-- Features will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Compare Plans Modal -->
+    <div class="modal-overlay" id="compareModal">
+        <div class="modal modal-extra-large">
+            <button class="modal-close" onclick="hideCompareModal()">×</button>
+            <div class="modal-header">
+                <h2 class="modal-title">Compare Plans</h2>
+                <p class="modal-subtitle">See how our plans stack up against each other</p>
+            </div>
+            <div class="modal-body" id="compareModalBody">
+                <!-- Comparison table will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userToken = null;
+        let plans = [];
+        let selectedPlanId = null;
+        let comparePlans = [];
+        let signupEmail = null;
+        let signupUserId = null;
+        let signupPhone = null;
+        let userEmail = null;
+        let userPhone = null;
+        let availableSponsors = [];
+        let hierarchyLevels = [];
+        let currentSubscription = null;
+
+        // Default hierarchy levels (Level 1 to 5)
+        const defaultHierarchyLevels = [
+            { level: 1, name: 'Level 1' },
+            { level: 2, name: 'Level 2' },
+            { level: 3, name: 'Level 3' },
+            { level: 4, name: 'Level 4' },
+            { level: 5, name: 'Level 5' }
+        ];
+
+        // Check for existing login token (stored in localStorage)
+        function getAuthToken() {
+            return localStorage.getItem('coach_token') || localStorage.getItem('auth_token') || null;
+        }
+
+        // Set auth token
+        function setAuthToken(token) {
+            localStorage.setItem('coach_token', token);
+            localStorage.setItem('auth_token', token);
+            userToken = token;
+        }
+
+        // Remove auth token
+        function removeAuthToken() {
+            localStorage.removeItem('coach_token');
+            localStorage.removeItem('auth_token');
+            userToken = null;
+        }
+
+        // Check if user is logged in
+        function isLoggedIn() {
+            return getAuthToken() !== null;
+        }
+
+        // Update login button based on auth status
+        function updateLoginButton() {
+            const loginBtn = document.getElementById('loginBtn');
+            if (isLoggedIn()) {
+                loginBtn.textContent = 'Log out';
+                loginBtn.onclick = () => {
+                    removeAuthToken();
+                    window.location.reload();
+                };
+            } else {
+                loginBtn.textContent = 'Sign up';
+                loginBtn.onclick = showSignupModal;
+            }
+        }
+
+        // Handle login button click
+        function handleLoginButtonClick() {
+            if (isLoggedIn()) {
+                removeAuthToken();
+                window.location.reload();
+            } else {
+                showSignupModal();
+            }
+        }
+
+        // Load current subscription status
+        async function loadCurrentSubscription() {
+            if (!isLoggedIn()) {
+                currentSubscription = null;
+                updateSubscriptionStatusDisplay();
+                return;
+            }
+
+            try {
+                const token = getAuthToken();
+                const response = await fetch('/api/subscriptions/current', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const result = await response.json();
+
+                if (result.success && result.data) {
+                    currentSubscription = result.data;
+                    updateSubscriptionStatusDisplay();
+                    // Re-render plans to update button states
+                    if (plans.length > 0) {
+                        renderPlans(plans);
+                    }
+                } else {
+                    currentSubscription = null;
+                    updateSubscriptionStatusDisplay();
+                }
+            } catch (error) {
+                console.error('Error loading current subscription:', error);
+                currentSubscription = null;
+                updateSubscriptionStatusDisplay();
+            }
+        }
+
+        // Update subscription status display
+        function updateSubscriptionStatusDisplay() {
+            const statusContainer = document.getElementById('subscriptionStatus');
+            if (!statusContainer) return;
+
+            if (currentSubscription) {
+                const plan = currentSubscription.planId;
+                const endDate = new Date(currentSubscription.endDate).toLocaleDateString();
+                statusContainer.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border: 2px solid #10b981; border-radius: 12px; padding: 20px; margin-bottom: 32px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                            <div>
+                                <h3 style="color: #065f46; font-size: 1.25rem; font-weight: 700; margin-bottom: 8px;">
+                                    ✓ Active Subscription
+                                </h3>
+                                <p style="color: #047857; margin: 0;">
+                                    <strong>Plan:</strong> ${plan?.name || 'N/A'}<br>
+                                    <strong>Status:</strong> ${currentSubscription.status}<br>
+                                    <strong>Valid until:</strong> ${endDate}
+                                </p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 1.5rem; font-weight: 800; color: #065f46; margin-bottom: 4px;">
+                                    ${plan?.currency || 'INR'} ${plan?.price || 0}
+                                </div>
+                                <div style="color: #047857; font-size: 0.875rem;">
+                                    per ${plan?.billingCycle || 'monthly'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                statusContainer.style.display = 'block';
+            } else {
+                statusContainer.style.display = 'none';
+            }
+        }
+
+        // Load subscription plans
+        async function loadPlans() {
+            try {
+                showLoading(true);
+                const response = await fetch('/api/subscriptions/plans');
+                const result = await response.json();
+
+                if (result.success) {
+                    plans = result.data || [];
+                    renderPlans(plans);
+                } else {
+                    showError('Failed to load subscription plans. Please try again later.');
+                }
+            } catch (error) {
+                console.error('Error loading plans:', error);
+                showError('Failed to load subscription plans. Please try again later.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Render plans
+        function renderPlans(plansData) {
+            const plansGrid = document.getElementById('plansGrid');
+            plansGrid.innerHTML = '';
+
+            if (plansData.length === 0) {
+                plansGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <h3>No Plans Available</h3>
+                        <p>Subscription plans are currently being set up. Please check back soon!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort plans: popular first, then by sortOrder, then by price
+            const sortedPlans = [...plansData].sort((a, b) => {
+                if (a.isPopular && !b.isPopular) return -1;
+                if (!a.isPopular && b.isPopular) return 1;
+                if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+                    return a.sortOrder - b.sortOrder;
+                }
+                return (a.price || 0) - (b.price || 0);
+            });
+
+            sortedPlans.forEach((plan, index) => {
+                const planCard = createPlanCard(plan);
+                planCard.style.animationDelay = `${index * 0.1}s`;
+                plansGrid.appendChild(planCard);
+            });
+        }
+
+        // Create plan card (compact version)
+        function createPlanCard(plan) {
+            const card = document.createElement('div');
+            card.className = `plan-card-compact ${plan.isPopular ? 'popular' : ''}`;
+            card.dataset.planId = plan._id;
+
+            const price = plan.price || 0;
+            const currency = plan.currency || 'INR';
+            const billingCycle = plan.billingCycle || 'monthly';
+            const tags = plan.tags || [];
+            const specialties = tags.length > 0 ? tags : ['All Coaches'];
+            
+            // Check if user already has this plan or any active subscription
+            const hasActiveSubscription = currentSubscription !== null;
+            const hasThisPlan = currentSubscription && currentSubscription.planId && 
+                               (currentSubscription.planId._id === plan._id || currentSubscription.planId.toString() === plan._id);
+            const isCurrentPlan = hasThisPlan;
+
+            card.innerHTML = `
+                <div class="plan-card-compact-header-wrapper">
+                    <div class="plan-compact-checkbox-wrapper">
+                        <input type="checkbox" class="plan-compact-checkbox" onchange="toggleCompare('${plan._id}')" id="compare-${plan._id}" ${hasActiveSubscription ? 'disabled' : ''}>
+                    </div>
+                    <div class="plan-compact-header">
+                        <div class="plan-compact-info">
+                            <div class="plan-compact-name">${plan.name || 'Plan'}</div>
+                            ${plan.description ? `<div class="plan-compact-description">${plan.description}</div>` : ''}
+                            <div class="plan-compact-specialties">
+                                ${specialties.map(tag => `<span class="specialty-badge">${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="plan-compact-price">
+                            <div class="plan-compact-price-wrapper">
+                                <div class="plan-compact-price-currency">${currency}</div>
+                                <div class="plan-compact-price-amount">${price}</div>
+                                <div class="plan-compact-price-cycle">per ${billingCycle}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="plan-compact-actions">
+                    ${isCurrentPlan ? `
+                        <button class="btn-compact btn-select-compact current-plan" disabled>
+                            ✓ Current Plan
+                        </button>
+                    ` : hasActiveSubscription ? `
+                        <button class="btn-compact btn-select-compact" disabled>
+                            Already Subscribed
+                        </button>
+                    ` : `
+                        <button class="btn-compact btn-select-compact" onclick="handleSelectPlan('${plan._id}')">
+                            Select Plan
+                        </button>
+                    `}
+                    <button class="btn-compact btn-preview" onclick="previewFeatures('${plan._id}')">
+                        Preview Features
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Group features by category for better organization
+        function groupFeaturesByCategory(features) {
+            const groups = [];
+            let currentGroup = { features: [] };
+
+            features.forEach(feature => {
+                // Check if feature belongs to a category
+                const lowerFeature = feature.toLowerCase();
+                
+                if (lowerFeature.includes('funnel') || lowerFeature.includes('staff') || lowerFeature.includes('device')) {
+                    if (currentGroup.title !== 'Core Resources' && currentGroup.features.length > 0) {
+                        groups.push(currentGroup);
+                        currentGroup = { title: 'Core Resources', features: [] };
+                    }
+                    if (!currentGroup.title) currentGroup.title = 'Core Resources';
+                    currentGroup.features.push(feature);
+                } else if (lowerFeature.includes('lead') || lowerFeature.includes('campaign') || lowerFeature.includes('appointment')) {
+                    if (currentGroup.title !== 'Business Operations' && currentGroup.features.length > 0) {
+                        groups.push(currentGroup);
+                        currentGroup = { title: 'Business Operations', features: [] };
+                    }
+                    if (!currentGroup.title) currentGroup.title = 'Business Operations';
+                    currentGroup.features.push(feature);
+                } else if (lowerFeature.includes('credit') || lowerFeature.includes('storage') || lowerFeature.includes('automation rule')) {
+                    if (currentGroup.title !== 'Credits & Automation' && currentGroup.features.length > 0) {
+                        groups.push(currentGroup);
+                        currentGroup = { title: 'Credits & Automation', features: [] };
+                    }
+                    if (!currentGroup.title) currentGroup.title = 'Credits & Automation';
+                    currentGroup.features.push(feature);
+                } else if (lowerFeature.includes('ai') || lowerFeature.includes('analytics') || lowerFeature.includes('support') || lowerFeature.includes('domain') || lowerFeature.includes('api') || lowerFeature.includes('white label') || lowerFeature.includes('webhook')) {
+                    if (currentGroup.title !== 'Advanced Features' && currentGroup.features.length > 0) {
+                        groups.push(currentGroup);
+                        currentGroup = { title: 'Advanced Features', features: [] };
+                    }
+                    if (!currentGroup.title) currentGroup.title = 'Advanced Features';
+                    currentGroup.features.push(feature);
+                } else if (lowerFeature.includes('course')) {
+                    if (currentGroup.title !== 'Course Access' && currentGroup.features.length > 0) {
+                        groups.push(currentGroup);
+                        currentGroup = { title: 'Course Access', features: [] };
+                    }
+                    if (!currentGroup.title) currentGroup.title = 'Course Access';
+                    currentGroup.features.push(feature);
+                } else {
+                    currentGroup.features.push(feature);
+                }
+            });
+
+            if (currentGroup.features.length > 0) {
+                groups.push(currentGroup);
+            }
+
+            // If no groups were created, return all features in one group
+            if (groups.length === 0 || (groups.length === 1 && !groups[0].title)) {
+                return [{ features: features }];
+            }
+
+            return groups;
+        }
+
+        // Get plan features
+        function getPlanFeatures(plan) {
+            const features = [];
+            const planFeatures = plan.features || {};
+            const planLimits = plan.limits || {};
+
+            // Core resources
+            if (planFeatures.maxFunnels !== undefined) {
+                features.push(planFeatures.maxFunnels === -1 ? 'Unlimited Funnels' : `${planFeatures.maxFunnels} Funnels`);
+            }
+            if (planFeatures.maxStaff !== undefined) {
+                features.push(planFeatures.maxStaff === -1 ? 'Unlimited Staff Members' : `${planFeatures.maxStaff} Staff Members`);
+            }
+            if (planFeatures.maxDevices !== undefined) {
+                features.push(planFeatures.maxDevices === -1 ? 'Unlimited Devices' : `${planFeatures.maxDevices} Devices`);
+            }
+
+            // Limits
+            if (planLimits.maxLeads !== undefined && planLimits.maxLeads !== -1) {
+                features.push(`${planLimits.maxLeads} Leads`);
+            } else if (planLimits.maxLeads === -1) {
+                features.push('Unlimited Leads');
+            }
+
+            if (planLimits.maxCampaigns !== undefined && planLimits.maxCampaigns !== -1) {
+                features.push(`${planLimits.maxCampaigns} Campaigns`);
+            } else if (planLimits.maxCampaigns === -1) {
+                features.push('Unlimited Campaigns');
+            }
+
+            // Credits
+            if (planFeatures.emailCredits !== undefined) {
+                features.push(planFeatures.emailCredits === -1 ? 'Unlimited Email Credits' : `${planFeatures.emailCredits} Email Credits`);
+            }
+            if (planFeatures.smsCredits !== undefined) {
+                features.push(planFeatures.smsCredits === -1 ? 'Unlimited SMS Credits' : `${planFeatures.smsCredits} SMS Credits`);
+            }
+            if (planFeatures.storageGB !== undefined) {
+                features.push(planFeatures.storageGB === -1 ? 'Unlimited Storage' : `${planFeatures.storageGB} GB Storage`);
+            }
+            if (planFeatures.automationRules !== undefined) {
+                features.push(planFeatures.automationRules === -1 ? 'Unlimited Automation Rules' : `${planFeatures.automationRules} Automation Rules`);
+            }
+
+            // Boolean features
+            if (planFeatures.aiFeatures) features.push('AI Features');
+            if (planFeatures.advancedAnalytics) features.push('Advanced Analytics');
+            if (planFeatures.prioritySupport) features.push('Priority Support');
+            if (planFeatures.customDomain) features.push('Custom Domain');
+            if (planFeatures.apiAccess) features.push('API Access');
+            if (planFeatures.whiteLabel) features.push('White Label');
+            if (planFeatures.webhooks) features.push('Webhooks');
+            if (planFeatures.whatsappAutomation) features.push('WhatsApp Automation');
+            if (planFeatures.emailAutomation) features.push('Email Automation');
+
+            // Course bundles
+            if (plan.courseBundles && plan.courseBundles.length > 0) {
+                features.push(`${plan.courseBundles.length} Course${plan.courseBundles.length > 1 ? 's' : ''} Included`);
+            }
+
+            return features.length > 0 ? features : ['All essential features included'];
+        }
+
+        // Handle select plan
+        async function handleSelectPlan(planId) {
+            // Check if user already has an active subscription
+            if (currentSubscription) {
+                showError('You already have an active subscription. Please cancel your current subscription before selecting a new plan.');
+                return;
+            }
+
+            if (!isLoggedIn()) {
+                selectedPlanId = planId;
+                showSignupModal();
+                return;
+            }
+
+            const plan = plans.find(p => p._id === planId);
+            if (!plan) {
+                showError('Plan not found');
+                return;
+            }
+
+            await createSubscriptionOrder(plan);
+        }
+
+        // Create subscription order
+        async function createSubscriptionOrder(plan) {
+            try {
+                // Double-check: Prevent creating order if user already has subscription
+                if (currentSubscription) {
+                    showError('You already have an active subscription. Please cancel your current subscription before selecting a new plan.');
+                    return;
+                }
+
+                showLoading(true);
+                hideError();
+                hideSuccess();
+
+                const token = getAuthToken();
+                const response = await fetch('/api/subscriptions/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        planId: plan._id
+                    })
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    showError(result.message || 'Failed to create order');
+                    showLoading(false);
+                    return;
+                }
+
+                const orderData = result.data.paymentOrder;
+
+                if (!orderData.key) {
+                    showError('Payment gateway not configured. Please contact support.');
+                    showLoading(false);
+                    return;
+                }
+
+                // Get email and phone for prefill
+                // Priority: signupEmail/signupPhone (just signed up) > userEmail/userPhone (stored) > localStorage
+                const prefillEmail = signupEmail || userEmail || localStorage.getItem('user_email') || '';
+                const prefillPhone = signupPhone || userPhone || localStorage.getItem('user_phone') || '';
+
+                // Initialize Razorpay checkout
+                const options = {
+                    key: orderData.key,
+                    amount: orderData.amount,
+                    currency: orderData.currency || plan.currency || 'INR',
+                    name: 'FunnelsEye',
+                    description: `Subscription: ${plan.name}`,
+                    order_id: orderData.orderId,
+                    prefill: {
+                        email: prefillEmail,
+                        contact: prefillPhone
+                    },
+                    handler: async function(response) {
+                        await verifyPayment(response, plan._id);
+                    },
+                    theme: {
+                        color: '#2563eb'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            showLoading(false);
+                        }
+                    }
+                };
+
+                const razorpay = new Razorpay(options);
+                razorpay.open();
+                showLoading(false);
+
+            } catch (error) {
+                console.error('Error creating order:', error);
+                showError('Failed to process payment. Please try again.');
+                showLoading(false);
+            }
+        }
+
+        // Verify payment
+        async function verifyPayment(razorpayResponse, planId) {
+            try {
+                showLoading(true);
+                hideError();
+                hideSuccess();
+
+                const token = getAuthToken();
+                const response = await fetch('/api/subscriptions/verify-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        razorpay_order_id: razorpayResponse.razorpay_order_id,
+                        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                        razorpay_signature: razorpayResponse.razorpay_signature,
+                        planId: planId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSuccess('Payment successful! Your subscription is now active.');
+                    // Reload plans to show updated subscription status
+                    await loadPlans();
+                    await loadCurrentSubscription();
+                    // Only redirect after successful payment
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                } else {
+                    showError(result.message || 'Payment verification failed.');
+                }
+            } catch (error) {
+                console.error('Error verifying payment:', error);
+                showError('An error occurred during payment verification.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle login
+        async function handleLogin(event) {
+            event.preventDefault();
+            showLoading(true);
+            showLoginError('');
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    setAuthToken(result.token);
+                    
+                    // Store user email and phone if available
+                    if (result.user && result.user.email) {
+                        userEmail = result.user.email;
+                        localStorage.setItem('user_email', result.user.email);
+                    }
+                    if (result.user && result.user.phone) {
+                        userPhone = result.user.phone;
+                        localStorage.setItem('user_phone', result.user.phone);
+                    }
+                    
+                    hideLoginModal();
+                    updateLoginButton();
+                    
+                    // Load current subscription status
+                    await loadCurrentSubscription();
+                    
+                    // If a plan was selected before login, proceed with subscription
+                    if (selectedPlanId) {
+                        const plan = plans.find(p => p._id === selectedPlanId);
+                        if (plan) {
+                            await createSubscriptionOrder(plan);
+                        }
+                        selectedPlanId = null;
+                    }
+                    // NO REDIRECT - user stays on subscription page
+                } else {
+                    showLoginError(result.message || 'Login failed');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showLoginError('An error occurred during login.');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Handle signup
+        async function handleSignup(event) {
+            event.preventDefault();
+            const submitBtn = document.getElementById('signupSubmitBtn');
+            const errorEl = document.getElementById('signupError');
+            
+            // Set loading state
+            const originalBtnText = submitBtn ? submitBtn.textContent : 'Create Account';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending OTP...';
+                submitBtn.style.opacity = '0.7';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+            
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+
+            const name = document.getElementById('signupName').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const phone = document.getElementById('signupPhone').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
+            const coachId = document.getElementById('signupCoachId').value.trim();
+            const currentLevel = document.getElementById('signupCurrentLevel').value;
+            const sponsorId = document.getElementById('signupSponsorId').value;
+
+            // Validation
+            if (password !== confirmPassword) {
+                if (errorEl) {
+                    errorEl.textContent = 'Passwords do not match';
+                    errorEl.style.display = 'block';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+                return;
+            }
+
+            if (!name || !email || !phone || !password || !coachId || !currentLevel) {
+                if (errorEl) {
+                    errorEl.textContent = 'Please fill in all required fields';
+                    errorEl.style.display = 'block';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+                return;
+            }
+
+            try {
+                const payload = {
+                    name,
+                    email,
+                    password,
+                    role: 'coach',
+                    selfCoachId: coachId,
+                    currentLevel: parseInt(currentLevel),
+                    ...(sponsorId ? { sponsorId } : {})
+                };
+
+                const response = await fetch('/api/auth/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    signupEmail = email;
+                    signupPhone = phone;
+                    signupUserId = result.userId;
+                    // Store for payment prefill
+                    userEmail = email;
+                    userPhone = phone;
+                    if (submitBtn) {
+                        submitBtn.textContent = 'OTP Sent! Opening verification...';
+                    }
+                    // Small delay to show success message
+                    setTimeout(() => {
+                        hideSignupModal();
+                        showOtpModal();
+                    }, 500);
+                } else {
+                    if (errorEl) {
+                        errorEl.textContent = result.message || 'Signup failed. Please try again.';
+                        errorEl.style.display = 'block';
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.style.cursor = 'pointer';
+                    }
+                }
+            } catch (error) {
+                console.error('Signup error:', error);
+                if (errorEl) {
+                    errorEl.textContent = 'An error occurred during signup. Please try again.';
+                    errorEl.style.display = 'block';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+            }
+        }
+
+        // Handle OTP verification
+        async function handleOtpVerification(event) {
+            event.preventDefault();
+            const submitBtn = document.getElementById('otpSubmitBtn');
+            const errorEl = document.getElementById('otpError');
+            
+            // Set loading state
+            const originalBtnText = submitBtn ? submitBtn.textContent : 'Verify OTP';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Verifying...';
+                submitBtn.style.opacity = '0.7';
+                submitBtn.style.cursor = 'not-allowed';
+            }
+            
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+
+            const otp = document.getElementById('otpCode').value.trim();
+
+            if (!otp || otp.length !== 6) {
+                if (errorEl) {
+                    errorEl.textContent = 'Please enter a valid 6-digit OTP';
+                    errorEl.style.display = 'block';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+                return;
+            }
+
+            if (!signupEmail) {
+                if (errorEl) {
+                    errorEl.textContent = 'Email not found. Please start the signup process again.';
+                    errorEl.style.display = 'block';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: signupEmail, otp })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (submitBtn) {
+                        submitBtn.textContent = 'Verified! Redirecting...';
+                    }
+                    setAuthToken(result.token);
+                    
+                    // Store email and phone in localStorage for payment prefill
+                    if (signupEmail) {
+                        userEmail = signupEmail;
+                        localStorage.setItem('user_email', signupEmail);
+                    }
+                    if (signupPhone) {
+                        userPhone = signupPhone;
+                        localStorage.setItem('user_phone', signupPhone);
+                    }
+                    
+                    hideOtpModal();
+                    updateLoginButton();
+                    
+                    // Load current subscription status
+                    await loadCurrentSubscription();
+                    
+                    // If a plan was selected before signup, proceed with subscription
+                    if (selectedPlanId) {
+                        const plan = plans.find(p => p._id === selectedPlanId);
+                        if (plan) {
+                            await createSubscriptionOrder(plan);
+                        }
+                        selectedPlanId = null;
+                    } else {
+                        // Show success message
+                        showSuccess('Account created successfully! You can now select a plan.');
+                    }
+                } else {
+                    if (errorEl) {
+                        errorEl.textContent = result.message || 'Invalid OTP. Please try again.';
+                        errorEl.style.display = 'block';
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                        submitBtn.style.opacity = '1';
+                        submitBtn.style.cursor = 'pointer';
+                    }
+                }
+            } catch (error) {
+                console.error('OTP verification error:', error);
+                if (errorEl) {
+                    errorEl.textContent = 'An error occurred during OTP verification. Please try again.';
+                    errorEl.style.display = 'block';
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalBtnText;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+            }
+        }
+
+        // Resend OTP
+        async function resendOtp() {
+            if (!signupEmail) {
+                alert('Email not found. Please start the signup process again.');
+                return;
+            }
+
+            const resendLink = document.getElementById('resendOtpLink');
+            const originalLinkText = resendLink ? resendLink.textContent : 'Resend OTP';
+            
+            // Set loading state
+            if (resendLink) {
+                resendLink.style.pointerEvents = 'none';
+                resendLink.style.opacity = '0.6';
+                resendLink.textContent = 'Sending OTP...';
+            }
+
+            const errorEl = document.getElementById('otpError');
+            if (errorEl) {
+                errorEl.textContent = '';
+                errorEl.style.display = 'none';
+            }
+
+            try {
+                const response = await fetch('/api/auth/resend-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: signupEmail })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (resendLink) {
+                        resendLink.textContent = 'OTP Sent!';
+                        setTimeout(() => {
+                            resendLink.textContent = originalLinkText;
+                            resendLink.style.pointerEvents = 'auto';
+                            resendLink.style.opacity = '1';
+                        }, 2000);
+                    }
+                    showSuccess('OTP has been resent to your email address.');
+                } else {
+                    if (errorEl) {
+                        errorEl.textContent = result.message || 'Failed to resend OTP. Please try again.';
+                        errorEl.style.display = 'block';
+                    }
+                    if (resendLink) {
+                        resendLink.textContent = originalLinkText;
+                        resendLink.style.pointerEvents = 'auto';
+                        resendLink.style.opacity = '1';
+                    }
+                }
+            } catch (error) {
+                console.error('Resend OTP error:', error);
+                if (errorEl) {
+                    errorEl.textContent = 'An error occurred. Please try again.';
+                    errorEl.style.display = 'block';
+                }
+                if (resendLink) {
+                    resendLink.textContent = originalLinkText;
+                    resendLink.style.pointerEvents = 'auto';
+                    resendLink.style.opacity = '1';
+                }
+            }
+        }
+
+        // Show OTP modal
+        function showOtpModal() {
+            const otpModal = document.getElementById('otpModal');
+            if (otpModal) {
+                const otpEmailSpan = document.getElementById('otpEmail');
+                if (otpEmailSpan && signupEmail) {
+                    otpEmailSpan.textContent = signupEmail;
+                }
+                otpModal.style.display = 'flex';
+                const errorEl = document.getElementById('otpError');
+                if (errorEl) {
+                    errorEl.textContent = '';
+                    errorEl.style.display = 'none';
+                }
+                // Clear OTP input
+                const otpInput = document.getElementById('otpCode');
+                if (otpInput) {
+                    otpInput.value = '';
+                }
+            }
+        }
+
+        // Hide OTP modal
+        function hideOtpModal() {
+            const otpModal = document.getElementById('otpModal');
+            if (otpModal) {
+                otpModal.style.display = 'none';
+            }
+        }
+
+        // Modal functions
+        function showLoginModal() {
+            document.getElementById('loginModal').style.display = 'flex';
+            showLoginError('');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function showSignupModal() {
+            const signupModal = document.getElementById('signupModal');
+            if (signupModal) {
+                signupModal.style.display = 'flex';
+                const errorEl = document.getElementById('signupError');
+                if (errorEl) {
+                    errorEl.textContent = '';
+                    errorEl.style.display = 'none';
+                }
+                // Immediately show dummy levels 1-5
+                populateHierarchyLevelOptions(defaultHierarchyLevels);
+            }
+        }
+
+        function hideSignupModal() {
+            const signupModal = document.getElementById('signupModal');
+            if (signupModal) {
+                signupModal.style.display = 'none';
+            }
+        }
+
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('loginError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = message ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            // You can add a global error display here
+            console.error(message);
+            alert(message);
+        }
+
+        function showSuccess(message) {
+            // You can add a global success display here
+            console.log(message);
+            alert(message);
+        }
+
+        function hideError() {
+            // Hide global error if exists
+        }
+
+        function hideSuccess() {
+            // Hide global success if exists
+        }
+
+        function showLoading(show) {
+            const loadingElement = document.getElementById('loading');
+            if (loadingElement) {
+                loadingElement.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        function populateHierarchyLevelOptions(levels = []) {
+            const levelSelect = document.getElementById('signupCurrentLevel');
+            if (!levelSelect) return;
+            levelSelect.innerHTML = '<option value="">Select Hierarchy Level</option>';
+            levels.forEach(level => {
+                const option = document.createElement('option');
+                const value = level.level || level._id || level.id || level.name;
+                option.value = value;
+                option.textContent = level.name || `Level ${level.level || value}`;
+                levelSelect.appendChild(option);
+            });
+        }
+
+        function populateSponsorOptions(sponsors = []) {
+            const sponsorSelect = document.getElementById('signupSponsorId');
+            if (!sponsorSelect) return;
+            sponsorSelect.innerHTML = '<option value="">No Sponsor</option>';
+            sponsors.forEach(sponsor => {
+                if (!sponsor || !sponsor._id) return;
+                const option = document.createElement('option');
+                option.value = sponsor._id;
+                const coachId = sponsor.selfCoachId ? ` • ${sponsor.selfCoachId}` : '';
+                const levelLabel = sponsor.currentLevel ? ` • Level ${sponsor.currentLevel}` : '';
+                option.textContent = `${sponsor.name || sponsor.email || 'Coach'}${coachId}${levelLabel}`;
+                sponsorSelect.appendChild(option);
+            });
+        }
+
+        async function loadSignupMetadata() {
+            // Show dummy levels immediately
+            populateHierarchyLevelOptions(defaultHierarchyLevels);
+            
+            try {
+                // Create a timeout promise (5 seconds)
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('Timeout after 5 seconds')), 5000);
+                });
+
+                // Race between API calls and timeout
+                const apiCallsPromise = Promise.all([
+                    fetch('/api/auth/available-sponsors'),
+                    fetch('/api/auth/coach-ranks')
+                ]).then(async ([sponsorsRes, levelsRes]) => {
+                    // Process sponsors
+                    if (sponsorsRes.ok) {
+                        const sponsorsData = await sponsorsRes.json();
+                        availableSponsors = sponsorsData?.data?.digitalSponsors || [];
+                        populateSponsorOptions(availableSponsors);
+                    } else {
+                        populateSponsorOptions([]);
+                    }
+
+                    // Process hierarchy levels
+                    if (levelsRes.ok) {
+                        const levelsData = await levelsRes.json();
+                        const apiLevels = Array.isArray(levelsData?.data) && levelsData.data.length > 0
+                            ? levelsData.data
+                            : null;
+                        // Only update if we got valid data from API
+                        if (apiLevels && apiLevels.length > 0) {
+                            hierarchyLevels = apiLevels;
+                            populateHierarchyLevelOptions(hierarchyLevels);
+                        }
+                    }
+                    return { sponsorsRes, levelsRes };
+                });
+
+                await Promise.race([
+                    apiCallsPromise,
+                    timeoutPromise
+                ]);
+            } catch (error) {
+                console.error('Error loading signup metadata (timeout or error):', error);
+                // On timeout or error, keep showing dummy levels (already populated)
+                hierarchyLevels = defaultHierarchyLevels;
+                populateSponsorOptions([]);
+            }
+        }
+
+        // Close modals on outside click
+        document.getElementById('loginModal').addEventListener('click', (e) => {
+            if (e.target.id === 'loginModal') {
+                hideLoginModal();
+            }
+        });
+
+        document.getElementById('signupModal').addEventListener('click', (e) => {
+            if (e.target.id === 'signupModal') {
+                hideSignupModal();
+            }
+        });
+
+        document.getElementById('otpModal').addEventListener('click', (e) => {
+            if (e.target.id === 'otpModal') {
+                hideOtpModal();
+            }
+        });
+
+        // Toggle plan for comparison
+        function toggleCompare(planId) {
+            const checkbox = document.getElementById(`compare-${planId}`);
+            if (checkbox.checked) {
+                if (comparePlans.length < 4) {
+                    comparePlans.push(planId);
+                } else {
+                    checkbox.checked = false;
+                    alert('You can compare up to 4 plans at once.');
+                    return;
+                }
+            } else {
+                comparePlans = comparePlans.filter(id => id !== planId);
+            }
+            updateCompareBar();
+        }
+
+        // Update compare bar visibility
+        function updateCompareBar() {
+            const compareBar = document.getElementById('compareBar');
+            const compareCount = document.getElementById('compareCount');
+            
+            if (comparePlans.length > 0) {
+                compareBar.style.display = 'block';
+                compareCount.textContent = `${comparePlans.length} plan${comparePlans.length > 1 ? 's' : ''} selected`;
+            } else {
+                compareBar.style.display = 'none';
+            }
+        }
+
+        // Clear compare selection
+        function clearCompare() {
+            comparePlans.forEach(planId => {
+                const checkbox = document.getElementById(`compare-${planId}`);
+                if (checkbox) checkbox.checked = false;
+            });
+            comparePlans = [];
+            updateCompareBar();
+        }
+
+        // Preview features modal
+        function previewFeatures(planId) {
+            const plan = plans.find(p => p._id === planId);
+            if (!plan) return;
+
+            const features = getPlanFeatures(plan);
+            const groupedFeatures = groupFeaturesByCategory(features);
+
+            document.getElementById('previewPlanName').textContent = plan.name || 'Plan';
+            document.getElementById('previewPlanDescription').textContent = plan.description || '';
+
+            const modalBody = document.getElementById('previewModalBody');
+            modalBody.innerHTML = `
+                <div style="padding: 24px;">
+                    <div style="margin-bottom: 32px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                            <div>
+                                <div style="font-size: 2rem; font-weight: 800; color: #0f172a; margin-bottom: 4px;">
+                                    ${plan.currency || 'INR'} ${plan.price || 0}
+                                </div>
+                                <div style="color: #64748b; font-size: 0.95rem;">
+                                    per ${plan.billingCycle || 'monthly'}
+                                </div>
+                            </div>
+                            ${plan.isPopular ? '<span style="background: #2563eb; color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Most Popular</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 24px;">
+                        <h3 style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin-bottom: 16px;">What's Included</h3>
+                        <ul style="list-style: none; padding: 0;">
+                            ${groupedFeatures.map((group, groupIndex) => {
+                                let html = '';
+                                if (group.title && groupIndex > 0) {
+                                    html += `<li style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin: 20px 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">${group.title}</li>`;
+                                } else if (group.title && groupIndex === 0) {
+                                    html += `<li style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin: 0 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;">${group.title}</li>`;
+                                }
+                                html += group.features.map(feature => `
+                                    <li style="padding: 12px 0; color: #334155; display: flex; align-items: flex-start; border-bottom: 1px solid #f1f5f9;">
+                                        <span style="background: #d1fae5; color: #10b981; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 700; margin-right: 12px; flex-shrink: 0; margin-top: 2px;">✓</span>
+                                        <span>${feature}</span>
+                                    </li>
+                                `).join('');
+                                return html;
+                            }).join('')}
+                        </ul>
+                    </div>
+                    <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0;">
+                        <button onclick="handleSelectPlan('${plan._id}'); hidePreviewModal();" style="width: 100%; padding: 14px 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                            Get Started
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+
+        // Hide preview modal
+        function hidePreviewModal() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        // Show compare modal
+        function showCompareModal() {
+            if (comparePlans.length < 2) {
+                alert('Please select at least 2 plans to compare.');
+                return;
+            }
+
+            const selectedPlans = plans.filter(p => comparePlans.includes(p._id));
+            if (selectedPlans.length === 0) return;
+
+            // Build comparison table
+            const allFeatures = new Set();
+            selectedPlans.forEach(plan => {
+                const features = getPlanFeatures(plan);
+                features.forEach(f => allFeatures.add(f));
+            });
+
+            const featureList = Array.from(allFeatures).sort();
+
+            const modalBody = document.getElementById('compareModalBody');
+            modalBody.innerHTML = `
+                <div style="padding: 24px; overflow-x: auto;">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th class="comparison-feature-name">Feature</th>
+                                ${selectedPlans.map(plan => `
+                                    <th class="comparison-plan-header">
+                                        ${plan.name || 'Plan'}<br>
+                                        <span style="font-size: 0.875rem; font-weight: 400; color: #64748b;">
+                                            ${plan.currency || 'INR'} ${plan.price || 0} / ${plan.billingCycle || 'monthly'}
+                                        </span>
+                                    </th>
+                                `).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${featureList.map(feature => `
+                                <tr>
+                                    <td class="comparison-feature-name">${feature}</td>
+                                    ${selectedPlans.map(plan => {
+                                        const planFeatures = getPlanFeatures(plan);
+                                        const hasFeature = planFeatures.includes(feature);
+                                        return `<td class="comparison-value ${hasFeature ? 'yes' : 'no'}">${hasFeature ? '✓' : '✗'}</td>`;
+                                    }).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 32px; display: flex; gap: 12px; justify-content: center;">
+                        ${selectedPlans.map(plan => `
+                            <button onclick="handleSelectPlan('${plan._id}'); hideCompareModal();" style="padding: 12px 24px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                Select ${plan.name}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('compareModal').style.display = 'flex';
+        }
+
+        // Hide compare modal
+        function hideCompareModal() {
+            document.getElementById('compareModal').style.display = 'none';
+        }
+
+        // Close modals on outside click
+        document.getElementById('previewModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'previewModal') {
+                hidePreviewModal();
+            }
+        });
+
+        document.getElementById('compareModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'compareModal') {
+                hideCompareModal();
+            }
+        });
+
+        // Initialize
+        updateLoginButton();
+        // Load user email and phone from localStorage if available
+        userEmail = localStorage.getItem('user_email') || null;
+        userPhone = localStorage.getItem('user_phone') || null;
+        
+        loadPlans();
+        loadCurrentSubscription(); // Load subscription status if user is logged in
+        loadSignupMetadata();
+    </script>
+</body>
+</html>
+

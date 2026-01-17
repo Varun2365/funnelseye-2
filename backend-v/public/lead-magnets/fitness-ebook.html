@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Ebooks - Free Resources</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        .ebooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .ebook-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ebook-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        .ebook-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .ebook-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 8px;
+        }
+        .ebook-category {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .download-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .download-btn:hover {
+            transform: scale(1.02);
+        }
+        .form-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .form-modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #a855f7;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Fitness Ebooks Library</h1>
+            <p class="subtitle">Download free fitness resources and guides</p>
+        </header>
+        
+        <div class="ebooks-grid" id="ebooksGrid">
+            <div class="ebook-card">
+                <div class="ebook-icon">💪</div>
+                <div class="ebook-title">Complete Workout Guide</div>
+                <div class="ebook-category">Training</div>
+                <button class="download-btn" onclick="showDownloadForm('workout-guide')">Download Free</button>
+            </div>
+            <div class="ebook-card">
+                <div class="ebook-icon">🥗</div>
+                <div class="ebook-title">Nutrition Essentials</div>
+                <div class="ebook-category">Nutrition</div>
+                <button class="download-btn" onclick="showDownloadForm('nutrition-guide')">Download Free</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-modal" id="downloadModal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 20px;">Get Your Free Ebook</h2>
+            <form id="downloadForm">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" required>
+                </div>
+                <button type="submit">Download Now</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const coachId = window.location.pathname.split('/').pop();
+        let currentEbook = '';
+
+        function showDownloadForm(ebookId) {
+            currentEbook = ebookId;
+            document.getElementById('downloadModal').classList.add('show');
+        }
+
+        document.getElementById('downloadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/lead-magnets/ebook-generator`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coachId, ebookId: currentEbook, userData: data })
+                });
+                
+                if (response.ok) {
+                    alert('Download link sent to your email!');
+                    document.getElementById('downloadModal').classList.remove('show');
+                }
+            } catch (error) {
+                alert('Error processing request. Please try again.');
+            }
+        });
+
+        document.getElementById('downloadModal').addEventListener('click', (e) => {
+            if (e.target.id === 'downloadModal') {
+                document.getElementById('downloadModal').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>
+

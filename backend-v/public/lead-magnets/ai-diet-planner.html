@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Diet Planner - Free Personalized Diet Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        h1 {
+            color: #1a202c;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .subtitle {
+            color: #718096;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            color: #2d3748;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 8px;
+            display: none;
+        }
+        .result.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ AI Diet Planner</h1>
+        <p class="subtitle">Get your personalized diet plan in seconds</p>
+        
+        <form id="dietForm">
+            <div class="form-group">
+                <label>Age</label>
+                <input type="number" name="age" required min="18" max="100">
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select name="gender" required>
+                    <option value="">Select...</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Weight (kg)</label>
+                <input type="number" name="weight" required min="30" max="200" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>Height (cm)</label>
+                <input type="number" name="height" required min="100" max="250">
+            </div>
+            <div class="form-group">
+                <label>Activity Level</label>
+                <select name="activity" required>
+                    <option value="">Select...</option>
+                    <option value="sedentary">Sedentary</option>
+                    <option value="light">Lightly Active</option>
+                    <option value="moderate">Moderately Active</option>
+                    <option value="very">Very Active</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Dietary Preferences</label>
+                <select name="diet" required>
+                    <option value="">Select...</option>
+                    <option value="none">No Restrictions</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="vegan">Vegan</option>
+                    <option value="keto">Keto</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Email (to receive your plan)</label>
+                <input type="email" name="email" required>
+            </div>
+            <button type="submit">Generate My Diet Plan</button>
+        </form>
+        
+        <div id="result" class="result">
+            <h2>Your Personalized Diet Plan</h2>
+            <div id="planContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const coachId = window.location.pathname.split('/').pop();
+        
+        document.getElementById('dietForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await fetch(`/api/lead-magnets/ai-diet-plan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ coachId, userPreferences: data })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    document.getElementById('planContent').innerHTML = `
+                        <p><strong>Daily Calories:</strong> ${result.data.calories || 'Calculating...'}</p>
+                        <p><strong>Macros:</strong> ${result.data.macros || 'Calculating...'}</p>
+                        <p>Your full diet plan has been sent to your email!</p>
+                    `;
+                    document.getElementById('result').classList.add('show');
+                }
+            } catch (error) {
+                alert('Error generating diet plan. Please try again.');
+            }
+        });
+    </script>
+</body>
+</html>
+

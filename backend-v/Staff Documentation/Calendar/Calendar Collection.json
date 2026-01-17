@@ -1,0 +1,1948 @@
+{
+  "info": {
+    "name": "Calendar & Appointment Management - Complete Collection",
+    "description": "Comprehensive testing collection for Calendar, Availability, Appointments, Zoom Integration, and Reminders\n\n**Features:**\n- Public booking (no auth)\n- Coach & Staff availability (unified endpoints)\n- Appointment management\n- Staff assignment\n- Zoom integration\n- Automated reminders",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set token based on user type",
+          "if (pm.variables.get('useStaffToken')) {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + pm.environment.get('staff_token')",
+          "    });",
+          "} else {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + pm.environment.get('coach_token')",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "coach_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "lead_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "appointment_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. PUBLIC BOOKING (NO AUTH)",
+      "item": [
+        {
+          "name": "Get Coach Availability (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success true', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response contains availability data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('workingHours');",
+                  "    pm.expect(jsonData.data).to.have.property('timeZone');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/{{coach_id}}/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "{{coach_id}}", "availability"]
+            },
+            "description": "Get coach availability settings without authentication"
+          }
+        },
+        {
+          "name": "Get Available Slots (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains slots array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('slots');",
+                  "    pm.expect(jsonData.slots).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Slots have capacity info', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.slots.length > 0) {",
+                  "        pm.expect(jsonData.slots[0]).to.have.property('capacity');",
+                  "        pm.expect(jsonData.slots[0]).to.have.property('available');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/{{coach_id}}/available-slots?date=2025-01-20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "{{coach_id}}", "available-slots"],
+              "query": [
+                {
+                  "key": "date",
+                  "value": "2025-01-20",
+                  "description": "Date in YYYY-MM-DD format"
+                }
+              ]
+            },
+            "description": "Get available booking slots for a specific date"
+          }
+        },
+        {
+          "name": "Book Appointment (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Appointment created successfully', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.appointmentDetails).to.exist;",
+                  "});",
+                  "",
+                  "pm.test('Appointment has Zoom meeting link', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.appointmentDetails.zoomMeeting) {",
+                  "        pm.expect(jsonData.appointmentDetails.zoomMeeting).to.have.property('joinUrl');",
+                  "        pm.expect(jsonData.appointmentDetails.zoomMeeting).to.have.property('password');",
+                  "    }",
+                  "});",
+                  "",
+                  "// Save appointment ID for later tests",
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('appointment_id', jsonData.appointmentDetails._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"startTime\": \"2025-01-20T14:00:00Z\",\n  \"duration\": 30,\n  \"notes\": \"Initial consultation for premium package\",\n  \"timeZone\": \"Asia/Kolkata\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/{{coach_id}}/book",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "{{coach_id}}", "book"]
+            },
+            "description": "Book appointment without authentication - automatically assigns to staff if enabled"
+          }
+        },
+        {
+          "name": "Get Coach Calendar (Public)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains calendar data', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/{{coach_id}}/calendar?startDate=2025-01-15&endDate=2025-01-20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "{{coach_id}}", "calendar"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-15"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-20"
+                }
+              ]
+            },
+            "description": "Get coach calendar view - shows availability without sensitive details"
+          }
+        }
+      ],
+      "description": "Public booking routes - No authentication required"
+    },
+    {
+      "name": "2. COACH AVAILABILITY",
+      "item": [
+        {
+          "name": "Check Zoom Status (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response shows Zoom status', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('hasZoomIntegration');",
+                  "    pm.expect(jsonData.data).to.have.property('userType');",
+                  "    pm.expect(jsonData.data.userType).to.equal('coach');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/zoom-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "zoom-status"]
+            },
+            "description": "Check if coach has valid Zoom integration (Required for availability setup)"
+          }
+        },
+        {
+          "name": "Get Coach Availability (Dashboard)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is for coach', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userContext.isStaff).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "availability"]
+            },
+            "description": "Get coach availability settings with coach token"
+          }
+        },
+        {
+          "name": "Set Coach Availability",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Availability updated for coach', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.message).to.include('Coach availability');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeZone\": \"Asia/Kolkata\",\n  \"workingHours\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\"\n    },\n    {\n      \"dayOfWeek\": 2,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\"\n    },\n    {\n      \"dayOfWeek\": 3,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\"\n    },\n    {\n      \"dayOfWeek\": 4,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\"\n    },\n    {\n      \"dayOfWeek\": 5,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"13:00\"\n    }\n  ],\n  \"unavailableSlots\": [],\n  \"defaultAppointmentDuration\": 30,\n  \"bufferTime\": 15\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "availability"]
+            },
+            "description": "Set coach availability - Requires Zoom integration"
+          }
+        },
+        {
+          "name": "Set Coach Availability (No Zoom) - Should Fail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Requires Zoom integration', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.requiresZoomIntegration).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeZone\": \"Asia/Kolkata\",\n  \"workingHours\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"17:00\"\n    }\n  ],\n  \"defaultAppointmentDuration\": 30,\n  \"bufferTime\": 15\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "availability"]
+            },
+            "description": "Test that availability cannot be set without Zoom integration"
+          }
+        }
+      ],
+      "description": "Coach availability management with Zoom requirement"
+    },
+    {
+      "name": "3. STAFF AVAILABILITY (SAME ENDPOINTS)",
+      "item": [
+        {
+          "name": "Check Zoom Status (Staff)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response shows staff Zoom status', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.userType).to.equal('staff');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/zoom-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "zoom-status"]
+            },
+            "description": "Check if staff has valid Zoom integration (same endpoint as coach)"
+          }
+        },
+        {
+          "name": "Get Staff Availability (Auto-Created)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is for staff', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userContext.isStaff).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Staff availability has staffId', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('staffId');",
+                  "});",
+                  "",
+                  "pm.test('Copied from coach initially', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.copiedFromCoach !== undefined) {",
+                  "        pm.expect(jsonData.data.copiedFromCoach).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/{{coach_id}}/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "{{coach_id}}", "availability"]
+            },
+            "description": "Get staff availability - auto-created from coach settings if doesn't exist"
+          }
+        },
+        {
+          "name": "Set Staff Availability",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Staff availability updated', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Staff availability');",
+                  "    pm.expect(jsonData.data.copiedFromCoach).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"timeZone\": \"Asia/Kolkata\",\n  \"workingHours\": [\n    {\n      \"dayOfWeek\": 1,\n      \"startTime\": \"10:00\",\n      \"endTime\": \"18:00\"\n    },\n    {\n      \"dayOfWeek\": 3,\n      \"startTime\": \"10:00\",\n      \"endTime\": \"18:00\"\n    },\n    {\n      \"dayOfWeek\": 5,\n      \"startTime\": \"09:00\",\n      \"endTime\": \"14:00\"\n    }\n  ],\n  \"unavailableSlots\": [],\n  \"defaultAppointmentDuration\": 45,\n  \"bufferTime\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability"]
+            },
+            "description": "Set staff availability using same endpoint as coach - token determines target"
+          }
+        },
+        {
+          "name": "Copy Coach Availability to Staff",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Copied from coach', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.copiedFromCoach).to.be.true;",
+                  "    pm.expect(jsonData.data.lastSyncedWithCoach).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/copy-from-coach",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "copy-from-coach"]
+            },
+            "description": "Copy coach availability to staff - Staff only endpoint"
+          }
+        }
+      ],
+      "description": "Staff availability using unified endpoints with coach"
+    },
+    {
+      "name": "4. APPOINTMENT MANAGEMENT",
+      "item": [
+        {
+          "name": "Get Calendar (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Coach sees all appointments', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userContext.isStaff).to.be.false;",
+                  "    pm.expect(jsonData.data).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/calendar?startDate=2025-01-15&endDate=2025-01-20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "calendar"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-15"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-20"
+                }
+              ]
+            },
+            "description": "Coach sees ALL appointments"
+          }
+        },
+        {
+          "name": "Get Calendar (Staff) - Only Assigned",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Staff sees only assigned appointments', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userContext.isStaff).to.be.true;",
+                  "    ",
+                  "    // All appointments should be assigned to this staff",
+                  "    if (jsonData.data.length > 0) {",
+                  "        jsonData.data.forEach(function(appt) {",
+                  "            pm.expect(appt.assignedStaffId).to.equal(jsonData.userContext.userId);",
+                  "        });",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/calendar?startDate=2025-01-15&endDate=2025-01-20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "calendar"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-15"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-20"
+                }
+              ]
+            },
+            "description": "Staff sees ONLY appointments assigned to them"
+          }
+        },
+        {
+          "name": "Get Today's Appointments (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response includes date', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('date');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "today"]
+            },
+            "description": "Get today's appointments for coach"
+          }
+        },
+        {
+          "name": "Get Today's Appointments (Staff)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Staff sees only their appointments', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userContext.isStaff).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/today",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "today"]
+            },
+            "description": "Get today's appointments for staff - filtered to assigned only"
+          }
+        },
+        {
+          "name": "Get Upcoming Appointments (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/upcoming?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "upcoming"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get upcoming appointments for coach"
+          }
+        },
+        {
+          "name": "Get Upcoming Appointments (Staff)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Staff filtered appointments', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.userContext.isStaff).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/upcoming?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "upcoming"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get upcoming appointments for staff - filtered to assigned only"
+          }
+        },
+        {
+          "name": "Book Appointment (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test('Appointment has Zoom link', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data && jsonData.data.zoomMeeting) {",
+                  "        pm.expect(jsonData.data.zoomMeeting.joinUrl).to.exist;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"startTime\": \"2025-01-22T14:00:00Z\",\n  \"duration\": 30,\n  \"notes\": \"Follow-up consultation\",\n  \"timeZone\": \"Asia/Kolkata\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments"]
+            },
+            "description": "Coach books appointment - may auto-assign to staff"
+          }
+        },
+        {
+          "name": "Reschedule Appointment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Appointment rescheduled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('rescheduled');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStartTime\": \"2025-01-23T15:00:00Z\",\n  \"newDuration\": 45\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/{{appointment_id}}/reschedule",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "{{appointment_id}}", "reschedule"]
+            },
+            "description": "Reschedule appointment - reminders auto-rescheduled"
+          }
+        },
+        {
+          "name": "Cancel Appointment (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Appointment cancelled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('cancelled');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/{{appointment_id}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "{{appointment_id}}"]
+            },
+            "description": "Coach cancels appointment - Zoom meeting deleted, reminders cancelled"
+          }
+        },
+        {
+          "name": "Get Appointment Stats (Coach)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Stats include completion rates', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('completionRate');",
+                  "    pm.expect(jsonData.data).to.have.property('cancellationRate');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach-dashboard/appointments/stats?timeRange=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach-dashboard", "appointments", "stats"],
+              "query": [
+                {
+                  "key": "timeRange",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Get appointment statistics for coach"
+          }
+        }
+      ],
+      "description": "Appointment management for coach and staff"
+    },
+    {
+      "name": "5. STAFF ASSIGNMENT",
+      "item": [
+        {
+          "name": "Get Available Staff for Assignment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Staff list includes conflict info', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.data.length > 0) {",
+                  "        pm.expect(jsonData.data[0]).to.have.property('hasConflicts');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/available-staff?appointmentDate=2025-01-20&appointmentTime=14:00&duration=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "available-staff"],
+              "query": [
+                {
+                  "key": "appointmentDate",
+                  "value": "2025-01-20"
+                },
+                {
+                  "key": "appointmentTime",
+                  "value": "14:00"
+                },
+                {
+                  "key": "duration",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Get available staff members for appointment assignment"
+          }
+        },
+        {
+          "name": "Assign Appointment to Staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Assignment successful', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('assigned');",
+                  "    pm.expect(jsonData.data.assignedStaffId).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"staffId\": \"{{staff_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "assign"]
+            },
+            "description": "Manually assign appointment to staff - generates Zoom with staff credentials"
+          }
+        },
+        {
+          "name": "Unassign Appointment from Staff",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Unassignment successful', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.assignedStaffId).to.be.null;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/{{appointment_id}}/unassign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "{{appointment_id}}", "unassign"]
+            },
+            "description": "Remove staff assignment from appointment"
+          }
+        },
+        {
+          "name": "Get Staff Appointments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has pagination', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('pagination');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/staff/{{staff_id}}?status=scheduled&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "staff", "{{staff_id}}"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "scheduled"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Get all appointments assigned to specific staff member"
+          }
+        },
+        {
+          "name": "Get Staff Calendar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has appointments and calendar events', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('appointments');",
+                  "    pm.expect(jsonData.data).to.have.property('calendarEvents');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/staff/{{staff_id}}/calendar?startDate=2025-01-15&endDate=2025-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "staff", "{{staff_id}}", "calendar"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2025-01-15"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-01-31"
+                }
+              ]
+            },
+            "description": "Get staff calendar with appointments and events"
+          }
+        },
+        {
+          "name": "Bulk Assign Appointments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Bulk assignment results', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('results');",
+                  "    pm.expect(jsonData.message).to.include('Bulk assignment');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignments\": [\n    {\n      \"appointmentId\": \"appt_id_1\",\n      \"staffId\": \"{{staff_id}}\"\n    },\n    {\n      \"appointmentId\": \"appt_id_2\",\n      \"staffId\": \"{{staff_id}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/bulk-assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "bulk-assign"]
+            },
+            "description": "Assign multiple appointments to staff at once"
+          }
+        }
+      ],
+      "description": "Staff assignment management (Coach only)"
+    },
+    {
+      "name": "6. ASSIGNMENT SETTINGS (COACH ONLY)",
+      "item": [
+        {
+          "name": "Get Assignment Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Settings include mode and enabled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('enabled');",
+                  "    pm.expect(jsonData.data).to.have.property('mode');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/assignment-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "assignment-settings"]
+            },
+            "description": "Get current appointment assignment settings"
+          }
+        },
+        {
+          "name": "Update Assignment Settings - Enable Automatic",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Settings updated successfully', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.enabled).to.be.true;",
+                  "    pm.expect(jsonData.data.mode).to.equal('automatic');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"mode\": \"automatic\",\n  \"considerStaffAvailability\": true,\n  \"allowMultipleStaffSameSlot\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/assignment-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "assignment-settings"]
+            },
+            "description": "Enable automatic staff assignment with distribution ratio"
+          }
+        },
+        {
+          "name": "Update Assignment Settings - Manual Mode",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Mode set to manual', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.mode).to.equal('manual');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"mode\": \"manual\",\n  \"considerStaffAvailability\": false,\n  \"allowMultipleStaffSameSlot\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/assignment-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "assignment-settings"]
+            },
+            "description": "Set manual assignment mode - coach assigns appointments manually"
+          }
+        },
+        {
+          "name": "Get Assignment Statistics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Stats include staff performance', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('totalAppointments');",
+                  "    pm.expect(jsonData.data).to.have.property('staffStats');",
+                  "    pm.expect(jsonData.data.staffStats).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/assignment-stats?days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "assignment-stats"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Get detailed assignment statistics and staff performance"
+          }
+        }
+      ],
+      "description": "Appointment assignment settings and statistics (Coach only)"
+    },
+    {
+      "name": "7. REMINDER SETTINGS (COACH ONLY)",
+      "item": [
+        {
+          "name": "Get Reminder Settings",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Settings include reminders array', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data).to.have.property('enabled');",
+                  "    pm.expect(jsonData.data).to.have.property('reminders');",
+                  "    pm.expect(jsonData.data.reminders).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/reminder-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "reminder-settings"]
+            },
+            "description": "Get current reminder settings - defaults to 3 days, 1 day, 10 mins"
+          }
+        },
+        {
+          "name": "Update Reminder Settings - Use Defaults",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Default reminders enabled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.defaultReminders).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"defaultReminders\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/reminder-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "reminder-settings"]
+            },
+            "description": "Use default reminders (3 days, 1 day, 10 minutes)"
+          }
+        },
+        {
+          "name": "Update Reminder Settings - Custom",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Custom reminders set', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.defaultReminders).to.be.false;",
+                  "    pm.expect(jsonData.data.reminders.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"defaultReminders\": false,\n  \"reminders\": [\n    {\n      \"name\": \"1 Week Before\",\n      \"timing\": 10080,\n      \"channel\": \"whatsapp\",\n      \"templateId\": \"template_id_here\",\n      \"isActive\": true\n    },\n    {\n      \"name\": \"3 Days Before\",\n      \"timing\": 4320,\n      \"channel\": \"email\",\n      \"isActive\": true\n    },\n    {\n      \"name\": \"1 Hour Before\",\n      \"timing\": 60,\n      \"channel\": \"both\",\n      \"templateId\": \"template_id_here\",\n      \"isActive\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/reminder-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "reminder-settings"]
+            },
+            "description": "Configure custom reminders with specific timings and channels"
+          }
+        },
+        {
+          "name": "Disable Reminders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Reminders disabled', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.enabled).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/reminder-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "reminder-settings"]
+            },
+            "description": "Disable automated appointment reminders"
+          }
+        }
+      ],
+      "description": "Appointment reminder configuration (Coach only)"
+    },
+    {
+      "name": "8. COMPLETE WORKFLOWS",
+      "item": [
+        {
+          "name": "WORKFLOW: Coach Setup",
+          "item": [
+            {
+              "name": "1. Check Zoom Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/availability/zoom-status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "availability", "zoom-status"]
+                },
+                "description": "Step 1: Verify coach has Zoom integration"
+              }
+            },
+            {
+              "name": "2. Set Availability",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"timeZone\": \"Asia/Kolkata\",\n  \"workingHours\": [\n    {\"dayOfWeek\": 1, \"startTime\": \"09:00\", \"endTime\": \"17:00\"},\n    {\"dayOfWeek\": 2, \"startTime\": \"09:00\", \"endTime\": \"17:00\"},\n    {\"dayOfWeek\": 3, \"startTime\": \"09:00\", \"endTime\": \"17:00\"},\n    {\"dayOfWeek\": 4, \"startTime\": \"09:00\", \"endTime\": \"17:00\"},\n    {\"dayOfWeek\": 5, \"startTime\": \"09:00\", \"endTime\": \"13:00\"}\n  ],\n  \"defaultAppointmentDuration\": 30,\n  \"bufferTime\": 15\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/availability",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "availability"]
+                },
+                "description": "Step 2: Set coach availability"
+              }
+            },
+            {
+              "name": "3. Enable Automatic Assignment",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"enabled\": true,\n  \"mode\": \"automatic\",\n  \"considerStaffAvailability\": true,\n  \"allowMultipleStaffSameSlot\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/availability/assignment-settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "availability", "assignment-settings"]
+                },
+                "description": "Step 3: Enable automatic staff assignment"
+              }
+            },
+            {
+              "name": "4. Configure Reminders",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"enabled\": true,\n  \"defaultReminders\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/availability/reminder-settings",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "availability", "reminder-settings"]
+                },
+                "description": "Step 4: Configure appointment reminders"
+              }
+            }
+          ],
+          "description": "Complete coach setup workflow"
+        },
+        {
+          "name": "WORKFLOW: Staff Setup",
+          "item": [
+            {
+              "name": "1. Check Zoom Status (Staff)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.variables.set('useStaffToken', true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/availability/zoom-status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "availability", "zoom-status"]
+                },
+                "description": "Step 1: Verify staff has Zoom integration"
+              }
+            },
+            {
+              "name": "2. Get Staff Availability (Auto-Copy)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.variables.set('useStaffToken', true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/{{coach_id}}/availability",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "{{coach_id}}", "availability"]
+                },
+                "description": "Step 2: Get staff availability - auto-copies from coach if doesn't exist"
+              }
+            },
+            {
+              "name": "3. Customize Staff Availability",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.variables.set('useStaffToken', true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"timeZone\": \"Asia/Kolkata\",\n  \"workingHours\": [\n    {\"dayOfWeek\": 1, \"startTime\": \"10:00\", \"endTime\": \"18:00\"},\n    {\"dayOfWeek\": 3, \"startTime\": \"10:00\", \"endTime\": \"18:00\"},\n    {\"dayOfWeek\": 5, \"startTime\": \"09:00\", \"endTime\": \"14:00\"}\n  ],\n  \"defaultAppointmentDuration\": 45,\n  \"bufferTime\": 10\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/availability",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "availability"]
+                },
+                "description": "Step 3: Customize staff availability using same endpoint as coach"
+              }
+            },
+            {
+              "name": "4. View Staff Calendar",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "exec": [
+                      "pm.variables.set('useStaffToken', true);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach-dashboard/appointments/today",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach-dashboard", "appointments", "today"]
+                },
+                "description": "Step 4: View today's appointments with Zoom links"
+              }
+            }
+          ],
+          "description": "Complete staff setup workflow"
+        },
+        {
+          "name": "WORKFLOW: Public Booking Flow",
+          "item": [
+            {
+              "name": "1. View Available Slots",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/{{coach_id}}/available-slots?date=2025-01-20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "{{coach_id}}", "available-slots"],
+                  "query": [
+                    {
+                      "key": "date",
+                      "value": "2025-01-20"
+                    }
+                  ]
+                },
+                "description": "Step 1: Lead views available slots"
+              }
+            },
+            {
+              "name": "2. Book Appointment",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    var jsonData = pm.response.json();",
+                      "    pm.environment.set('appointment_id', jsonData.appointmentDetails._id);",
+                      "    ",
+                      "    console.log('Appointment Created:', jsonData.appointmentDetails._id);",
+                      "    console.log('Assigned to Staff:', jsonData.appointmentDetails.assignedStaffId);",
+                      "    console.log('Zoom Link:', jsonData.appointmentDetails.zoomMeeting?.joinUrl);",
+                      "}"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"startTime\": \"2025-01-20T14:00:00Z\",\n  \"duration\": 30,\n  \"notes\": \"Initial consultation\",\n  \"timeZone\": \"Asia/Kolkata\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/{{coach_id}}/book",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "{{coach_id}}", "book"]
+                },
+                "description": "Step 2: Book appointment - auto-assigns, generates Zoom, schedules reminders"
+              }
+            },
+            {
+              "name": "3. Verify Appointment Created",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/coach/appointments/{{appointment_id}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "coach", "appointments", "{{appointment_id}}"]
+                },
+                "description": "Step 3: Verify appointment with Zoom link and assignment"
+              }
+            }
+          ],
+          "description": "Complete public booking workflow with auto-assignment"
+        }
+      ],
+      "description": "Complete end-to-end workflows for testing"
+    },
+    {
+      "name": "9. ERROR SCENARIOS",
+      "item": [
+        {
+          "name": "Book Unavailable Slot - Should Fail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 400 or 500', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 500]);",
+                  "});",
+                  "",
+                  "pm.test('Error message about slot unavailability', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.be.false;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"startTime\": \"2025-01-20T23:00:00Z\",\n  \"duration\": 30,\n  \"notes\": \"After hours\",\n  \"timeZone\": \"Asia/Kolkata\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/{{coach_id}}/book",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "{{coach_id}}", "book"]
+            },
+            "description": "Test booking outside working hours - should fail"
+          }
+        },
+        {
+          "name": "Staff Access Coach Settings - Should Fail",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set('useStaffToken', true);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 403', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});",
+                  "",
+                  "pm.test('Access denied for staff', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('coaches');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/coach/availability/assignment-settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "coach", "availability", "assignment-settings"]
+            },
+            "description": "Test staff cannot access coach-only settings"
+          }
+        },
+        {
+          "name": "Assign to Staff with Conflict - Should Fail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Should detect conflict', function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    if (jsonData.success === false) {",
+                  "        pm.expect(jsonData.message).to.include('conflict');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"staffId\": \"{{staff_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/staff-appointments/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "staff-appointments", "assign"]
+            },
+            "description": "Test assignment when staff has scheduling conflict"
+          }
+        }
+      ],
+      "description": "Error scenarios and validation testing"
+    }
+  ]
+}
+

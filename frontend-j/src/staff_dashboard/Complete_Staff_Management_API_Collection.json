@@ -1,0 +1,1128 @@
+{
+	"info": {
+		"_postman_id": "complete-staff-management",
+		"name": "Complete Staff Management System",
+		"description": "Complete staff management system with authentication, coach operations, staff operations, and all related functionalities",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{coach_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "coach_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "staff_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "coach_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "staff_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "lead_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "appointment_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "calendar_event_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "transfer_staff_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Coach Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"coach@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data.token) {",
+									"        pm.collectionVariables.set('coach_token', response.data.token);",
+									"        pm.collectionVariables.set('user_id', response.data.user.id);",
+									"        pm.collectionVariables.set('coach_id', response.data.user.id);",
+									"        console.log('Coach logged in:', response.data.user.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Staff Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"staff@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						}
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.success && response.data.token) {",
+									"        pm.collectionVariables.set('staff_token', response.data.token);",
+									"        pm.collectionVariables.set('user_id', response.data.user.id);",
+									"        pm.collectionVariables.set('staff_id', response.data.user.id);",
+									"        pm.collectionVariables.set('coach_id', response.data.user.coachId);",
+									"        console.log('Staff logged in:', response.data.user.id);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/me",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "me"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "👨‍💼 Coach Operations",
+			"item": [
+				{
+					"name": "👥 Staff Management",
+					"item": [
+						{
+							"name": "Create Staff",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Staff\",\n  \"email\": \"john.staff@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"staff\",\n  \"permissions\": [\"tasks:read\", \"tasks:write\", \"calendar:read\", \"leads:read\"],\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff"]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    const response = pm.response.json();",
+											"    if (response.success && response.data._id) {",
+											"        pm.collectionVariables.set('staff_id', response.data._id);",
+											"        console.log('Staff created:', response.data._id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Get All Staff",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff"]
+								}
+							}
+						},
+						{
+							"name": "Get Staff by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff/{{staff_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff", "{{staff_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Update Staff",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Staff Updated\",\n  \"permissions\": [\"tasks:read\", \"tasks:write\", \"calendar:read\", \"calendar:write\", \"leads:read\", \"leads:write\"],\n  \"isActive\": true\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff/{{staff_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff", "{{staff_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Get Staff Performance",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff/{{staff_id}}/performance",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff", "{{staff_id}}", "performance"]
+								}
+							}
+						},
+						{
+							"name": "Get Staff Performance Trends",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff/{{staff_id}}/performance/trends",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff", "{{staff_id}}", "performance", "trends"]
+								}
+							}
+						},
+						{
+							"name": "Get Staff Performance Comparison",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff/performance/comparison",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff", "performance", "comparison"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📋 Task Management",
+					"item": [
+						{
+							"name": "Get All Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-tasks?page=1&limit=20",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-tasks"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "👥 Lead Management",
+					"item": [
+						{
+							"name": "Create Lead",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"+1234567890\",\n  \"source\": \"Website\",\n  \"assignedTo\": \"{{staff_id}}\",\n  \"status\": \"New\",\n  \"priority\": \"HIGH\",\n  \"notes\": \"Interested in fitness coaching program\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/leads",
+									"host": ["{{base_url}}"],
+									"path": ["api", "leads"]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    const response = pm.response.json();",
+											"    if (response.success && response.data._id) {",
+											"        pm.collectionVariables.set('lead_id', response.data._id);",
+											"        console.log('Lead created:', response.data._id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Get All Leads",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/leads?page=1&limit=20",
+									"host": ["{{base_url}}"],
+									"path": ["api", "leads"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Submit Question Responses",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"leadId\": \"{{lead_id}}\",\n  \"questionResponses\": {\n    \"clientQuestions\": {\n      \"fitnessGoals\": \"Weight loss and muscle building\",\n      \"experience\": \"Beginner\",\n      \"timeCommitment\": \"3-4 hours per week\",\n      \"budget\": \"$200-300 per month\"\n    },\n    \"coachQuestions\": {\n      \"assessment\": \"Client shows strong motivation\",\n      \"recommendations\": \"Start with basic program\",\n      \"nextSteps\": \"Schedule consultation call\"\n    }\n  },\n  \"appointmentData\": {\n    \"preferredDate\": \"2024-01-22\",\n    \"preferredTime\": \"14:00\",\n    \"duration\": 60,\n    \"notes\": \"Client prefers afternoon appointments\"\n  }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/leads/question-responses",
+									"host": ["{{base_url}}"],
+									"path": ["api", "leads", "question-responses"]
+								}
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "👷 Staff Operations",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{staff_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "📊 Dashboard",
+					"item": [
+						{
+							"name": "Get Unified Dashboard Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/data?timeRange=30&sections=overview,tasks,performance,calendar",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "data"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										},
+										{
+											"key": "sections",
+											"value": "overview,tasks,performance,calendar"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Overview Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/overview",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "overview"]
+								}
+							}
+						},
+						{
+							"name": "Get Notifications",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/notifications",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "notifications"]
+								}
+							}
+						},
+						{
+							"name": "Get Analytics",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/analytics?timeRange=30",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "analytics"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📋 Task Management",
+					"item": [
+						{
+							"name": "Get All Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks?page=1&limit=20",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks"],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get My Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/my-tasks?timeRange=30",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "my-tasks"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Overdue Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/overdue",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "overdue"]
+								}
+							}
+						},
+						{
+							"name": "Get Upcoming Tasks",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/upcoming?days=7",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "upcoming"],
+									"query": [
+										{
+											"key": "days",
+											"value": "7"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Task Details",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Update Task Status",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"status\": \"In Progress\",\n  \"notes\": \"Started working on this task\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}/status",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}", "status"]
+								}
+							}
+						},
+						{
+							"name": "Start Task",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"notes\": \"Starting work on this task\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}/start",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}", "start"]
+								}
+							}
+						},
+						{
+							"name": "Pause Task",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"notes\": \"Taking a break, will resume later\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}/pause",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}", "pause"]
+								}
+							}
+						},
+						{
+							"name": "Add Task Comment",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"comment\": \"Making good progress on this task. Should be completed by tomorrow.\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}/comments",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}", "comments"]
+								}
+							}
+						},
+						{
+							"name": "Log Task Time",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"hours\": 1.5,\n  \"description\": \"Initial research and client contact\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}/time-log",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}", "time-log"]
+								}
+							}
+						},
+						{
+							"name": "Complete Task",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"completionNotes\": \"Task completed successfully. Client is satisfied with the outcome.\",\n  \"actualHours\": 2.5,\n  \"outcome\": \"Client signed up for the program\",\n  \"qualityRating\": 9,\n  \"feedback\": \"Great experience working on this task\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/{{task_id}}/complete",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "{{task_id}}", "complete"]
+								}
+							}
+						},
+						{
+							"name": "Bulk Update Tasks",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"taskIds\": [\"{{task_id}}\"],\n  \"updates\": {\n    \"priority\": \"URGENT\",\n    \"status\": \"In Progress\"\n  }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/tasks/bulk-update",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "tasks", "bulk-update"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📅 Calendar Management",
+					"item": [
+						{
+							"name": "Get Calendar Events",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/calendar?startDate=2024-01-01&endDate=2024-01-31&page=1&limit=50",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "calendar"],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2024-01-01"
+										},
+										{
+											"key": "endDate",
+											"value": "2024-01-31"
+										},
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "50"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Create Calendar Event",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"eventType\": \"task\",\n  \"title\": \"Client Follow-up Call\",\n  \"startTime\": \"2024-01-20T15:00:00Z\",\n  \"endTime\": \"2024-01-20T16:00:00Z\",\n  \"description\": \"Follow-up call with potential client\",\n  \"priority\": \"high\",\n  \"relatedTask\": \"{{task_id}}\",\n  \"location\": \"Phone Call\",\n  \"reminder\": {\n    \"enabled\": true,\n    \"minutes\": 15\n  }\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/calendar",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "calendar"]
+								}
+							},
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"if (pm.response.code === 201) {",
+											"    const response = pm.response.json();",
+											"    if (response.success && response.data._id) {",
+											"        pm.collectionVariables.set('calendar_event_id', response.data._id);",
+											"        console.log('Calendar event created:', response.data._id);",
+											"    }",
+											"}"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Update Calendar Event",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"title\": \"Updated Client Follow-up Call\",\n  \"startTime\": \"2024-01-20T15:30:00Z\",\n  \"endTime\": \"2024-01-20T16:30:00Z\",\n  \"notes\": \"Rescheduled to accommodate client's availability\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/calendar/{{calendar_event_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "calendar", "{{calendar_event_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Delete Calendar Event",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/calendar/{{calendar_event_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "calendar", "{{calendar_event_id}}"]
+								}
+							}
+						},
+						{
+							"name": "Get Staff Availability",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/calendar/staff/{{staff_id}}/availability?startTime=2024-01-20T09:00:00Z&endTime=2024-01-20T17:00:00Z",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "calendar", "staff", "{{staff_id}}", "availability"],
+									"query": [
+										{
+											"key": "startTime",
+											"value": "2024-01-20T09:00:00Z"
+										},
+										{
+											"key": "endTime",
+											"value": "2024-01-20T17:00:00Z"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📊 Performance & Analytics",
+					"item": [
+						{
+							"name": "Get Performance Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/performance?timeRange=30",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "performance"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Performance Metrics",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/performance/metrics?timeRange=30&includeDetails=true",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "performance", "metrics"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										},
+										{
+											"key": "includeDetails",
+											"value": "true"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Performance Comparison",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/performance/comparison?timeRange=30",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "performance", "comparison"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Performance Trends",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/performance/trends?period=monthly&months=6",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "performance", "trends"],
+									"query": [
+										{
+											"key": "period",
+											"value": "monthly"
+										},
+										{
+											"key": "months",
+											"value": "6"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Achievements",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/achievements?timeRange=30",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "achievements"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Get Team Leaderboard",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/team/leaderboard?timeRange=30&limit=20",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "team", "leaderboard"],
+									"query": [
+										{
+											"key": "timeRange",
+											"value": "30"
+										},
+										{
+											"key": "limit",
+											"value": "20"
+										}
+									]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "📅 Appointment Management",
+					"item": [
+						{
+							"name": "Get Available Staff",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/appointments/available-staff?appointmentDate=2024-01-20&appointmentTime=14:00&duration=60",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "appointments", "available-staff"],
+									"query": [
+										{
+											"key": "appointmentDate",
+											"value": "2024-01-20"
+										},
+										{
+											"key": "appointmentTime",
+											"value": "14:00"
+										},
+										{
+											"key": "duration",
+											"value": "60"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Assign Appointment to Staff",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"appointmentId\": \"{{appointment_id}}\",\n  \"staffId\": \"{{staff_id}}\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/appointments/assign",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "appointments", "assign"]
+								}
+							}
+						},
+						{
+							"name": "Get Staff Appointments",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/appointments/staff/{{staff_id}}?startDate=2024-01-01&endDate=2024-01-31",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "appointments", "staff", "{{staff_id}}"],
+									"query": [
+										{
+											"key": "startDate",
+											"value": "2024-01-01"
+										},
+										{
+											"key": "endDate",
+											"value": "2024-01-31"
+										}
+									]
+								}
+							}
+						},
+						{
+							"name": "Unassign Appointment",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"reason\": \"Schedule conflict\",\n  \"notes\": \"Need to reschedule due to personal emergency\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/appointments/{{appointment_id}}/unassign",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "appointments", "{{appointment_id}}", "unassign"]
+								}
+							}
+						},
+						{
+							"name": "Transfer Appointment Between Staff",
+							"request": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"appointmentId\": \"{{appointment_id}}\",\n    \"fromStaffId\": \"{{staff_id}}\",\n    \"toStaffId\": \"{{transfer_staff_id}}\",\n    \"reason\": \"Workload redistribution\",\n    \"notes\": \"Transferring appointment due to schedule conflict\",\n    \"transferDate\": \"2024-01-20T10:00:00Z\"\n}"
+								},
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/appointments/transfer",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "appointments", "transfer"]
+								}
+							}
+						}
+					]
+				},
+				{
+					"name": "🔧 System & Health",
+					"item": [
+						{
+							"name": "Health Check",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/health",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "health"]
+								}
+							}
+						},
+						{
+							"name": "System Info",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/staff-dashboard/unified/system-info",
+									"host": ["{{base_url}}"],
+									"path": ["api", "staff-dashboard", "unified", "system-info"]
+								}
+							}
+						}
+					]
+				}
+			]
+		}
+	]
+}

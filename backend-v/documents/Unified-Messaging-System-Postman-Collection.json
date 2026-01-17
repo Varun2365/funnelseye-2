@@ -1,0 +1,1255 @@
+{
+  "info": {
+    "name": "Unified Messaging System API",
+    "description": "Complete API collection for the unified messaging system with WhatsApp and Email capabilities",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "coach_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "staff_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "Authentication endpoints for Admin, Coach, and Staff login",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "login"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data.token) {",
+                  "        pm.collectionVariables.set('admin_token', response.data.token);",
+                  "        console.log('Admin token saved:', response.data.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Coach Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"coach@example.com\",\n  \"password\": \"coach123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/coach/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "coach", "login"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data.token) {",
+                  "        pm.collectionVariables.set('coach_token', response.data.token);",
+                  "        console.log('Coach token saved:', response.data.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Staff Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"password\": \"staff123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/staff/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "staff", "login"]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.success && response.data.token) {",
+                  "        pm.collectionVariables.set('staff_token', response.data.token);",
+                  "        console.log('Staff token saved:', response.data.token);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👨‍💼 Admin Endpoints",
+      "description": "Admin-only endpoints for central WhatsApp and email management",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{admin_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Central WhatsApp Setup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"your_meta_access_token\",\n  \"webhookVerifyToken\": \"your_webhook_token\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/setup",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "setup"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Central WhatsApp Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Central WhatsApp Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"updated_access_token\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test WhatsApp Configuration",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/test-config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "test-config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create WhatsApp Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"welcome_message\",\n  \"category\": \"UTILITY\",\n  \"language\": \"en_US\",\n  \"components\": [\n    {\n      \"type\": \"BODY\",\n      \"text\": \"Hello {{1}}, welcome to our service!\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Templates from Meta",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/templates/sync",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "templates", "sync"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "contacts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Contact Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contactId\": \"contact_123\",\n  \"name\": \"John Smith\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/contacts/update",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "contacts", "update"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message as Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"type\": \"text\",\n  \"message\": \"Hello from admin!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/send-message",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "send-message"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Template Message as Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"type\": \"template\",\n  \"templateName\": \"welcome_message\",\n  \"parameters\": [\"John\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/send-message",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "send-message"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bulk Messages as Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\n    \"+1234567890\",\n    \"+0987654321\"\n  ],\n  \"type\": \"text\",\n  \"message\": \"Bulk message from admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/send-bulk-messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "send-bulk-messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messages/conversation/conversation_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messages", "conversation", "conversation_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages by Coach",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messages/coach/coach_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messages", "coach", "coach_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messages by Lead",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messages/lead/lead_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messages", "lead", "lead_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get WhatsApp Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "analytics"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Config",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/admin/email/config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "admin", "email", "config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Setup Email Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"gmail\",\n  \"host\": \"smtp.gmail.com\",\n  \"port\": 587,\n  \"secure\": false,\n  \"auth\": {\n    \"user\": \"admin@example.com\",\n    \"pass\": \"app_password\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/admin/email/setup",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "admin", "email", "setup"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Email Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"test@example.com\",\n  \"subject\": \"Test Email\",\n  \"body\": \"This is a test email\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/admin/email/test-config",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "admin", "email", "test-config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/admin/email/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "admin", "email", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Test Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"test@example.com\",\n  \"subject\": \"Test Email from Admin\",\n  \"body\": \"This is a test email from the admin panel\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/admin/email/send-test",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "admin", "email", "send-test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Queue Stats (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/queue-stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "queue-stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "👥 Coach & Staff Endpoints",
+      "description": "Unified messaging endpoints for Coach and Staff users",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{coach_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Unified Inbox Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/inbox?page=1&limit=20&type=&within24Hours=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "inbox"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "type",
+                  "value": "",
+                  "description": "Filter by message type: whatsapp, email"
+                },
+                {
+                  "key": "contact",
+                  "value": "",
+                  "description": "Filter by contact name/phone/email"
+                },
+                {
+                  "key": "within24Hours",
+                  "value": "false",
+                  "description": "Filter contacts within 24-hour window"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unified Conversation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/inbox/conversation/contact_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "inbox", "conversation", "contact_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unified Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Unified Text Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello from coach!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Unified Template Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"template\",\n  \"templateName\": \"welcome_message\",\n  \"templateParameters\": [\"John\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Unified Media Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"media\",\n  \"mediaUrl\": \"https://example.com/image.jpg\",\n  \"mediaType\": \"image\",\n  \"caption\": \"Check out this image!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Unified Email Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"john@example.com\",\n  \"messageType\": \"email\",\n  \"subject\": \"Follow up\",\n  \"emailBody\": \"Hello John, thank you for your inquiry...\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Unified Bulk Messages",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\n    \"+1234567890\",\n    \"+0987654321\"\n  ],\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Bulk message from coach\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/send-bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "send-bulk"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Parameter Options",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/parameter-options",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "parameter-options"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get 24-Hour Contacts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messagingv1/unified/24hr-contacts?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messagingv1", "unified", "24hr-contacts"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔧 Legacy Messaging Endpoints",
+      "description": "Legacy messaging endpoints for backward compatibility",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{coach_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Send Message (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Hello from legacy endpoint!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bulk Messages (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\n    \"+1234567890\",\n    \"+0987654321\"\n  ],\n  \"message\": \"Bulk message from legacy endpoint\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/send-bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "send-bulk"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contacts (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "contacts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Contacts (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/contacts/search?q=John",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "contacts", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "John",
+                  "description": "Search query"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Templates (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Template (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/templates/template_123/preview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "templates", "template_123", "preview"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Parameters (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/templates/parameters",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "templates", "parameters"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Inbox Messages (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/inbox",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "inbox"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Conversation (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/inbox/conversation/contact_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "inbox", "conversation", "contact_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Inbox Message (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Hello from inbox!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/inbox/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "inbox", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Message as Read (Legacy)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/inbox/messages/msg_123/read",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "inbox", "messages", "msg_123", "read"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Messaging Stats (Legacy)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔧 Admin Legacy Messaging Endpoints",
+      "description": "Admin-only legacy messaging endpoints",
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{admin_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get All Contacts (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "contacts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search All Contacts (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/contacts/search?q=John",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "contacts", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "John",
+                  "description": "Search query"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message as Admin (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Hello from admin!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/send",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "send"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Bulk Messages as Admin (Legacy)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\n    \"+1234567890\",\n    \"+0987654321\"\n  ],\n  \"message\": \"Bulk message from admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/send-bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "send-bulk"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Templates (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Global Template (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"global_template\",\n  \"category\": \"UTILITY\",\n  \"language\": \"en_US\",\n  \"components\": [\n    {\n      \"type\": \"BODY\",\n      \"text\": \"Global template: {{1}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/templates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "templates"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Global Template (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"updated_global_template\",\n  \"category\": \"UTILITY\",\n  \"language\": \"en_US\",\n  \"components\": [\n    {\n      \"type\": \"BODY\",\n      \"text\": \"Updated global template: {{1}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/templates/template_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "templates", "template_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Global Template (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/templates/template_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "templates", "template_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Inbox Messages (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/inbox",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "inbox"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Conversation (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/inbox/conversation/contact_123",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "inbox", "conversation", "contact_123"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Messaging Stats (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Coach Messages (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/whatsapp/v1/messaging/admin/coaches/coach_123/messages",
+              "host": ["{{base_url}}"],
+              "path": ["api", "whatsapp", "v1", "messaging", "admin", "coaches", "coach_123", "messages"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set auth token based on folder",
+          "const folderName = pm.info.requestName;",
+          "if (folderName.includes('Admin')) {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + pm.collectionVariables.get('admin_token')",
+          "    });",
+          "} else if (folderName.includes('Coach') || folderName.includes('Staff')) {",
+          "    pm.request.headers.add({",
+          "        key: 'Authorization',",
+          "        value: 'Bearer ' + pm.collectionVariables.get('coach_token')",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ]
+}

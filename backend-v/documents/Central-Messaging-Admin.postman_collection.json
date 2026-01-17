@@ -1,0 +1,203 @@
+{
+  "info": {
+    "_postman_id": "7b5f9b8a-5f7f-4f62-9a2f-cc5f9e9a6b11",
+    "name": "Central Messaging - Admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Admin-only endpoints for Central Messaging v1. Includes Admin Login and Admin WhatsApp send."
+  },
+  "item": [
+    {
+      "name": "Auth (Admin)",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/admin/auth/login",
+              "host": ["{{host}}"],
+              "path": ["api", "admin", "auth", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "description": "Logs in as admin and returns a JWT token. Save the token to the adminToken variable."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Central Messaging (Admin)",
+      "item": [
+        {
+          "name": "Send WhatsApp (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "send"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"message\": \"Hello from Admin\"\n}"
+            },
+            "description": "Send a WhatsApp message as Admin via Central Messaging."
+          },
+          "response": []
+        },
+        {
+          "name": "Send WhatsApp Template (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "send"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"templateName\": \"onboarding_welcome\",\n  \"parameters\": [\"John Doe\", \"2025-10-30\"],\n  \"messageType\": \"whatsapp\",\n  \"type\": \"template\"\n}"
+            },
+            "description": "Send a WhatsApp template as Admin using an approved Meta template name and parameters."
+          },
+          "response": []
+        },
+        {
+          "name": "Get WhatsApp Config (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "config"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update WhatsApp Config (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "config"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test WhatsApp Config (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/test",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Health (Central Messaging)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/health",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Email Status (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/status",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Email Config (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/test",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "test"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testEmail\": \"admin@example.com\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Templates (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "host", "value": "http://localhost:5000" },
+    { "key": "adminToken", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZG1pbklkIjoiNjhlOGNhM2IxZWZiZDMyOWIxOWNkN2NkIiwicm9sZSI6InN1cGVyX2FkbWluIiwidHlwZSI6ImFkbWluIiwiaWF0IjoxNzYxODM2MDY4LCJleHAiOjE3NjI0NDA4Njh9.TrD27Bx6TGvQYv1fjA3a2yLzay_5nwq7ISTD4kvMfes" }
+  ]
+}
+
+

@@ -1,0 +1,1927 @@
+{
+  "info": {
+    "_postman_id": "central-messaging-admin-complete",
+    "name": "Central Messaging - Admin Only",
+    "description": "Complete admin-only endpoints for Central Messaging v1 API. All routes require admin authentication.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"your-password\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/admin/auth/login",
+              "host": ["{{host}}"],
+              "path": ["api", "admin", "auth", "login"]
+            },
+            "description": "Login as admin. Save the returned token to the adminToken variable."
+          }
+        },
+        {
+          "name": "Debug Auth",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/debug-auth",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "debug-auth"]
+            },
+            "description": "Debug admin authentication - verify token is working"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Configuration & Setup",
+      "item": [
+        {
+          "name": "Get WhatsApp Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "config"]
+            },
+            "description": "Get Central WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Setup WhatsApp Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\",\n  \"webhookUrl\": \"https://your-domain.com/api/central-messaging/v1/webhook\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/setup",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "setup"]
+            },
+            "description": "Setup Central WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Update WhatsApp Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "config"]
+            },
+            "description": "Update Central WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Test WhatsApp Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/test-config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "test-config"]
+            },
+            "description": "Test WhatsApp Configuration"
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/health",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "health"]
+            },
+            "description": "Health Check for Central WhatsApp"
+          }
+        },
+        {
+          "name": "Get Messaging Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "config"]
+            },
+            "description": "Get messaging configuration"
+          }
+        },
+        {
+          "name": "Update Messaging Config",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"defaultMessageType\": \"whatsapp\",\n  \"maxBulkRecipients\": 100\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "config"]
+            },
+            "description": "Update messaging configuration"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Message Sending (Admin)",
+      "item": [
+        {
+          "name": "Send Message (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Hello from Admin\",\n  \"type\": \"text\",\n  \"leadId\": \"optional_lead_id\",\n  \"coachId\": \"optional_coach_id\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "send"]
+            },
+            "description": "Send message as admin to any contact"
+          }
+        },
+        {
+          "name": "Send Template Message (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"templateId\": \"template_id_here\",\n  \"type\": \"template\",\n  \"templateParameters\": {\n    \"param1\": \"value1\",\n    \"param2\": \"value2\"\n  },\n  \"leadId\": \"optional_lead_id\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "send"]
+            },
+            "description": "Send template message as admin"
+          }
+        },
+        {
+          "name": "Send Media Message (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"type\": \"media\",\n  \"mediaUrl\": \"https://example.com/image.jpg\",\n  \"mediaType\": \"image\",\n  \"caption\": \"Optional caption text\",\n  \"leadId\": \"optional_lead_id\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "send"]
+            },
+            "description": "Send media message as admin"
+          }
+        },
+        {
+          "name": "Send Bulk Messages (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contacts\": [\"+1234567890\", \"+0987654321\"],\n  \"message\": \"Bulk message content\",\n  \"type\": \"text\",\n  \"delay\": 1000\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/send-bulk",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "send-bulk"]
+            },
+            "description": "Send bulk messages as admin"
+          }
+        },
+        {
+          "name": "Send Test Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Test message from admin\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/test-message",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "test-message"]
+            },
+            "description": "Send test message"
+          }
+        },
+        {
+          "name": "Send Message (Unified - WhatsApp)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello from Admin\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "send"]
+            },
+            "description": "Send WhatsApp message via unified endpoint"
+          }
+        },
+        {
+          "name": "Send Message (Unified - Email)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"user@example.com\",\n  \"messageType\": \"email\",\n  \"subject\": \"Email Subject\",\n  \"emailBody\": \"Email body content\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "send"]
+            },
+            "description": "Send email via unified endpoint"
+          }
+        },
+        {
+          "name": "Send Template Message (Unified)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"messageType\": \"whatsapp\",\n  \"type\": \"template\",\n  \"templateName\": \"welcome_message\",\n  \"templateParameters\": [\"John\"],\n  \"leadId\": \"lead_id_here\",\n  \"variables\": { \"custom.var\": \"value\" }\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "send"]
+            },
+            "description": "Send template message with variables"
+          }
+        },
+        {
+          "name": "Send Bulk Messages (Unified)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipients\": [\"+1234567890\", \"user@email.com\"],\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Bulk message content\",\n  \"leadIds\": [\"lead_id_1\", \"lead_id_2\"]\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/bulk",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "bulk"]
+            },
+            "description": "Send bulk messages via unified endpoint"
+          }
+        },
+        {
+          "name": "Broadcast Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"coachIds\": [\"coach_id_1\", \"coach_id_2\"],\n  \"message\": \"Broadcast message to coaches\",\n  \"type\": \"text\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/broadcast",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "broadcast"]
+            },
+            "description": "Send broadcast message to multiple coaches"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages & Conversations",
+      "item": [
+        {
+          "name": "Get All Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/messages?page=1&limit=20",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "messages"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false }
+              ]
+            },
+            "description": "Get All WhatsApp Messages"
+          }
+        },
+        {
+          "name": "Get Messages by Coach",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/messages/coach/:coachId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "messages", "coach", ":coachId"],
+              "variable": [
+                { "key": "coachId", "value": "" }
+              ]
+            },
+            "description": "Get Messages by Coach"
+          }
+        },
+        {
+          "name": "Get Messages by Lead",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/messages/lead/:leadId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "messages", "lead", ":leadId"],
+              "variable": [
+                { "key": "leadId", "value": "" }
+              ]
+            },
+            "description": "Get Messages by Lead"
+          }
+        },
+        {
+          "name": "Get Conversation Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/messages/conversation/:conversationId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "messages", "conversation", ":conversationId"],
+              "variable": [
+                { "key": "conversationId", "value": "" }
+              ]
+            },
+            "description": "Get Conversation Messages"
+          }
+        },
+        {
+          "name": "Get All Messages (Unified)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/messages?page=1&limit=20",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "messages"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false }
+              ]
+            },
+            "description": "Get all messages across coaches"
+          }
+        },
+        {
+          "name": "Get Coach Messages (Unified)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/coaches/:coachId/messages",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "coaches", ":coachId", "messages"],
+              "variable": [
+                { "key": "coachId", "value": "" }
+              ]
+            },
+            "description": "Get messages for specific coach"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Inbox Management",
+      "item": [
+        {
+          "name": "Get Inbox Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox?page=1&limit=20",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false },
+                { "key": "contact", "value": "", "disabled": true },
+                { "key": "type", "value": "", "disabled": true },
+                { "key": "within24Hours", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Get unified inbox (role-based access)"
+          }
+        },
+        {
+          "name": "Get All Inbox Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/inbox?page=1&limit=20",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "inbox"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false }
+              ]
+            },
+            "description": "Get all inbox messages across coaches"
+          }
+        },
+        {
+          "name": "Get Conversation (Inbox)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox/conversation/:conversationId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox", "conversation", ":conversationId"],
+              "variable": [
+                { "key": "conversationId", "value": "" }
+              ]
+            },
+            "description": "Get conversation messages"
+          }
+        },
+        {
+          "name": "Get Admin Conversation",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/inbox/conversation/:contactId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "inbox", "conversation", ":contactId"],
+              "variable": [
+                { "key": "contactId", "value": "" }
+              ]
+            },
+            "description": "Get conversation with specific contact (admin view)"
+          }
+        },
+        {
+          "name": "Send Message from Inbox",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Reply from inbox\",\n  \"conversationId\": \"conversation_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox/send",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox", "send"]
+            },
+            "description": "Send message from inbox"
+          }
+        },
+        {
+          "name": "Mark Message as Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox/messages/:messageId/read",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox", "messages", ":messageId", "read"],
+              "variable": [
+                { "key": "messageId", "value": "" }
+              ]
+            },
+            "description": "Mark message as read"
+          }
+        },
+        {
+          "name": "Assign Message",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"assignedTo\": \"user_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox/messages/:messageId/assign",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox", "messages", ":messageId", "assign"],
+              "variable": [
+                { "key": "messageId", "value": "" }
+              ]
+            },
+            "description": "Assign message to user"
+          }
+        },
+        {
+          "name": "Archive Message",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox/messages/:messageId/archive",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox", "messages", ":messageId", "archive"],
+              "variable": [
+                { "key": "messageId", "value": "" }
+              ]
+            },
+            "description": "Archive message"
+          }
+        },
+        {
+          "name": "Get Inbox Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/inbox/stats",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "inbox", "stats"]
+            },
+            "description": "Get inbox statistics"
+          }
+        },
+        {
+          "name": "Get Conversation (Unified)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/conversation/:contactId?page=1&limit=50",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "conversation", ":contactId"],
+              "variable": [
+                { "key": "contactId", "value": "" }
+              ],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "50", "disabled": false }
+              ]
+            },
+            "description": "Get conversation with contact (returns WhatsApp + Email)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Get All Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/contacts?page=1&limit=20",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "contacts"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false }
+              ]
+            },
+            "description": "Get Contacts (Admin view)"
+          }
+        },
+        {
+          "name": "Get All Contacts (Unified)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/contacts?page=1&limit=20",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "contacts"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false }
+              ]
+            },
+            "description": "Get all contacts across all coaches"
+          }
+        },
+        {
+          "name": "Search All Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/contacts/search?q=search_term",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "contacts", "search"],
+              "query": [
+                { "key": "q", "value": "search_term", "disabled": false }
+              ]
+            },
+            "description": "Search all contacts by name, phone, or email"
+          }
+        },
+        {
+          "name": "Update Contact Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone\": \"+1234567890\",\n  \"name\": \"Updated Contact Name\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/contacts/update",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "contacts", "update"]
+            },
+            "description": "Update Contact Name"
+          }
+        },
+        {
+          "name": "Get Contacts (With 24hr Window)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/contacts?page=1&limit=20&within24Hours=false",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "contacts"],
+              "query": [
+                { "key": "page", "value": "1", "disabled": false },
+                { "key": "limit", "value": "20", "disabled": false },
+                { "key": "within24Hours", "value": "false", "disabled": false }
+              ]
+            },
+            "description": "Get all contacts with 24hr window info"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Templates",
+      "item": [
+        {
+          "name": "Get All Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates"]
+            },
+            "description": "Get All Templates"
+          }
+        },
+        {
+          "name": "Create WhatsApp Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"template_name\",\n  \"category\": \"MARKETING\",\n  \"components\": [\n    {\n      \"type\": \"BODY\",\n      \"text\": \"Hello {{1}}\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates"]
+            },
+            "description": "Create WhatsApp Template"
+          }
+        },
+        {
+          "name": "Sync Templates from Meta",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates/sync",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates", "sync"]
+            },
+            "description": "Sync Templates from Meta"
+          }
+        },
+        {
+          "name": "Create Template (With Variables)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"appointment_reminder\",\n  \"description\": \"Reminder for upcoming appointment\",\n  \"type\": \"whatsapp\",\n  \"category\": \"reminder\",\n  \"content\": {\n    \"body\": \"Hi {{lead.name}}, your appointment with {{appointment.coachName}} is on {{appointment.dateTime}}\"\n  },\n  \"selectedVariables\": [\"lead.name\", \"appointment.date\", \"appointment.coachName\"],\n  \"isMetaTemplate\": false\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates/create",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates", "create"]
+            },
+            "description": "Create template (Admin or Coach) with variable selection"
+          }
+        },
+        {
+          "name": "Preview Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"template_id_here\",\n  \"variables\": {\n    \"lead.name\": \"John Doe\",\n    \"appointment.dateTime\": \"2025-01-15 10:00 AM\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates/preview",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates", "preview"]
+            },
+            "description": "Preview template with actual data"
+          }
+        },
+        {
+          "name": "Distribute Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateId\": \"template_id_here\",\n  \"subscriptionIds\": [\"sub_id_1\", \"sub_id_2\"]\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates/distribute",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates", "distribute"]
+            },
+            "description": "Distribute template to specific subscriptions"
+          }
+        },
+        {
+          "name": "Get All Templates (Unified)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/templates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "templates"]
+            },
+            "description": "Get all templates across all coaches"
+          }
+        },
+        {
+          "name": "Create Global Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"global_template\",\n  \"content\": \"Template content\",\n  \"type\": \"whatsapp\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/templates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "templates"]
+            },
+            "description": "Create global template"
+          }
+        },
+        {
+          "name": "Update Global Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"updated_template\",\n  \"content\": \"Updated content\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/templates/:templateId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "templates", ":templateId"],
+              "variable": [
+                { "key": "templateId", "value": "" }
+              ]
+            },
+            "description": "Update global template"
+          }
+        },
+        {
+          "name": "Delete Global Template",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/templates/:templateId",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "templates", ":templateId"],
+              "variable": [
+                { "key": "templateId", "value": "" }
+              ]
+            },
+            "description": "Delete global template"
+          }
+        },
+        {
+          "name": "Get Meta Templates",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/templates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "templates"]
+            },
+            "description": "Get Meta templates"
+          }
+        },
+        {
+          "name": "Sync Meta Templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/templates/sync",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "templates", "sync"]
+            },
+            "description": "Sync templates from Meta"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics & Stats",
+      "item": [
+        {
+          "name": "Get WhatsApp Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/analytics",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "analytics"]
+            },
+            "description": "Get WhatsApp Analytics"
+          }
+        },
+        {
+          "name": "Get System Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/stats",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "stats"]
+            },
+            "description": "Get system-wide messaging statistics"
+          }
+        },
+        {
+          "name": "Get Messaging Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/analytics?startDate=2025-01-01&endDate=2025-01-31",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "analytics"],
+              "query": [
+                { "key": "startDate", "value": "2025-01-01", "disabled": false },
+                { "key": "endDate", "value": "2025-01-31", "disabled": false }
+              ]
+            },
+            "description": "Get messaging analytics with date filters"
+          }
+        },
+        {
+          "name": "Get System Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/overview",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "overview"]
+            },
+            "description": "Get unified messaging system overview"
+          }
+        },
+        {
+          "name": "Get Settings Overview",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/settings-overview",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "settings-overview"]
+            },
+            "description": "Get Complete Admin Settings Overview"
+          }
+        },
+        {
+          "name": "Get Admin Settings Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/analytics",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", "analytics"]
+            },
+            "description": "Get admin WhatsApp analytics"
+          }
+        },
+        {
+          "name": "Get Settings Usage Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/usage-stats",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", "usage-stats"]
+            },
+            "description": "Get settings usage statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credits & Settings",
+      "item": [
+        {
+          "name": "Get Credit Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/credit-settings",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "credit-settings"]
+            },
+            "description": "Get Credit Rates and Settings"
+          }
+        },
+        {
+          "name": "Update Credit Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"textMessageCredits\": 1,\n  \"mediaMessageCredits\": 2,\n  \"templateMessageCredits\": 1,\n  \"emailCredits\": 0.5\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/credit-settings",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "credit-settings"]
+            },
+            "description": "Update Credit Rates and Settings"
+          }
+        },
+        {
+          "name": "Get System Credit Rates",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/credit-rates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "credit-rates"]
+            },
+            "description": "Get system credit rates"
+          }
+        },
+        {
+          "name": "Update Credit Rates",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"textMessageCredits\": 1,\n  \"mediaMessageCredits\": 2,\n  \"templateMessageCredits\": 1\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/credit-rates",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "credit-rates"]
+            },
+            "description": "Update credit rates for messaging"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin WhatsApp Settings",
+      "item": [
+        {
+          "name": "Get All Admin Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings"]
+            },
+            "description": "Get all admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Get Admin Settings by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Get specific admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Get Default Admin Settings",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/default",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", "default"]
+            },
+            "description": "Get default admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Create Admin Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Production Settings\",\n  \"aiEnabled\": true,\n  \"aiModel\": \"gpt-4\",\n  \"autoReply\": true,\n  \"businessHours\": {\n    \"enabled\": true,\n    \"start\": \"09:00\",\n    \"end\": \"17:00\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings"]
+            },
+            "description": "Create new admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Update Admin Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Settings\",\n  \"aiEnabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Update admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Set Admin Settings as Default",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id/set-default",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id", "set-default"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Set admin settings as default"
+          }
+        },
+        {
+          "name": "Delete Admin Settings",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Delete admin WhatsApp settings"
+          }
+        },
+        {
+          "name": "Test Admin AI Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testMessage\": \"Hello, how can I help?\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id/test-ai",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id", "test-ai"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Test admin AI settings"
+          }
+        },
+        {
+          "name": "Clone Admin Settings",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cloned Settings\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id/clone",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id", "clone"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Clone admin settings"
+          }
+        },
+        {
+          "name": "Apply Settings to Coaches",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/settings/:id/apply-to-coaches",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "settings", ":id", "apply-to-coaches"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Apply settings to all coaches"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Configuration",
+      "item": [
+        {
+          "name": "Get Email Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "config"]
+            },
+            "description": "Get central email configuration"
+          }
+        },
+        {
+          "name": "Setup Email Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"service\": \"gmail\",\n  \"email\": \"noreply@example.com\",\n  \"password\": \"app_password\",\n  \"smtpHost\": \"smtp.gmail.com\",\n  \"smtpPort\": 587\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/setup",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "setup"]
+            },
+            "description": "Setup central email configuration"
+          }
+        },
+        {
+          "name": "Test Email Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"testEmail\": \"admin@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/test-config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "test-config"]
+            },
+            "description": "Test central email configuration"
+          }
+        },
+        {
+          "name": "Get Email Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/status",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "status"]
+            },
+            "description": "Get central email status"
+          }
+        },
+        {
+          "name": "Send Test Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"test@example.com\",\n  \"subject\": \"Test Email\",\n  \"body\": \"This is a test email\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/send-test",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "send-test"]
+            },
+            "description": "Send test email via central email system"
+          }
+        },
+        {
+          "name": "Test Email (Unified)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"test@example.com\",\n  \"subject\": \"Test\",\n  \"body\": \"Test email\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/email/test",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "email", "test"]
+            },
+            "description": "Send test email"
+          }
+        }
+      ]
+    },
+    {
+      "name": "WhatsApp Configuration",
+      "item": [
+        {
+          "name": "Get WhatsApp Config",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/config",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "config"]
+            },
+            "description": "Get WhatsApp configuration"
+          }
+        },
+        {
+          "name": "Setup WhatsApp Config",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"businessAccountId\": \"123456789\",\n  \"phoneNumberId\": \"987654321\",\n  \"accessToken\": \"EAAB...\",\n  \"webhookVerifyToken\": \"verify_token\",\n  \"webhookUrl\": \"https://your-domain.com/api/central-messaging/v1/webhook\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/setup",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "setup"]
+            },
+            "description": "Setup WhatsApp configuration"
+          }
+        },
+        {
+          "name": "Test WhatsApp",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to\": \"+1234567890\",\n  \"message\": \"Test WhatsApp message\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/whatsapp/test",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "whatsapp", "test"]
+            },
+            "description": "Send test WhatsApp message"
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Knowledge Base",
+      "item": [
+        {
+          "name": "Create AI Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Company Knowledge Base\",\n  \"description\": \"Knowledge base for customer support\",\n  \"content\": \"Your knowledge base content here...\",\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge"]
+            },
+            "description": "Create AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Get All AI Knowledge Bases",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge"]
+            },
+            "description": "Get all AI Knowledge Bases"
+          }
+        },
+        {
+          "name": "Get AI Knowledge Base by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge", ":id"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Get single AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Update AI Knowledge Base",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Knowledge Base\",\n  \"description\": \"Updated description\",\n  \"content\": \"Updated content\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge", ":id"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Update AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Delete AI Knowledge Base",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge/:id",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge", ":id"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Delete AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Set Default AI Knowledge Base",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge/:id/set-default",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge", ":id", "set-default"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Set default AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Test AI Knowledge Base",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What is your refund policy?\"\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge/:id/test",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge", ":id", "test"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Test AI Knowledge Base"
+          }
+        },
+        {
+          "name": "Get AI Knowledge Base Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/ai-knowledge/:id/stats",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "ai-knowledge", ":id", "stats"],
+              "variable": [
+                { "key": "id", "value": "" }
+              ]
+            },
+            "description": "Get AI Knowledge Base statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Handle Webhook (Meta)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"WAB_ID\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"1234567890\",\n              \"phone_number_id\": \"PHONE_NUMBER_ID\"\n            },\n            \"messages\": [\n              {\n                \"from\": \"1234567890\",\n                \"id\": \"wamid.ID\",\n                \"timestamp\": \"1234567890\",\n                \"text\": {\n                  \"body\": \"Hello\"\n                },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/webhook",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "webhook"]
+            },
+            "description": "Handle WhatsApp webhook from Meta (Public endpoint)"
+          }
+        },
+        {
+          "name": "Get Webhook Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/webhook/status",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "webhook", "status"]
+            },
+            "description": "Get webhook status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Devices & System",
+      "item": [
+        {
+          "name": "Get All Devices",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/devices",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "devices"]
+            },
+            "description": "Get all WhatsApp devices across coaches"
+          }
+        },
+        {
+          "name": "Get Queue Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/admin/queue-stats",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "admin", "queue-stats"]
+            },
+            "description": "Get RabbitMQ queue statistics"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Template Variables & Preview",
+      "item": [
+        {
+          "name": "Get Template Variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/variables",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "variables"]
+            },
+            "description": "Get available template variables"
+          }
+        },
+        {
+          "name": "Preview Template with Variables",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"template\": \"Hello {{lead.name}}, your appointment is on {{appointment.date}}\",\n  \"variables\": {\n    \"lead.name\": \"John Doe\",\n    \"appointment.date\": \"2025-01-15\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/variables/preview",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "variables", "preview"]
+            },
+            "description": "Preview template with variables"
+          }
+        },
+        {
+          "name": "Get Available Variables (UI Format)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/templates/variables",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "templates", "variables"]
+            },
+            "description": "Get available variables for template creation (with selectable UI format)"
+          }
+        },
+        {
+          "name": "Preview Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messageType\": \"whatsapp\",\n  \"type\": \"text\",\n  \"message\": \"Hello {{lead.name}}\",\n  \"leadId\": \"lead_id_here\",\n  \"variables\": { \"custom.var\": \"value\" }\n}"
+            },
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/preview",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "preview"]
+            },
+            "description": "Preview message before sending"
+          }
+        },
+        {
+          "name": "Get Parameter Options",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/parameter-options",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "parameter-options"]
+            },
+            "description": "Get available parameters for template assignment"
+          }
+        }
+      ]
+    },
+    {
+      "name": "24hr Window & Advanced",
+      "item": [
+        {
+          "name": "Get 24hr Window Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": {
+              "raw": "{{host}}/api/central-messaging/v1/24hr-window",
+              "host": ["{{host}}"],
+              "path": ["api", "central-messaging", "v1", "24hr-window"]
+            },
+            "description": "Get contacts within Meta 24-hour window"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "host",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    }
+  ]
+}
+
