@@ -40,7 +40,7 @@
     "razorpay": "^2.9.6",
     "react-chartjs-2": "^5.3.1",
     "sentiment": "^5.0.2",
-    "sharp": "^0.33.0",
+    "sharp": "^0.32.6",
     "socket.io": "^4.8.1",
     "twilio": "^5.7.2",
     "uuid": "^11.1.0",
