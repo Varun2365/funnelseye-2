@@ -42,7 +42,8 @@ import {
   Cog,
   Monitor,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -69,13 +70,12 @@ const AdminLayout = () => {
   }, [location.search, location.pathname]);
 
   const navigationGroups = [
-    // Group 1: Dashboard, User Management, Hierarchy
+    // Group 1: Dashboard, User Management
     {
       title: 'Core Management',
       items: [
         { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
         { name: 'User Management', href: '/users', icon: Users },
-        { name: 'Hierarchy Requests', href: '/hierarchy-requests', icon: UserCheck },
       ]
     },
     // Group 2: Financial & MLM, Subscription Plans, Central Messaging
@@ -87,11 +87,12 @@ const AdminLayout = () => {
         { name: 'Central Messaging', href: '/messaging', icon: MessageCircle },
       ]
     },
-    // Group 3: Ads Campaigns, Automation Rules, Course Creation, Funnels, Uploads
+    // Group 3: Ads Campaigns, Automation Rules, Course Creation, Funnels, Uploads, AI Features
     {
-      title: 'Content Management',
+      title: 'Platform Features',
       items: [
         { name: 'Ads Campaigns', href: '/ads-campaigns', icon: TrendingUp },
+        { name: 'AI Features', href: '/ai-features', icon: Brain },
         { name: 'Automation Rules', href: '/automation-rules', icon: Zap },
         {
           name: 'Course Creation',
@@ -358,32 +359,6 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="flex-1 lg:ml-64">
-        {/* Top bar */}
-        <header className="bg-card border-b h-16 flex items-center justify-between px-6 sticky top-0 z-10">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-muted-foreground">
-              Welcome back, {admin?.firstName}
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </header>
-
         {/* Page content */}
         <main className="p-6">
           <Outlet />

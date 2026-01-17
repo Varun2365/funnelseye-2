@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { 
+import {
   Settings,
   CreditCard,
   TrendingUp,
@@ -23,6 +23,7 @@ import {
   Download,
   Upload,
   Eye,
+  EyeOff,
   Edit,
   Save,
   X,
@@ -42,7 +43,14 @@ import {
   AlertTriangle,
   UserCheck,
   Target,
-  BarChart
+  BarChart,
+  BarChartHorizontal,
+  PieChartIcon,
+  LineChart,
+  IndianRupee,
+  Percent,
+  Timer,
+  Globe
 } from 'lucide-react';
 import adminApiService from '../services/adminApiService';
 import { useToast } from '../contexts/ToastContext';
@@ -55,7 +63,7 @@ import PerformanceTrackingTab from './downline/PerformanceTrackingTab';
 
 const FinancialMlmManagement = () => {
   const { showToast } = useToast();
-  
+
   // State for financial settings
   const [financialSettings, setFinancialSettings] = useState({
     razorpayApiKey: '',
@@ -107,9 +115,13 @@ const FinancialMlmManagement = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [processingPayout, setProcessingPayout] = useState(false);
+  const [refreshingBalance, setRefreshingBalance] = useState(false);
+  const [balanceLoading, setBalanceLoading] = useState(true);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [showApiSecret, setShowApiSecret] = useState(false);
 
   // Active tab state
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Load financial data
   const loadFinancialData = async () => {
@@ -146,6 +158,19 @@ const FinancialMlmManagement = () => {
   useEffect(() => {
     loadFinancialData();
   }, []);
+
+  // Auto-refresh balance after 1 second delay
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(async () => {
+        if (!refreshingBalance) {
+          await handleRefreshBalance();
+        }
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   // Save financial settings
   const handleSaveSettings = async () => {
@@ -243,11 +268,15 @@ const FinancialMlmManagement = () => {
 
   // Refresh Razorpay balance
   const handleRefreshBalance = async () => {
+    if (refreshingBalance) return; // Prevent multiple simultaneous calls
+
     try {
+      setRefreshingBalance(true);
+      setBalanceLoading(true);
       const response = await adminApiService.refreshRazorpayBalance();
       if (response.success) {
-        setRevenueStats(prev => ({ 
-          ...prev, 
+        setRevenueStats(prev => ({
+          ...prev,
           razorpayBalance: response.data.balance,
           accountName: response.data.accountName || '',
           accountId: response.data.accountId || '',
@@ -255,6 +284,7 @@ const FinancialMlmManagement = () => {
           availableAmount: response.data.availableAmount || 0,
           refreshedAt: response.data.refreshedAt || null
         }));
+        setBalanceLoading(false);
         showToast('Razorpay balance refreshed', 'success');
       } else {
         if (response.message?.includes('not configured')) {
@@ -270,585 +300,685 @@ const FinancialMlmManagement = () => {
       } else {
         showToast('Error refreshing balance', 'error');
       }
+    } finally {
+      setRefreshingBalance(false);
+      setBalanceLoading(false);
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-blue-600 border-t-transparent"></div>
+          <p className="text-sm text-gray-600">Loading financial data...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50/30">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Financial & MLM Management</h1>
-          <p className="text-muted-foreground">Comprehensive financial and MLM system administration</p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowSettingsDialog(true)}
-            className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Settings
-          </Button>
-          <Button 
-            onClick={() => setShowPayoutAllDialog(true)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            <Zap className="w-4 h-4 mr-2" />
-            Payout All
-          </Button>
-        </div>
-      </div>
-
-      {/* Revenue Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              ₹{revenueStats.totalRevenue?.toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All-time earnings
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Razorpay Balance</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              ₹{revenueStats.razorpayBalance?.toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {revenueStats.accountName ? `${revenueStats.accountName}` : 'RazorpayX Balance'}
-            </p>
-            {revenueStats.accountType && (
-              <p className="text-xs text-muted-foreground">
-                Type: {revenueStats.accountType}
-              </p>
-            )}
-            {revenueStats.availableAmount !== undefined && revenueStats.availableAmount !== revenueStats.razorpayBalance && (
-              <p className="text-xs text-muted-foreground">
-                Available: ₹{revenueStats.availableAmount?.toLocaleString() || 0}
-              </p>
-            )}
-            <div className="flex items-center space-x-2 mt-2">
-              <Button 
-                size="sm" 
-                variant={isRazorpayConfigured() ? "outline" : "secondary"}
-                onClick={handleRefreshBalance}
-                className="h-6 px-2 text-xs"
-                title={isRazorpayConfigured() ? "Refresh Razorpay balance" : "Configure Razorpay credentials first"}
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                {isRazorpayConfigured() ? "Refresh" : "Configure"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Payouts</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              ₹{revenueStats.pendingPayouts?.toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting processing
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Platform Earnings</CardTitle>
-            <Banknote className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              ₹{revenueStats.platformEarnings?.toLocaleString() || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Fee: {financialSettings?.platformFee || 0}%
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Content */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground w-auto">
-          <TabsTrigger value="overview">Financial Overview</TabsTrigger>
-          <TabsTrigger value="coaches">Coach Payouts</TabsTrigger>
-          <TabsTrigger value="payouts">Payout Settings</TabsTrigger>
-          <TabsTrigger value="history">Transaction History</TabsTrigger>
-          <TabsTrigger value="mlm-admin">MLM Administration</TabsTrigger>
-          <TabsTrigger value="hierarchy">Hierarchy Management</TabsTrigger>
-          <TabsTrigger value="commission">Commission Settings</TabsTrigger>
-          <TabsTrigger value="performance">Performance Tracking</TabsTrigger>
-        </TabsList>
-
-        {/* Financial Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Revenue Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Statistics</CardTitle>
-                <CardDescription>Platform revenue breakdown</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      ₹{revenueStats.monthlyRevenue?.toLocaleString() || 0}
-                    </div>
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      ₹{revenueStats.weeklyRevenue?.toLocaleString() || 0}
-                    </div>
-                    <p className="text-sm text-muted-foreground">This Week</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      ₹{revenueStats.dailyRevenue?.toLocaleString() || 0}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Today</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">
-                      ₹{revenueStats.coachEarnings?.toLocaleString() || 0}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Coach Earnings</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Financial Settings Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Financial Settings</CardTitle>
-                <CardDescription>Current platform configuration</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Platform Fee</span>
-                    <span className="text-sm font-bold">{financialSettings?.platformFee || 0}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">MLM Commission</span>
-                    <span className="text-sm font-bold">{financialSettings?.mlmCommission || 0}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Tax Rate</span>
-                    <span className="text-sm font-bold">{financialSettings?.taxRate || 0}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Payout Frequency</span>
-                    <span className="text-sm font-bold capitalize">{financialSettings?.payoutFrequency || 'weekly'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm font-medium">Min Payout Amount</span>
-                    <span className="text-sm font-bold">₹{financialSettings?.minimumPayoutAmount || 100}</span>
-                  </div>
-                </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowSettingsDialog(true)}
-                  className="w-full"
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Settings
-                </Button>
-              </CardContent>
-            </Card>
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Financial & MLM</h1>
+            <p className="text-sm text-gray-600 mt-1">Comprehensive financial management system</p>
           </div>
-        </TabsContent>
+        </div>
+      </div>
 
-        {/* Coach Payouts Tab */}
-        <TabsContent value="coaches" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Coaches for Payout</CardTitle>
-              <CardDescription>Select coaches and process individual payouts</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Search className="h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="Search coaches..." className="w-64" />
+      {/* Main Layout */}
+      <div className="flex">
+        {/* Vertical Sidebar Tabs */}
+        <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
+          <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
+            <TabsList className="flex flex-col h-auto w-full bg-transparent p-6 space-y-1">
+              <TabsTrigger
+                value="dashboard"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <BarChart3 className="w-4 h-4 mr-3" />
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger
+                value="payouts"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <CreditCard className="w-4 h-4 mr-3" />
+                Payouts
+              </TabsTrigger>
+              <TabsTrigger
+                value="transactions"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <Receipt className="w-4 h-4 mr-3" />
+                Transactions
+              </TabsTrigger>
+              <TabsTrigger
+                value="mlm-admin"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <Users className="w-4 h-4 mr-3" />
+                MLM Admin
+              </TabsTrigger>
+              <TabsTrigger
+                value="hierarchy"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <Layers className="w-4 h-4 mr-3" />
+                Hierarchy
+              </TabsTrigger>
+              <TabsTrigger
+                value="commission"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <Percent className="w-4 h-4 mr-3" />
+                Commission
+              </TabsTrigger>
+              <TabsTrigger
+                value="performance"
+                className="w-full justify-start px-3 py-2 text-left border-0 bg-transparent hover:bg-gray-100 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 data-[state=active]:border-r-2 data-[state=active]:border-r-blue-600 rounded-none"
+              >
+                <Activity className="w-4 h-4 mr-3" />
+                Performance
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 p-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            {/* Dashboard Tab */}
+            <TabsContent value="dashboard" className="space-y-6 mt-0">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="flex items-center gap-4">
+                  <div className="bg-yellow-100 p-3 rounded-lg">
+                    <IndianRupee className="w-6 h-6 text-yellow-600" />
                   </div>
-                  <div className="flex space-x-2">
-                    <Button 
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold text-yellow-800">
+                      ₹{revenueStats.totalRevenue?.toLocaleString() || 0}
+                    </p>
+                    <p className="text-sm text-yellow-700">Total Revenue</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <TrendingUp className="w-3 h-3 text-green-500" />
+                      <span className="text-xs text-green-500">+12.5% from last month</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-blue-800">Available Balance</h3>
+                  <button
+                    onClick={handleRefreshBalance}
+                    disabled={refreshingBalance}
+                    className="flex items-center gap-2 px-3 py-1.5 text-xs bg-white border border-blue-200 rounded-lg hover:bg-blue-25 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <RefreshCw className={`w-3 h-3 text-blue-600 ${refreshingBalance ? 'animate-spin' : ''}`} />
+                    <span className="text-blue-600 font-medium">
+                      {refreshingBalance ? 'Refreshing...' : 'Refresh'}
+                    </span>
+                  </button>
+                </div>
+                {balanceLoading ? (
+                  <div className="flex items-center gap-4">
+                    <div className="bg-gray-200 p-3 rounded-lg animate-pulse">
+                      <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-8 bg-gray-300 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-300 rounded animate-pulse w-24"></div>
+                      <div className="h-3 bg-gray-300 rounded animate-pulse w-32"></div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <div className="bg-blue-100 p-3 rounded-lg">
+                      <Wallet className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-2xl font-bold text-blue-800">
+                        ₹{revenueStats.razorpayBalance?.toLocaleString() || 0}
+                      </p>
+                      <p className="text-sm text-blue-700">Current Balance</p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {revenueStats.accountName || 'RazorpayX'}
+                    </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="flex items-center gap-4">
+                  <div className="bg-orange-100 p-3 rounded-lg">
+                    <Clock className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold text-orange-800">
+                      ₹{revenueStats.pendingPayouts?.toLocaleString() || 0}
+                    </p>
+                    <p className="text-sm text-orange-700">Pending Payouts</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3 h-3 text-orange-500" />
+                      <span className="text-xs text-orange-500">Processing</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-6 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+                <div className="flex items-center gap-4">
+                  <div className="bg-purple-100 p-3 rounded-lg">
+                    <Banknote className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-2xl font-bold text-purple-800">
+                      ₹{revenueStats.platformEarnings?.toLocaleString() || 0}
+                    </p>
+                    <p className="text-sm text-purple-700">Platform Earnings</p>
+                    <p className="text-xs text-purple-600 mt-1">
+                      {financialSettings?.platformFee || 0}% platform fee
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-sm transition-shadow duration-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setShowSettingsDialog(true)}
+                  className="group flex flex-col items-center justify-center p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-200"
+                >
+                  <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors duration-200 mb-2">
+                    <Settings className="w-5 h-5 text-gray-600" />
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">Settings</span>
+                </button>
+
+                <button
+                  onClick={() => setShowPayoutAllDialog(true)}
+                  className="group flex flex-col items-center justify-center p-4 rounded-lg bg-blue-600 hover:bg-blue-700 transition-all duration-200"
+                >
+                  <div className="p-2 bg-blue-500 rounded-lg group-hover:bg-blue-600 transition-colors duration-200 mb-2">
+                    <Zap className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-sm font-medium text-white">Payout All</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Analytics Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <BarChart3 className="w-5 h-5 mr-2" />
+                    Revenue Breakdown
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-2xl font-bold text-blue-600">
+                        ₹{revenueStats.monthlyRevenue?.toLocaleString() || 0}
+                      </p>
+                      <p className="text-sm text-blue-700 mt-1">This Month</p>
+                    </div>
+                    <div className="text-center p-4 bg-green-50 rounded-lg">
+                      <p className="text-2xl font-bold text-green-600">
+                        ₹{revenueStats.weeklyRevenue?.toLocaleString() || 0}
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">This Week</p>
+                    </div>
+                    <div className="text-center p-4 bg-purple-50 rounded-lg">
+                      <p className="text-2xl font-bold text-purple-600">
+                        ₹{revenueStats.dailyRevenue?.toLocaleString() || 0}
+                      </p>
+                      <p className="text-sm text-purple-700 mt-1">Today</p>
+                    </div>
+                    <div className="text-center p-4 bg-orange-50 rounded-lg">
+                      <p className="text-2xl font-bold text-orange-600">
+                        ₹{revenueStats.coachEarnings?.toLocaleString() || 0}
+                      </p>
+                      <p className="text-sm text-orange-700 mt-1">Coach Earnings</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    System Configuration
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">Platform Fee</span>
+                    <span className="text-sm font-semibold text-gray-900">{financialSettings?.platformFee || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">MLM Commission</span>
+                    <span className="text-sm font-semibold text-gray-900">{financialSettings?.mlmCommission || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">Tax Rate</span>
+                    <span className="text-sm font-semibold text-gray-900">{financialSettings?.taxRate || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">Payout Frequency</span>
+                    <span className="text-sm font-semibold text-gray-900 capitalize">{financialSettings?.payoutFrequency || 'weekly'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm font-medium text-gray-600">Min Payout</span>
+                    <span className="text-sm font-semibold text-gray-900">₹{financialSettings?.minimumPayoutAmount || 100}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            </TabsContent>
+
+
+            {/* Payouts Tab */}
+            <TabsContent value="payouts" className="space-y-6 mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Coaches List */}
+              <div className="lg:col-span-2">
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                      <Users className="w-5 h-5 mr-2" />
+                      Coach Payouts
+                    </CardTitle>
+                    <CardDescription>Select coaches to process payouts</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {coaches.map((coach) => (
+                        <div
+                          key={coach._id}
+                          className={`p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                            selectedCoach?._id === coach._id
+                              ? 'border-blue-300 bg-blue-50 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                          }`}
+                          onClick={() => {
+                            setSelectedCoach(coach);
+                            setPayoutAmount(coach.pendingAmount || 0);
+                          }}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Users className="w-5 h-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-gray-900">{coach.name}</p>
+                                <p className="text-sm text-gray-500">{coach.email}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-green-600">
+                                ₹{coach.pendingAmount?.toLocaleString() || 0}
+                              </p>
+                              <p className="text-sm text-gray-500">Available</p>
+                            </div>
+                          </div>
+                          {!coach.razorpayDetails?.isActive && (
+                            <div className="mt-2 text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                              Razorpay setup required
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Payout Actions */}
+              <div>
+                <Card className="border-0 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Button
                       onClick={() => setShowPayoutDialog(true)}
                       disabled={!selectedCoach}
+                      className="w-full"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
                       Process Payout
                     </Button>
+
                     {selectedCoach && !selectedCoach.razorpayDetails?.isActive && (
-                      <Button 
+                      <Button
                         variant="outline"
                         onClick={handleSetupRazorpayCoach}
                         disabled={processingPayout}
+                        className="w-full"
                       >
                         <Settings className="w-4 h-4 mr-2" />
                         Setup Razorpay
                       </Button>
                     )}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  {coaches.map((coach) => (
-                    <div 
-                      key={coach._id}
-                      className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedCoach?._id === coach._id ? 'border-blue-500 bg-blue-50' : 'hover:bg-gray-50'
-                      }`}
-                      onClick={() => {
-                        setSelectedCoach(coach);
-                        setPayoutAmount(coach.pendingAmount || 0);
-                      }}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users className="w-5 h-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{coach.name}</p>
-                          <p className="text-sm text-muted-foreground">{coach.email}</p>
-                        </div>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="text-sm text-gray-600">
-                          Total: ₹{coach.totalEarnings?.toLocaleString() || 0}
-                        </div>
-                        <div className="text-sm text-red-600">
-                          Platform Fee: ₹{coach.platformFeeAmount?.toLocaleString() || 0}
-                        </div>
-                        <div className="text-lg font-bold text-green-600">
-                          ₹{coach.pendingAmount?.toLocaleString() || 0}
-                        </div>
-                        <p className="text-sm text-muted-foreground">To Pay</p>
-                        {!coach.razorpayDetails?.isActive && (
-                          <div className="text-xs text-orange-600 mt-1">
-                            Razorpay not setup
-                          </div>
-                        )}
-                      </div>
+
+                    <div className="pt-4 border-t">
+                      <Button
+                        onClick={() => setShowPayoutAllDialog(true)}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        <Zap className="w-4 h-4 mr-2" />
+                        Payout All Eligible
+                      </Button>
                     </div>
-                  ))}
-                </div>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+            </TabsContent>
 
-        {/* Payout Settings Tab */}
-        <TabsContent value="payouts" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Payout Settings */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Payout Settings</CardTitle>
-                <CardDescription>Configure automatic payout parameters</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div>
-                    <Label>Payout Frequency</Label>
-                    <Select 
-                      value={financialSettings?.payoutFrequency || 'weekly'} 
-                      onValueChange={(value) => setFinancialSettings(prev => ({ ...prev, payoutFrequency: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Daily</SelectItem>
-                        <SelectItem value="weekly">Weekly</SelectItem>
-                        <SelectItem value="monthly">Monthly</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Payout Day</Label>
-                    <Select 
-                      value={financialSettings?.payoutDay || 'monday'} 
-                      onValueChange={(value) => setFinancialSettings(prev => ({ ...prev, payoutDay: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="monday">Monday</SelectItem>
-                        <SelectItem value="tuesday">Tuesday</SelectItem>
-                        <SelectItem value="wednesday">Wednesday</SelectItem>
-                        <SelectItem value="thursday">Thursday</SelectItem>
-                        <SelectItem value="friday">Friday</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Payout Time</Label>
-                    <Input 
-                      type="time" 
-                      value={financialSettings?.payoutTime || '09:00'}
-                      onChange={(e) => setFinancialSettings(prev => ({ ...prev, payoutTime: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>Minimum Payout Amount</Label>
-                    <Input 
-                      type="number" 
-                      value={financialSettings?.minimumPayoutAmount || 100}
-                      onChange={(e) => setFinancialSettings(prev => ({ ...prev, minimumPayoutAmount: parseInt(e.target.value) }))}
-                    />
-                  </div>
-                </div>
-                <Button onClick={handleSaveSettings} disabled={saving}>
-                  <Save className="w-4 h-4 mr-2" />
-                  {saving ? 'Saving...' : 'Save Settings'}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Payout Methods */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Payout Methods</CardTitle>
-                <CardDescription>Configure available payout methods</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">UPI Payouts</p>
-                      <p className="text-sm text-muted-foreground">Enable UPI-based payouts</p>
-                    </div>
-                    <Button 
-                      variant={financialSettings?.upiEnabled ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFinancialSettings(prev => ({ ...prev, upiEnabled: !prev?.upiEnabled }))}
-                    >
-                      {financialSettings?.upiEnabled ? 'Enabled' : 'Disabled'}
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Bank Transfer</p>
-                      <p className="text-sm text-muted-foreground">Enable bank transfer payouts</p>
-                    </div>
-                    <Button 
-                      variant={financialSettings?.bankTransferEnabled ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFinancialSettings(prev => ({ ...prev, bankTransferEnabled: !prev?.bankTransferEnabled }))}
-                    >
-                      {financialSettings?.bankTransferEnabled ? 'Enabled' : 'Disabled'}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Transaction History Tab */}
-        <TabsContent value="history" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Payment History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Payment History</CardTitle>
-                <CardDescription>Recent payment transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {paymentHistory.slice(0, 10).map((payment, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">₹{payment.amount}</p>
-                          <p className="text-xs text-muted-foreground">{payment.description}</p>
+            {/* Transactions Tab */}
+            <TabsContent value="transactions" className="space-y-6 mt-0">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <Receipt className="w-5 h-5 mr-2" />
+                    Payment History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {paymentHistory.slice(0, 10).map((payment, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-blue-100 rounded-full">
+                            <CreditCard className="h-4 w-4 text-blue-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">₹{payment.amount}</p>
+                            <p className="text-xs text-gray-500">{payment.description}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={payment.status === 'success' ? 'default' : 'secondary'} className="mb-1">
+                            {payment.status}
+                          </Badge>
+                          <p className="text-xs text-gray-500">
+                            {new Date(payment.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant={payment.status === 'success' ? 'default' : 'secondary'}>
-                          {payment.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(payment.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-            {/* Payout History */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Payout History</CardTitle>
-                <CardDescription>Recent payout transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {payoutHistory.slice(0, 10).map((payout, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Banknote className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <p className="text-sm font-medium">{payout.coachName}</p>
-                          <p className="text-xs text-muted-foreground">₹{payout.amount}</p>
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <Banknote className="w-5 h-5 mr-2" />
+                    Payout History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {payoutHistory.slice(0, 10).map((payout, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-green-100 rounded-full">
+                            <Banknote className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{payout.coachName}</p>
+                            <p className="text-xs text-gray-500">₹{payout.amount}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <Badge variant={payout.status === 'completed' ? 'default' : 'secondary'} className="mb-1">
+                            {payout.status}
+                          </Badge>
+                          <p className="text-xs text-gray-500">
+                            {new Date(payout.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant={payout.status === 'completed' ? 'default' : 'secondary'}>
-                          {payout.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(payout.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            </TabsContent>
+
+            {/* MLM Administration Tab */}
+            <TabsContent value="mlm-admin" className="space-y-6 mt-0">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  MLM Administration
+                </CardTitle>
+                <CardDescription>Manage MLM system requests and administration</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AdminRequestsTab />
               </CardContent>
             </Card>
-          </div>
-        </TabsContent>
+            </TabsContent>
 
-        {/* MLM Administration Tab */}
-        <TabsContent value="mlm-admin" className="space-y-4">
-          <AdminRequestsTab />
-        </TabsContent>
+            {/* Hierarchy Management Tab */}
+            <TabsContent value="hierarchy" className="space-y-6 mt-0">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Layers className="w-5 h-5 mr-2" />
+                  Hierarchy Management
+                </CardTitle>
+                <CardDescription>Manage coach hierarchy and relationships</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <HierarchyManagementTab />
+              </CardContent>
+            </Card>
+            </TabsContent>
 
-        {/* Hierarchy Management Tab */}
-        <TabsContent value="hierarchy" className="space-y-4">
-          <HierarchyManagementTab />
-        </TabsContent>
+            {/* Commission Settings Tab */}
+            <TabsContent value="commission" className="space-y-6 mt-0">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  <Percent className="w-5 h-5 mr-2" />
+                  Commission Settings
+                </CardTitle>
+                <CardDescription>Configure commission rates and payout structures</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CommissionManagementTab />
+              </CardContent>
+            </Card>
+            </TabsContent>
 
-        {/* Commission Settings Tab */}
-        <TabsContent value="commission" className="space-y-4">
-          <CommissionManagementTab />
-        </TabsContent>
-
-        {/* Performance Tracking Tab */}
-        <TabsContent value="performance" className="space-y-4">
-          <PerformanceTrackingTab />
-        </TabsContent>
-      </Tabs>
+            {/* Performance Tracking Tab */}
+            <TabsContent value="performance" className="space-y-6 mt-0">
+              <Card className="border-0 shadow-sm">
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <Activity className="w-5 h-5 mr-2" />
+                    Performance Tracking
+                  </CardTitle>
+                  <CardDescription>Monitor system performance and coach metrics</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PerformanceTrackingTab />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
 
       {/* Financial Settings Dialog */}
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Financial Settings</DialogTitle>
-            <DialogDescription>
-              Configure platform financial parameters and Razorpay integration
+        <DialogContent className="max-w-md">
+          <DialogHeader className="text-center pb-2">
+            <DialogTitle className="text-xl font-semibold">Financial Settings</DialogTitle>
+            <DialogDescription className="text-gray-600">
+              Configure your platform's financial parameters
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="razorpay-key">Razorpay API Key</Label>
-                <Input
-                  id="razorpay-key"
-                  type="password"
-                  value={financialSettings?.razorpayApiKey || ''}
-                  onChange={(e) => setFinancialSettings(prev => ({ ...prev, razorpayApiKey: e.target.value }))}
-                  placeholder="Enter Razorpay API Key"
-                />
+
+          <div className="space-y-6 py-4">
+            {/* Razorpay Integration */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Shield className="w-4 h-4" />
+                Razorpay Integration
               </div>
-              <div>
-                <Label htmlFor="razorpay-secret">Razorpay Secret</Label>
-                <Input
-                  id="razorpay-secret"
-                  type="password"
-                  value={financialSettings?.razorpaySecret || ''}
-                  onChange={(e) => setFinancialSettings(prev => ({ ...prev, razorpaySecret: e.target.value }))}
-                  placeholder="Enter Razorpay Secret"
-                />
+              <div className="space-y-3">
+                <div className="relative">
+                  <Label htmlFor="razorpay-key" className="text-sm font-medium text-gray-700">API Key</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="razorpay-key"
+                      type={showApiKey ? "text" : "password"}
+                      value={financialSettings?.razorpayApiKey || ''}
+                      onChange={(e) => setFinancialSettings(prev => ({ ...prev, razorpayApiKey: e.target.value }))}
+                      placeholder="Enter your Razorpay API key"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <Label htmlFor="razorpay-secret" className="text-sm font-medium text-gray-700">API Secret</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="razorpay-secret"
+                      type={showApiSecret ? "text" : "password"}
+                      value={financialSettings?.razorpaySecret || ''}
+                      onChange={(e) => setFinancialSettings(prev => ({ ...prev, razorpaySecret: e.target.value }))}
+                      placeholder="Enter your Razorpay API secret"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiSecret(!showApiSecret)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showApiSecret ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="platform-fee">Platform Fee (%)</Label>
-                <Input
-                  id="platform-fee"
-                  type="number"
-                  value={financialSettings?.platformFee || 0}
-                  onChange={(e) => setFinancialSettings(prev => ({ ...prev, platformFee: parseFloat(e.target.value) }))}
-                  placeholder="Enter platform fee percentage"
-                />
+
+            {/* Platform Settings */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Percent className="w-4 h-4" />
+                Platform Configuration
               </div>
-              <div>
-                <Label htmlFor="mlm-commission">MLM Commission (%)</Label>
-                <Input
-                  id="mlm-commission"
-                  type="number"
-                  value={financialSettings?.mlmCommission || 0}
-                  onChange={(e) => setFinancialSettings(prev => ({ ...prev, mlmCommission: parseFloat(e.target.value) }))}
-                  placeholder="Enter MLM commission percentage"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tax-rate">Tax Rate (%)</Label>
-                <Input
-                  id="tax-rate"
-                  type="number"
-                  value={financialSettings?.taxRate || 0}
-                  onChange={(e) => setFinancialSettings(prev => ({ ...prev, taxRate: parseFloat(e.target.value) }))}
-                  placeholder="Enter tax rate percentage"
-                />
-              </div>
-              <div>
-                <Label htmlFor="min-payout">Minimum Payout Amount</Label>
-                <Input
-                  id="min-payout"
-                  type="number"
-                  value={financialSettings?.minimumPayoutAmount || 100}
-                  onChange={(e) => setFinancialSettings(prev => ({ ...prev, minimumPayoutAmount: parseInt(e.target.value) }))}
-                  placeholder="Enter minimum payout amount"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="platform-fee" className="text-sm font-medium text-gray-700">Platform Fee (%)</Label>
+                  <Input
+                    id="platform-fee"
+                    type="number"
+                    value={financialSettings?.platformFee || 0}
+                    onChange={(e) => setFinancialSettings(prev => ({ ...prev, platformFee: parseFloat(e.target.value) }))}
+                    placeholder="0"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="mlm-commission" className="text-sm font-medium text-gray-700">MLM Commission (%)</Label>
+                  <Input
+                    id="mlm-commission"
+                    type="number"
+                    value={financialSettings?.mlmCommission || 0}
+                    onChange={(e) => setFinancialSettings(prev => ({ ...prev, mlmCommission: parseFloat(e.target.value) }))}
+                    placeholder="0"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tax-rate" className="text-sm font-medium text-gray-700">Tax Rate (%)</Label>
+                  <Input
+                    id="tax-rate"
+                    type="number"
+                    value={financialSettings?.taxRate || 0}
+                    onChange={(e) => setFinancialSettings(prev => ({ ...prev, taxRate: parseFloat(e.target.value) }))}
+                    placeholder="0"
+                    className="mt-1"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="min-payout" className="text-sm font-medium text-gray-700">Min Payout (₹)</Label>
+                  <Input
+                    id="min-payout"
+                    type="number"
+                    value={financialSettings?.minimumPayoutAmount || 100}
+                    onChange={(e) => setFinancialSettings(prev => ({ ...prev, minimumPayoutAmount: parseInt(e.target.value) }))}
+                    placeholder="100"
+                    className="mt-1"
+                  />
+                </div>
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
+
+          <DialogFooter className="flex gap-3 pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setShowSettingsDialog(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
-            <Button onClick={handleSaveSettings} disabled={saving}>
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Saving...' : 'Save Settings'}
+            <Button
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+            >
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Settings
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -958,6 +1088,7 @@ const FinancialMlmManagement = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </div>
     </div>
   );
 };

@@ -455,6 +455,7 @@ const SignupNew = () => {
       const payload = {
         name: form.name.trim(),
         email: form.email.trim(),
+        phone: form.phone.trim(),
         password: form.password,
         role: 'coach',
         selfCoachId: form.selfCoachId.trim() || undefined,

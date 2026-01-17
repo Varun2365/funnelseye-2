@@ -19,14 +19,9 @@ import {
   Trash2, 
   Copy, 
   Eye, 
-  ToggleLeft, 
-  ToggleRight,
-  Search,
   BarChart3,
   Star,
   CheckCircle,
-  XCircle,
-  AlertCircle,
   Loader2,
   X
 } from 'lucide-react';
@@ -117,9 +112,6 @@ const SubscriptionPlans = () => {
   const [success, setSuccess] = useState('');
   
   // Filters and pagination
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
@@ -181,16 +173,6 @@ const SubscriptionPlans = () => {
         sortOrder: 'asc'
       };
       
-      // Only add filters if they have valid values
-      if (statusFilter && statusFilter !== 'all') {
-        params.status = statusFilter;
-      }
-      if (categoryFilter && categoryFilter !== 'all') {
-        params.category = categoryFilter;
-      }
-      if (searchTerm && searchTerm.trim() !== '') {
-        params.search = searchTerm;
-      }
       
       console.log('🔍 [Frontend] Loading plans with params:', params);
       const response = await adminApiService.getSubscriptionPlans(params);
@@ -617,7 +599,7 @@ const SubscriptionPlans = () => {
   // Effects
   useEffect(() => {
     loadPlans();
-  }, [currentPage, searchTerm, statusFilter, categoryFilter]);
+  }, [currentPage]);
 
   useEffect(() => {
     const timer = setTimeout(clearMessages, 5000);
@@ -743,27 +725,25 @@ const SubscriptionPlans = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Subscription Plans</h1>
-          <p className="text-gray-600">Manage platform subscription plans and pricing</p>
+          <h1 className="text-3xl font-bold text-gray-900">Subscription Plans</h1>
+          <p className="text-gray-600 mt-1">Manage platform subscription plans and pricing</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={debugSubscriptionPlans}
-          >
-            🔍 Debug
-          </Button>
+        <div className="flex gap-3">
           <Button
             variant="outline"
             onClick={() => {
               setIsAnalyticsDialogOpen(true);
               loadAnalytics();
             }}
+            className="border-gray-300"
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             Analytics
           </Button>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Create Plan
           </Button>
@@ -785,163 +765,161 @@ const SubscriptionPlans = () => {
         </Alert>
       )}
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex gap-4 items-center">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search plans..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="starter">Starter</SelectItem>
-                <SelectItem value="professional">Professional</SelectItem>
-                <SelectItem value="enterprise">Enterprise</SelectItem>
-                <SelectItem value="custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Plans Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription Plans ({totalItems})</CardTitle>
-          <CardDescription>Manage all platform subscription plans</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-8 w-8 animate-spin" />
+      {/* Subscription Plans */}
+      <div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-lg p-6 animate-pulse" style={{ borderRadius: '8px' }}>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="h-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded mb-3"></div>
+                    <div className="flex gap-2">
+                      <div className="h-5 w-16 bg-gradient-to-r from-blue-200 to-purple-200 rounded-full"></div>
+                      <div className="h-5 w-14 bg-gradient-to-r from-green-200 to-emerald-200 rounded-full"></div>
+                    </div>
+                  </div>
+                  <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                </div>
+                <div className="mb-6">
+                  <div className="h-10 bg-gradient-to-r from-gray-200 to-gray-300 rounded mb-2"></div>
+                  <div className="h-5 w-24 bg-gray-200 rounded"></div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex-1 h-10 bg-gradient-to-r from-blue-200 to-blue-300 rounded-lg"></div>
+                  <div className="flex-1 h-10 bg-gradient-to-r from-gray-200 to-gray-300 rounded-lg"></div>
+                  <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <BarChart3 className="w-12 h-12 mx-auto" />
             </div>
-          ) : plans.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No subscription plans found</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Plan Name</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Billing</TableHead>
-                  <TableHead>Features</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {plans.map((plan) => (
-                  <TableRow key={plan._id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div>
-                          <div className="font-medium">{plan.name}</div>
-                          <div className="text-sm text-gray-500">{plan.description}</div>
-                        </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No subscription plans found</h3>
+            <p className="text-gray-500">Create your first subscription plan to get started.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {plans.map((plan) => (
+              <div
+                key={plan._id}
+                className="relative bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-lg p-6 overflow-hidden"
+                style={{ borderRadius: '8px' }}
+              >
+                {/* Subtle background pattern */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400 to-purple-500 rounded-full -translate-y-16 translate-x-16"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-400 to-blue-500 rounded-full translate-y-12 -translate-x-12"></div>
+                </div>
+
+                <div className="relative z-10">
+                  {/* Header with status */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
                         {plan.isPopular && (
-                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                          <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-current" />
+                            Popular
+                          </div>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{plan.category}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">
-                        {formatCurrency(plan.price, plan.currency)}
-                      </div>
-                      {plan.setupFee > 0 && (
-                        <div className="text-sm text-gray-500">
-                          +{formatCurrency(plan.setupFee, plan.currency)} setup
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>Funnels: {plan.features?.maxFunnels || 'N/A'}</div>
-                        <div>Staff: {plan.features?.maxStaff || 'N/A'}</div>
-                        <div>AI: {plan.features?.aiFeatures ? 'Yes' : 'No'}</div>
-                        <div>Courses: {plan.courseBundles?.length || 0}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{plan.description}</p>
                       <div className="flex items-center gap-2">
-                        <Badge variant={getStatusBadgeVariant(plan.isActive)}>
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 text-blue-700"
+                        >
+                          {plan.category}
+                        </Badge>
+                        <Badge
+                          variant={plan.isActive ? "default" : "secondary"}
+                          className={plan.isActive ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-300" : "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-600"}
+                        >
                           {plan.isActive ? 'Active' : 'Inactive'}
                         </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleStatus(plan._id)}
-                        >
-                          {plan.isActive ? (
-                            <ToggleRight className="w-4 h-4" />
-                          ) : (
-                            <ToggleLeft className="w-4 h-4" />
-                          )}
-                        </Button>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditPlan(plan)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDuplicatePlan(plan._id)}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedPlan(plan);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                    </div>
+                    <Switch
+                      checked={plan.isActive}
+                      onCheckedChange={() => handleToggleStatus(plan._id)}
+                      className={`scale-60 ${
+                        plan.isActive
+                          ? 'data-[state=checked]:bg-[#16a34a]'
+                          : 'data-[state=unchecked]:bg-[#dc2626]'
+                      }`}
+                    />
+                  </div>
+
+                  {/* Pricing */}
+                  <div className="mb-6">
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        {formatCurrency(plan.price, plan.currency)}
+                      </span>
+                      <span className="text-sm text-gray-500 font-medium">/month</span>
+                    </div>
+                    {plan.setupFee > 0 && (
+                      <p className="text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-md inline-block">
+                        +{formatCurrency(plan.setupFee, plan.currency)} setup fee
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Total Coaches */}
+                  <div className="mb-6">
+                    <div className="text-left">
+                      <div className="text-lg font-semibold text-gray-800 mb-1">
+                        {plan.enrolledCoaches || 0} Coaches
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      <div className="text-sm text-gray-600">Total Subscriptions</div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => handleEditPlan(plan)}
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-14"
+                      style={{ borderRadius: '5px' }}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      <span className="font-medium">Edit Plan</span>
+                    </Button>
+                    <Button
+                      onClick={() => handleDuplicatePlan(plan._id)}
+                      variant="outline"
+                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 h-14"
+                      style={{ borderRadius: '5px' }}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      <span className="font-medium">Duplicate</span>
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setSelectedPlan(plan);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (

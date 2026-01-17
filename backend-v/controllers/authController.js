@@ -135,10 +135,11 @@ const sendTokenResponse = (user, statusCode, res) => {
 // --- Authentication Controllers ---
 
 const signup = async (req, res) => {
-    const { 
-        name, 
-        email, 
-        password, 
+    const {
+        name,
+        email,
+        phone,
+        password,
         role,
         // MLM hierarchy fields - required for coach role
         selfCoachId,
@@ -216,6 +217,7 @@ const signup = async (req, res) => {
         const userData = {
             name,
             email,
+            phone,
             password,
             role,
             isVerified: false

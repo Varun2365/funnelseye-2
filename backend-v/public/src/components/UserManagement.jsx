@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Switch } from '../components/ui/switch';
+import { Textarea } from '../components/ui/textarea';
 import {
   Users,
   UserPlus,
@@ -30,10 +31,15 @@ import {
   Clock,
   RefreshCw,
   Filter,
-  X
+  X,
+  FileText,
+  Activity,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import adminApiService from '../services/adminApiService';
 import { useToast } from '../contexts/ToastContext';
+import axios from 'axios';
 
 const UserManagement = () => {
   const { showToast } = useToast();
@@ -48,7 +54,7 @@ const UserManagement = () => {
   const [showDeleted, setShowDeleted] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
@@ -130,6 +136,12 @@ const UserManagement = () => {
   const [togglingUsers, setTogglingUsers] = useState(new Set()); // Track users being toggled
 
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (newItemsPerPage) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   // Load users data
   const loadUsers = async () => {
@@ -611,7 +623,7 @@ const UserManagement = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-600 mt-1">Manage users, roles, and permissions</p>
+          <p className="text-sm text-gray-600 mt-1">Manage users, roles, permissions, and hierarchy requests</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button
@@ -634,8 +646,16 @@ const UserManagement = () => {
         </div>
       </div>
 
+      {/* Main Content Tabs */}
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-fit grid-cols-2">
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="hierarchy">Hierarchy Requests</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-6 mt-6">
       {/* Users Table with Integrated Filters */}
-      <Card className="border-gray-200">
+          <Card className="border-gray-200" style={{borderRadius: '10px'}}>
         <CardContent className="p-0">
           {/* Filter Bar */}
           <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
@@ -714,7 +734,7 @@ const UserManagement = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="border-gray-200 hover:bg-gray-50">
-                        <TableHead className="w-12 py-3">
+                        <TableHead className="w-12 py-2">
                           <input
                             type="checkbox"
                             checked={selectedUsers.length === users.length && users.length > 0}
@@ -722,18 +742,18 @@ const UserManagement = () => {
                             className="rounded border-gray-300"
                           />
                         </TableHead>
-                        <TableHead className="py-3 text-gray-700 font-medium">User</TableHead>
-                        <TableHead className="py-3 text-gray-700 font-medium">Role & Status</TableHead>
-                        <TableHead className="py-3 text-gray-700 font-medium">Contact</TableHead>
-                        <TableHead className="py-3 text-gray-700 font-medium">Location</TableHead>
-                        <TableHead className="py-3 text-gray-700 font-medium">Joined</TableHead>
-                        <TableHead className="py-3 text-gray-700 font-medium w-12">Actions</TableHead>
+                        <TableHead className="py-2 text-gray-700 font-medium">User</TableHead>
+                        <TableHead className="py-2 text-gray-700 font-medium">Role & Status</TableHead>
+                        <TableHead className="py-2 text-gray-700 font-medium">Contact</TableHead>
+                        <TableHead className="py-2 text-gray-700 font-medium">Location</TableHead>
+                        <TableHead className="py-2 text-gray-700 font-medium">Joined</TableHead>
+                        <TableHead className="py-2 text-gray-700 font-medium w-12">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {users.map((user) => (
                         <TableRow key={user._id} className={`border-gray-200 hover:bg-gray-50 ${user.deletedAt ? 'bg-red-50/50' : ''}`}>
-                          <TableCell className="py-4">
+                          <TableCell className="py-2">
                             <input
                               type="checkbox"
                               checked={selectedUsers.includes(user._id)}
@@ -741,9 +761,9 @@ const UserManagement = () => {
                               className="rounded border-gray-300"
                             />
                           </TableCell>
-                          <TableCell className="py-4">
+                          <TableCell className="py-2">
                       <div className="flex items-center space-x-3">
-                        <div className="w-[35px] h-[35px] rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                        <div className="w-[36px] h-[36px] overflow-hidden bg-gray-100 flex items-center justify-center" style={{borderRadius: '19px'}}>
                           {user.profilePictureUrl || user.profilePicture ? (
                             <img
                               src={user.profilePictureUrl || user.profilePicture}
@@ -756,11 +776,11 @@ const UserManagement = () => {
                             />
                           ) : null}
                           <div className="w-full h-full flex items-center justify-center" style={{ display: user.profilePictureUrl || user.profilePicture ? 'none' : 'flex' }}>
-                            <Users className="w-[18px] h-[18px] text-gray-600" />
+                            <Users className="w-[14px] h-[14px] text-gray-600" />
                           </div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-gray-900 text-base leading-tight">
                             <button
                               onClick={() => {
                                 console.log('🔍 [UserManagement] Navigating to user:', user._id);
@@ -789,7 +809,7 @@ const UserManagement = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className="py-2">
                       <div className="flex flex-col space-y-3">
                         <div className="flex justify-center">
                           {getRoleBadge(user.role)}
@@ -800,38 +820,38 @@ const UserManagement = () => {
                                 <RefreshCw className="w-2 h-2 text-gray-500 animate-spin" />
                               </div>
                             ) : user.status === 'under_review' ? (
-                              <div className="text-xs text-blue-600 font-medium px-2 py-1 bg-blue-50 rounded">
+                              <div className="text-xs text-blue-600 font-medium px-1 py-0.5 bg-blue-50 rounded">
                                 Pending
                               </div>
                             ) : (
                               <Switch
                                 checked={user.status === 'active'}
                                 onCheckedChange={() => toggleUserStatus(user._id, user.status)}
-                                className={`scale-75 ${
+                                className={`scale-50 ${
                                   user.status === 'active'
-                                    ? 'data-[state=checked]:bg-green-500'
-                                    : 'data-[state=unchecked]:bg-red-500'
+                                    ? 'data-[state=checked]:bg-[#16a34a]'
+                                    : 'data-[state=unchecked]:bg-[#dc2626]'
                                 }`}
                               />
                             )}
                           </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className="py-2">
                       <div className="space-y-1">
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-xs text-gray-600">
                           <Mail className="w-3 h-3 mr-2" />
                           {user.email}
                         </div>
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-xs text-gray-600">
                           <Phone className="w-3 h-3 mr-2" />
                           {user.phone || '—'}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className="py-2">
                       {user.country ? (
-                        <div className="flex items-center text-sm text-gray-600">
+                        <div className="flex items-center text-xs text-gray-600">
                           <MapPin className="w-3 h-3 mr-2" />
                           <span className="capitalize">{user.country}</span>
                           {user.city && <span className="text-gray-400">, {user.city}</span>}
@@ -840,21 +860,21 @@ const UserManagement = () => {
                         <span className="text-gray-400">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="py-4">
-                      <div className="flex items-center text-sm text-gray-600">
+                    <TableCell className="py-2">
+                      <div className="flex items-center text-xs text-gray-600">
                         <Calendar className="w-3 h-3 mr-2" />
                         {new Date(user.createdAt).toLocaleDateString()}
                       </div>
                     </TableCell>
-                    <TableCell className="py-4">
+                    <TableCell className="py-2">
                       <div className="flex items-center space-x-1">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => openUserDialog(user)}
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                          className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3 h-3" />
                         </Button>
 
                         {user.status === 'under_review' ? (
@@ -869,19 +889,19 @@ const UserManagement = () => {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => approveUser(user._id)}
-                                  className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                                  className="h-6 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
                                   title="Approve user"
                                 >
-                                  <CheckCircle className="w-4 h-4" />
+                                  <CheckCircle className="w-3 h-3" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => rejectUser(user._id)}
-                                  className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  className="h-6 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   title="Reject user"
                                 >
-                                  <UserX className="w-4 h-4" />
+                                  <UserX className="w-3 h-3" />
                                 </Button>
                               </>
                             )}
@@ -893,17 +913,17 @@ const UserManagement = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => openUserDialog(user)}
-                                className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                                className="h-6 w-6 p-0 text-gray-500 hover:text-gray-700"
                               >
-                                <Edit className="w-4 h-4" />
+                                <Edit className="w-3 h-3" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => deleteUser(user._id)}
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3 h-3" />
                               </Button>
                             </>
                           )
@@ -914,9 +934,9 @@ const UserManagement = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => restoreUser(user._id)}
-                            className="h-8 w-8 p-0 text-green-500 hover:text-green-700"
+                            className="h-6 w-6 p-0 text-green-500 hover:text-green-700"
                           >
-                            <RefreshCw className="w-4 h-4" />
+                            <RefreshCw className="w-3 h-3" />
                           </Button>
                         )}
                       </div>
@@ -927,10 +947,25 @@ const UserManagement = () => {
                 </Table>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center space-x-4">
                     <div className="text-sm text-gray-600">
-                      Page {currentPage} of {totalPages}
+                      Page {currentPage} of {totalPages || 1}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Label className="text-sm text-gray-600">Items per page:</Label>
+                      <Select value={itemsPerPage.toString()} onValueChange={(value) => handleItemsPerPageChange(parseInt(value))}>
+                        <SelectTrigger className="w-20 h-8 border-gray-300">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="25">25</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          <SelectItem value="100">100</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
@@ -945,20 +980,26 @@ const UserManagement = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                        disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(Math.min(totalPages || 1, currentPage + 1))}
+                      disabled={currentPage >= (totalPages || 1)}
                         className="h-8 border-gray-300 text-gray-700"
                       >
                         Next
                       </Button>
                     </div>
                   </div>
-              )}
                 </div>
               )}
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="hierarchy" className="space-y-6 mt-6">
+          {/* Hierarchy Requests Content */}
+          <HierarchyRequestsContent />
+        </TabsContent>
+      </Tabs>
       {/* Dialogs */}
       <>
         <Dialog open={userDialogOpen} onOpenChange={setUserDialogOpen}>
@@ -1691,6 +1732,725 @@ const UserManagement = () => {
       </Dialog>
 
       </>
+    </div>
+  );
+};
+
+// Hierarchy Requests Content Component (embedded version)
+const HierarchyRequestsContent = () => {
+  const { showToast } = useToast();
+  const [requests, setRequests] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [selectedRequests, setSelectedRequests] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+  // Dialog states
+  const [requestDialogOpen, setRequestDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [processDialogOpen, setProcessDialogOpen] = useState(false);
+  const [bulkProcessDialogOpen, setBulkProcessDialogOpen] = useState(false);
+
+  // Form states
+  const [processForm, setProcessForm] = useState({
+    status: '',
+    adminNotes: ''
+  });
+
+  // Load requests data
+  const loadRequests = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage
+      };
+
+      if (searchTerm && searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      if (statusFilter && statusFilter !== 'all') {
+        params.status = statusFilter;
+      }
+
+      if (typeFilter && typeFilter !== 'all') {
+        params.requestType = typeFilter;
+      }
+
+      console.log('📋 [HierarchyRequests] Loading requests with params:', params);
+
+      const response = await axios.get('/admin/hierarchy/requests', { params });
+      console.log('📋 [HierarchyRequests] Requests response:', response.data);
+
+      if (response.data.success) {
+        setRequests(response.data.data.requests);
+        setTotalPages(response.data.data.pagination.pages);
+      } else {
+        showToast(response.data.message || 'Failed to load requests', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading requests:', error);
+      showToast('Error loading requests', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load analytics data
+  const loadAnalytics = async () => {
+    try {
+      const response = await axios.get('/admin/hierarchy/analytics');
+      if (response.data.success) {
+        setAnalytics(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadRequests();
+    loadAnalytics();
+  }, [currentPage, statusFilter, typeFilter]);
+
+  // Process single request
+  const processRequest = async () => {
+    if (!selectedRequest || !processForm.status) {
+      showToast('Please select a status', 'warning');
+      return;
+    }
+
+    try {
+      const response = await axios.put(`/admin/hierarchy/requests/${selectedRequest._id}/process`, {
+        status: processForm.status,
+        adminNotes: processForm.adminNotes
+      });
+
+      if (response.data.success) {
+        showToast(`Request ${processForm.status} successfully`, 'success');
+        setProcessDialogOpen(false);
+        setRequestDialogOpen(false);
+        setProcessForm({ status: '', adminNotes: '' });
+        loadRequests();
+        loadAnalytics();
+      } else {
+        showToast(response.data.message || 'Failed to process request', 'error');
+      }
+    } catch (error) {
+      console.error('Error processing request:', error);
+      showToast('Error processing request', 'error');
+    }
+  };
+
+  // Bulk process requests
+  const bulkProcessRequests = async () => {
+    if (selectedRequests.length === 0) {
+      showToast('Please select requests first', 'warning');
+      return;
+    }
+
+    if (!processForm.status) {
+      showToast('Please select a status', 'warning');
+      return;
+    }
+
+    try {
+      const response = await axios.post('/admin/hierarchy/requests/bulk-process', {
+        requestIds: selectedRequests,
+        status: processForm.status,
+        adminNotes: processForm.adminNotes
+      });
+
+      if (response.data.success) {
+        showToast(`Successfully ${processForm.status} ${response.data.data.processedCount} requests`, 'success');
+        setBulkProcessDialogOpen(false);
+        setProcessForm({ status: '', adminNotes: '' });
+        setSelectedRequests([]);
+        loadRequests();
+        loadAnalytics();
+      } else {
+        showToast(response.data.message || 'Failed to bulk process requests', 'error');
+      }
+    } catch (error) {
+      console.error('Error bulk processing requests:', error);
+      showToast('Error bulk processing requests', 'error');
+    }
+  };
+
+  // Open request details dialog
+  const openRequestDialog = async (requestId) => {
+    try {
+      const response = await axios.get(`/admin/hierarchy/requests/${requestId}`);
+      if (response.data.success) {
+        setSelectedRequest(response.data.data);
+        setRequestDialogOpen(true);
+      } else {
+        showToast(response.data.message || 'Failed to load request details', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading request details:', error);
+      showToast('Error loading request details', 'error');
+    }
+  };
+
+  // Get status badge variant
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+      case 'approved':
+        return <Badge variant="default" className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive" className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  // Get request type badge
+  const getRequestTypeBadge = (type) => {
+    switch (type) {
+      case 'hierarchy_change':
+        return <Badge variant="default" className="bg-blue-100 text-blue-800">Hierarchy Change</Badge>;
+      case 'level_change':
+        return <Badge variant="default" className="bg-purple-100 text-purple-800">Level Change</Badge>;
+      case 'sponsor_change':
+        return <Badge variant="default" className="bg-orange-100 text-orange-800">Sponsor Change</Badge>;
+      default:
+        return <Badge variant="outline">{type}</Badge>;
+    }
+  };
+
+  // Handle request selection
+  const handleRequestSelection = (requestId, isSelected) => {
+    if (isSelected) {
+      setSelectedRequests(prev => [...prev, requestId]);
+    } else {
+      setSelectedRequests(prev => prev.filter(id => id !== requestId));
+    }
+  };
+
+  // Select all requests
+  const handleSelectAll = (isSelected) => {
+    if (isSelected) {
+      setSelectedRequests(requests.map(req => req._id));
+    } else {
+      setSelectedRequests([]);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Analytics Cards */}
+      {analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+              <FileText className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analytics.statusDistribution.reduce((sum, item) => sum + item.count, 0)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                All time requests
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analytics.statusDistribution.find(item => item.status === 'pending')?.count || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Awaiting review
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Approved Requests</CardTitle>
+              <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analytics.statusDistribution.find(item => item.status === 'approved')?.count || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Successfully processed
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg Processing Time</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {analytics.processingTime.avgProcessingTime.toFixed(1)}h
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Average response time
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters and Search */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filter Requests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="search">Search</Label>
+              <div className="relative">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="search"
+                  placeholder="Search by coach name, email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Request Type</Label>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="hierarchy_change">Hierarchy Change</SelectItem>
+                  <SelectItem value="level_change">Level Change</SelectItem>
+                  <SelectItem value="sponsor_change">Sponsor Change</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>&nbsp;</Label>
+              <Button onClick={loadRequests} className="w-full">
+                <Filter className="w-4 h-4 mr-2" />
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Bulk Actions */}
+      {selectedRequests.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-muted-foreground">
+                  {selectedRequests.length} request(s) selected
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => setBulkProcessDialogOpen(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <UserCheck className="w-4 h-4 mr-2" />
+                  Bulk Process
+                </Button>
+                <Button
+                  onClick={() => setSelectedRequests([])}
+                  variant="ghost"
+                  size="sm"
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Requests Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Hierarchy Change Requests</CardTitle>
+          <CardDescription>
+            Review and process coach hierarchy change requests
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+              Loading requests...
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <input
+                        type="checkbox"
+                        checked={selectedRequests.length === requests.length && requests.length > 0}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded"
+                      />
+                    </TableHead>
+                    <TableHead>Coach</TableHead>
+                    <TableHead>Request Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Created</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {requests.map((request) => (
+                    <TableRow key={request._id}>
+                      <TableCell>
+                        <input
+                          type="checkbox"
+                          checked={selectedRequests.includes(request._id)}
+                          onChange={(e) => handleRequestSelection(request._id, e.target.checked)}
+                          className="rounded"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{request.coachId?.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {request.coachId?.email}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {request.coachId?.selfCoachId}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {getRequestTypeBadge(request.requestType)}
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(request.status)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {new Date(request.createdAt).toLocaleDateString()}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(request.createdAt).toLocaleTimeString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          onClick={() => openRequestDialog(request._id)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Request Details Dialog */}
+      <Dialog open={requestDialogOpen} onOpenChange={setRequestDialogOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Request Details</DialogTitle>
+            <DialogDescription>
+              Review the hierarchy change request details
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedRequest && (
+            <div className="space-y-6">
+              {/* Coach Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Coach Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Name</Label>
+                      <p className="text-sm">{selectedRequest.coachId?.name}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Email</Label>
+                      <p className="text-sm">{selectedRequest.coachId?.email}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Coach ID</Label>
+                      <p className="text-sm">{selectedRequest.coachId?.selfCoachId}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium">Current Level</Label>
+                      <p className="text-sm">{selectedRequest.coachId?.currentLevel}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Request Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Request Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Request Type</Label>
+                        <div className="mt-1">
+                          {getRequestTypeBadge(selectedRequest.requestType)}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Status</Label>
+                        <div className="mt-1">
+                          {getStatusBadge(selectedRequest.status)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Reason</Label>
+                      <p className="text-sm mt-1 p-3 bg-muted rounded-md">
+                        {selectedRequest.reason}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label className="text-sm font-medium">Created</Label>
+                      <p className="text-sm">
+                        {new Date(selectedRequest.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Current vs Requested Data */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Changes Requested</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-sm font-medium">Current Data</Label>
+                        <div className="mt-2 p-3 bg-muted rounded-md">
+                          <pre className="text-xs whitespace-pre-wrap">
+                            {JSON.stringify(selectedRequest.currentData, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-sm font-medium">Requested Data</Label>
+                        <div className="mt-2 p-3 bg-muted rounded-md">
+                          <pre className="text-xs whitespace-pre-wrap">
+                            {JSON.stringify(selectedRequest.requestedData, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Admin Notes */}
+              {selectedRequest.adminNotes && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Admin Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm p-3 bg-muted rounded-md">
+                      {selectedRequest.adminNotes}
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            {selectedRequest?.status === 'pending' && (
+              <Button onClick={() => setProcessDialogOpen(true)}>
+                Process Request
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setRequestDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Process Request Dialog */}
+      <Dialog open={processDialogOpen} onOpenChange={setProcessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Process Request</DialogTitle>
+            <DialogDescription>
+              Approve or reject this hierarchy change request
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="status">Decision</Label>
+              <Select value={processForm.status} onValueChange={(value) => setProcessForm(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select decision" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approved">Approve</SelectItem>
+                  <SelectItem value="rejected">Reject</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="adminNotes">Admin Notes</Label>
+              <Textarea
+                id="adminNotes"
+                placeholder="Add notes about your decision..."
+                value={processForm.adminNotes}
+                onChange={(e) => setProcessForm(prev => ({ ...prev, adminNotes: e.target.value }))}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setProcessDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={processRequest}>
+              {processForm.status === 'approved' ? 'Approve' : 'Reject'} Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Process Dialog */}
+      <Dialog open={bulkProcessDialogOpen} onOpenChange={setBulkProcessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Process Requests</DialogTitle>
+            <DialogDescription>
+              Process {selectedRequests.length} selected requests
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="bulkStatus">Decision</Label>
+              <Select value={processForm.status} onValueChange={(value) => setProcessForm(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select decision" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="approved">Approve All</SelectItem>
+                  <SelectItem value="rejected">Reject All</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bulkAdminNotes">Admin Notes</Label>
+              <Textarea
+                id="bulkAdminNotes"
+                placeholder="Add notes for all requests..."
+                value={processForm.adminNotes}
+                onChange={(e) => setProcessForm(prev => ({ ...prev, adminNotes: e.target.value }))}
+                rows={4}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkProcessDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={bulkProcessRequests}>
+              {processForm.status === 'approved' ? 'Approve' : 'Reject'} All Requests
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
