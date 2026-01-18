@@ -1097,6 +1097,31 @@ const PortfolioEdit = () => {
   const coachId = getCoachId(authState);
   const token = getToken(authState);
 
+  // Function to extract couch ID from URL pattern
+  const extractCouchIdFromUrl = () => {
+    try {
+      const currentPath = window.location.pathname;
+      console.log('Current path for couch ID extraction:', currentPath);
+      
+      // Pattern: /funnels/n-6950e1b98aad53sswe5-mkjs9244/welcome-page-1768743575476
+      // Extract the part after /funnels/ and before the next /
+      const funnelUrlPattern = /\/funnels\/([^\/]+)/;
+      const match = currentPath.match(funnelUrlPattern);
+      
+      if (match && match[1]) {
+        const couchId = match[1];
+        console.log('Extracted couch ID from URL:', couchId);
+        return couchId;
+      }
+      
+      console.log('No couch ID found in URL');
+      return null;
+    } catch (error) {
+      console.error('Error extracting couch ID from URL:', error);
+      return null;
+    }
+  };
+
   // Debug auth state
   debugAuthState(authState, 'PortfolioEdit');
 
@@ -2714,13 +2739,20 @@ const PortfolioEdit = () => {
               const fullPhoneNumber = `${countryCode} ${phoneNumber}`;
 
               // Get form data including new city and country fields
+              // Extract couch ID from URL for form submission
+              const urlCouchId = extractCouchIdFromUrl();
+              console.log('🔍 Couch ID Debug:', {
+                urlCouchId: urlCouchId,
+                loggedInCoachId: coachId,
+                usingCouchId: urlCouchId || coachId
+              });
               const formData = {
                 name: this.querySelector('input[name="name"]').value,
                 email: this.querySelector('input[name="email"]').value,
                 phone: fullPhoneNumber,
                 city: this.querySelector('input[name="city"]').value,
                 country: this.querySelector('input[name="country"]').value,
-                coachId: coachId,
+                coachId: urlCouchId || coachId, // Use URL couch ID first, fallback to logged-in coach ID
                 funnelId: funnelId || 'default-funnel-id',
                 funnelType: funnelType || 'standard',
                 status: currentPageName,
@@ -2740,7 +2772,7 @@ const PortfolioEdit = () => {
               }
 
               if (!formData.coachId) {
-                throw new Error('Coach information not available');
+                throw new Error('Couch ID information not available. Please ensure you are accessing this page from a valid funnel URL.');
               }
 
               // API call to create lead
