@@ -809,21 +809,21 @@ const SubscriptionPlans = () => {
             {plans.map((plan) => (
               <div
                 key={plan._id}
-                className="relative bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-lg p-6 overflow-hidden"
+                className="relative bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-lg p-4 overflow-hidden"
                 style={{ borderRadius: '8px' }}
               >
                 {/* Subtle background pattern */}
                 <div className="absolute inset-0 opacity-5">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400 to-purple-500 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-green-400 to-blue-500 rounded-full translate-y-12 -translate-x-12"></div>
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-blue-400 to-purple-500 rounded-full -translate-y-12 translate-x-12"></div>
+                  <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-green-400 to-blue-500 rounded-full translate-y-10 -translate-x-10"></div>
                 </div>
 
                 <div className="relative z-10">
                   {/* Header with status */}
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-gray-900">{plan.name}</h3>
                         {plan.isPopular && (
                           <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1">
                             <Star className="w-3 h-3 fill-current" />
@@ -831,7 +831,7 @@ const SubscriptionPlans = () => {
                           </div>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{plan.description}</p>
+                      <p className="text-sm text-gray-600 mb-2 line-clamp-2">{plan.description}</p>
                       <div className="flex items-center gap-2">
                         <Badge
                           variant="outline"
@@ -859,9 +859,9 @@ const SubscriptionPlans = () => {
                   </div>
 
                   {/* Pricing */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                      <span className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                         {formatCurrency(plan.price, plan.currency)}
                       </span>
                       <span className="text-sm text-gray-500 font-medium">/month</span>
@@ -874,7 +874,7 @@ const SubscriptionPlans = () => {
                   </div>
 
                   {/* Total Coaches */}
-                  <div className="mb-6">
+                  <div className="mb-4">
                     <div className="text-left">
                       <div className="text-lg font-semibold text-gray-800 mb-1">
                         {plan.enrolledCoaches || 0} Coaches
@@ -887,7 +887,7 @@ const SubscriptionPlans = () => {
                   <div className="flex gap-3">
                     <Button
                       onClick={() => handleEditPlan(plan)}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-14"
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-11"
                       style={{ borderRadius: '5px' }}
                     >
                       <Edit className="w-4 h-4 mr-2" />
@@ -896,7 +896,7 @@ const SubscriptionPlans = () => {
                     <Button
                       onClick={() => handleDuplicatePlan(plan._id)}
                       variant="outline"
-                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 h-14"
+                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 h-11"
                       style={{ borderRadius: '5px' }}
                     >
                       <Copy className="w-4 h-4 mr-2" />
