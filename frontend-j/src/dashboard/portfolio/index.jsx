@@ -528,7 +528,8 @@ function FunnelManagementComponent() {
   const generateFunnelUrl = (name) => {
     if (!name) return '';
     const sanitizedName = name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-');
-    return `${sanitizedName}-${Date.now().toString(36)}`;
+    const couchId = coachID || 'unknown';
+    return `${sanitizedName}-${couchId}-${Date.now().toString(36)}`;
   };
 
   const formatDateWithTime = (value) => {
@@ -934,6 +935,7 @@ function FunnelManagementComponent() {
           isActive: false,
           isPublished: false,
           funnelUrl: funnelUrl,
+          couchId: coachID,
           indexPageId: formData.indexPageId || firstStagePageId, // Set first stage as default index page
           stages: [{
             pageId: firstStagePageId,

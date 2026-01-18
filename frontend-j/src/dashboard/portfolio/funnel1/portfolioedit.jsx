@@ -9,10 +9,6 @@ import { templates } from './df_temp.jsx';
 import addLandingPageComponents from './function.jsx';
 import { getCoachId, getToken, debugAuthState } from '../../../utils/authUtils';
 import { API_BASE_URL } from '../../../config/apiConfig';
-// GrapesJS Core and Plugins (100% FREE - Open Source MIT License - No payment/keys required for live server)
-// ✅ Completely free to use in production, commercial projects, and live servers
-// ✅ No API keys, no subscriptions, no payments needed
-// ✅ MIT License allows commercial use without restrictions jassi 3
 import grapesjs from 'grapesjs';
 import 'grapesjs/dist/css/grapes.min.css';
 import gjsPresetWebpage from "grapesjs-preset-webpage";
@@ -220,7 +216,7 @@ const parseDaySelectionFromElement = (element) => {
         return normalized;
       }
     } catch (error) {
-      console.warn('Failed to parse data-selected-days', error);
+      // Failed to parse data-selected-days
     }
   }
 
@@ -399,7 +395,7 @@ const SuccessPopup = ({ message, onClose }) => {
       
       playSuccessSound();
     } catch (error) {
-      console.log('Audio not supported:', error);
+      // Audio not supported
     }
 
     // Professional particle effect (more particles for party feel)
@@ -597,7 +593,6 @@ const DaySelectorPopup = ({ onSelect, onClose, initialSelection = [] }) => {
       return;
     }
     const normalized = normalizeDaySelection(selectedDays);
-    console.log('📤 Submitting from popup:', normalized);
     onSelect(normalized);
     onClose();
   };
@@ -927,6 +922,170 @@ const CustomCodePopup = ({ onClose, onSubmit }) => {
   );
 };
 
+//** HTML Upload Popup Component **//
+const HtmlUploadPopup = ({ onClose, onSubmit }) => {
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [fileContent, setFileContent] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if it's an HTML file
+    if (!file.name.toLowerCase().endsWith('.html') && !file.name.toLowerCase().endsWith('.htm')) {
+      alert('Please select an HTML file (.html or .htm)');
+      return;
+    }
+
+    setUploadedFile(file);
+    setIsProcessing(true);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      setFileContent(content);
+      setPreviewHtml(content);
+      setIsProcessing(false);
+    };
+    reader.onerror = () => {
+      alert('Error reading file. Please try again.');
+      setIsProcessing(false);
+      setUploadedFile(null);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleSubmit = () => {
+    if (!fileContent.trim()) {
+      alert('Please select an HTML file first.');
+      return;
+    }
+    onSubmit({ html: fileContent });
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setFileContent('');
+    setPreviewHtml('');
+    setShowPreview(false);
+  };
+
+  return (
+    <div className="html-upload-popup-content">
+      <div className="html-upload-popup-header">
+        <div className="popup-header-icon">
+          <FaFileAlt />
+        </div>
+        <div className="popup-header-text">
+          <h3>Upload External HTML File</h3>
+          <p>Select an HTML file to add its content to the current page. The complete HTML, CSS, and JavaScript will be preserved.</p>
+        </div>
+      </div>
+
+      <div className="html-upload-area">
+        {!uploadedFile ? (
+          <div className="file-drop-zone">
+            <input
+              type="file"
+              id="html-file-input"
+              accept=".html,.htm"
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+            <label htmlFor="html-file-input" className="file-drop-label">
+              <div className="file-upload-icon">
+                <FaFileAlt />
+              </div>
+              <div className="file-upload-text">
+                <h4>Click to browse or drag and drop</h4>
+                <p>Select an HTML file (.html or .htm)</p>
+              </div>
+            </label>
+          </div>
+        ) : (
+          <div className="file-selected-area">
+            <div className="file-info">
+              <div className="file-icon">
+                <FaFileAlt />
+              </div>
+              <div className="file-details">
+                <h4>{uploadedFile.name}</h4>
+                <p>Size: {(uploadedFile.size / 1024).toFixed(2)} KB</p>
+              </div>
+              <button
+                className="remove-file-btn"
+                onClick={handleRemoveFile}
+                title="Remove file"
+              >
+                <FaTimes />
+              </button>
+            </div>
+            
+            <div className="file-actions">
+              <button
+                className="preview-btn"
+                onClick={() => setShowPreview(!showPreview)}
+              >
+                {showPreview ? 'Hide Preview' : 'Show Preview'}
+              </button>
+            </div>
+
+            {showPreview && (
+              <div className="html-preview-container">
+                <div className="preview-header">
+                  <h5>HTML Preview</h5>
+                  <span className="preview-size">Content: {fileContent.length} characters</span>
+                </div>
+                <div className="html-preview-frame">
+                  <iframe
+                    srcDoc={fileContent}
+                    className="preview-iframe"
+                    title="HTML Preview"
+                    sandbox="allow-scripts allow-same-origin"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {isProcessing && (
+        <div className="processing-message">
+          <div className="spinner"></div>
+          <span>Processing HTML file...</span>
+        </div>
+      )}
+
+      <div className="html-upload-popup-footer">
+        <div className="popup-info-text">
+          <span>💡 The uploaded HTML will be added to the bottom of the current page with all its styling and functionality intact.</span>
+        </div>
+        <div className="html-upload-popup-buttons">
+          <button
+            onClick={onClose}
+            className="html-upload-cancel-btn"
+            disabled={isProcessing}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            className="html-upload-submit-btn"
+            disabled={!fileContent.trim() || isProcessing}
+          >
+            <FaFileAlt />
+            <span>Add to Page</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 //** Main Editor Component **//
 const PortfolioEdit = () => {
   const dispatch = useDispatch();
@@ -950,6 +1109,7 @@ const PortfolioEdit = () => {
   const [showRedirectPopup, setShowRedirectPopup] = useState(false);
   const [showDaySelectorPopup, setShowDaySelectorPopup] = useState(false);
   const [showCustomCodePopup, setShowCustomCodePopup] = useState(false);
+  const [showHtmlUploadPopup, setShowHtmlUploadPopup] = useState(false);
   const [isAILoading, setIsAILoading] = useState(false);
   const [currentStage, setCurrentStage] = useState(null);
   const [forceRefreshKey, setForceRefreshKey] = useState(0);
@@ -1066,7 +1226,7 @@ const PortfolioEdit = () => {
 
       setBlockCategories(Object.values(categoriesMap));
     } catch (error) {
-      console.error('Failed to load GrapesJS blocks for builder:', error);
+      // Failed to load GrapesJS blocks
       setBlockCategories([]);
     }
   }, [editorInstance]);
@@ -1154,7 +1314,9 @@ const PortfolioEdit = () => {
     const containerElement = document.querySelector('.portfolio-edit-container');
     const containerStyles = containerElement ? window.getComputedStyle(containerElement) : null;
     const toolsPanelWidth = containerStyles ? parseInt(containerStyles.getPropertyValue('--tools-panel-width'), 10) || 280 : 280;
-    const navSidebarWidth = pagesSidebarVisibilityRef.current && pagesSidebarElement
+    
+    // Get current pages sidebar width
+    const currentNavSidebarWidth = pagesSidebarVisibilityRef.current && pagesSidebarElement
       ? pagesSidebarElement.getBoundingClientRect().width || 300
       : 0;
 
@@ -1166,15 +1328,14 @@ const PortfolioEdit = () => {
       panel.style.top = '68px';
       panel.style.height = 'calc(100vh - 68px)';
       panel.style.maxHeight = 'calc(100vh - 68px)';
-      panel.style.zIndex = '1001';
+      panel.style.zIndex = '1000';
       panel.style.marginTop = '0';
       panel.style.paddingTop = '0';
       panel.style.overflowY = 'auto';
       panel.style.overflowX = 'hidden';
       if (toolsPanelSideRef.current === 'left') {
-        const editorLeft = editorRect ? editorRect.left : navSidebarWidth;
-        const targetLeft = Math.max((editorLeft || 0) - toolsPanelWidth, 0);
-        panel.style.left = `${targetLeft}px`;
+        // Position tools panel directly after the left sidebar
+        panel.style.left = `${currentNavSidebarWidth}px`;
         panel.style.right = 'auto';
         panel.style.borderRight = '1px solid #2d2d2d';
         panel.style.borderLeft = 'none';
@@ -1300,7 +1461,7 @@ const PortfolioEdit = () => {
       
       if (!rightSidebarPanel || !leftSidebarContainer) {
         // Retry if elements not found
-        const retryTimer = setTimeout(() => handleLayersPanelToggle(), 300);
+        const retryTimer = setTimeout(() => handleLayersPanelToggle(), 100);
         return () => clearTimeout(retryTimer);
       }
 
@@ -1317,71 +1478,69 @@ const PortfolioEdit = () => {
         const tryMoveLayers = (attempt = 1, maxAttempts = 8) => {
           const { layersView, layersContent } = findLayersContent(rightSidebarPanel);
           
-          console.log(`Attempt ${attempt}:`, { 
-            hasLayersView: !!layersView, 
-            hasLayersContent: !!layersContent,
-            layersContentClass: layersContent?.className,
-            layersContentHTML: layersContent ? layersContent.innerHTML.substring(0, 100) : 'none'
-          });
-          
-          if (layersContent && leftSidebarContainer) {
-            // Verify that layersContent actually has layer items
-            const hasLayerItems = layersContent.querySelector('.gjs-layer, .gjs-layer-item, [data-layer-item]');
-            
-            // Also check if the layersView itself has items (in case content is the view)
-            const viewHasItems = layersView ? layersView.querySelector('.gjs-layer, .gjs-layer-item, [data-layer-item]') : null;
-            
-            if ((hasLayerItems || viewHasItems) && layersContent.parentNode !== leftSidebarContainer) {
-              // Clear left sidebar
-              leftSidebarContainer.innerHTML = '';
+          if (layersContent && layersContent.parentNode) {
+            if (layersContent && leftSidebarContainer) {
+              // Verify that layersContent actually has layer items
+              const hasLayerItems = layersContent.querySelector('.gjs-layer, .gjs-layer-item, [data-layer-item]');
               
-              // Move the entire layers content
-              leftSidebarContainer.appendChild(layersContent);
-              movedLayersElement = layersContent;
-              movedLayersView = layersView;
+              // Also check if the layersView itself has items (in case content is the view)
+              const viewHasItems = layersView ? layersView.querySelector('.gjs-layer, .gjs-layer-item, [data-layer-item]') : null;
               
-              // Force display styles on both container and content
-              leftSidebarContainer.style.display = 'flex';
-              leftSidebarContainer.style.flexDirection = 'column';
-              leftSidebarContainer.style.overflow = 'auto';
-              
-              layersContent.style.display = 'block';
-              layersContent.style.visibility = 'visible';
-              layersContent.style.opacity = '1';
-              layersContent.style.width = '100%';
-              layersContent.style.height = '100%';
-              
-              // Ensure all child layers are visible
-              const allLayers = layersContent.querySelectorAll('.gjs-layer, .gjs-layer-item');
-              allLayers.forEach(layer => {
-                layer.style.display = 'flex';
-                layer.style.visibility = 'visible';
-                layer.style.opacity = '1';
-              });
-              
-              // Keep right sidebar visible (light mode requirement)
+              if ((hasLayerItems || viewHasItems) && layersContent.parentNode !== leftSidebarContainer) {
+                // Clear left sidebar
+                leftSidebarContainer.innerHTML = '';
+                
+                // Move the entire layers content
+                leftSidebarContainer.appendChild(layersContent);
+                movedLayersElement = layersContent;
+                movedLayersView = layersView;
+                
+                // Force display styles on both container and content
+                leftSidebarContainer.style.display = 'flex';
+                leftSidebarContainer.style.flexDirection = 'column';
+                leftSidebarContainer.style.overflow = 'auto';
+                
+                layersContent.style.display = 'block';
+                layersContent.style.visibility = 'visible';
+                layersContent.style.opacity = '1';
+                layersContent.style.width = '100%';
+                layersContent.style.height = '100%';
+                
+                // Ensure all child layers are visible
+                const allLayers = layersContent.querySelectorAll('.gjs-layer, .gjs-layer-item');
+                allLayers.forEach(layer => {
+                  layer.style.display = 'flex';
+                  layer.style.visibility = 'visible';
+                  layer.style.opacity = '1';
+                });
+                
+                // Keep right sidebar visible (light mode requirement)
+                rightSidebarPanel.style.display = 'block';
+                rightSidebarPanel.style.visibility = 'visible';
+                rightSidebarPanel.style.opacity = '1';
+                
+                // Layers panel moved successfully
+              } else if (!hasLayerItems && !viewHasItems && attempt < maxAttempts) {
+                // Layers content found but no items, retrying...
+                setTimeout(() => tryMoveLayers(attempt + 1, maxAttempts), 200);
+              } else if (layersContent.parentNode === leftSidebarContainer) {
+                // Layers panel already in left sidebar
+              }
+            } else if (attempt < maxAttempts) {
+              // Layers content not found, retrying...
+              setTimeout(() => tryMoveLayers(attempt + 1, maxAttempts), 200);
+            } else {
+              // Failed to find layers content after multiple attempts
+              // Show right sidebar if we failed
               rightSidebarPanel.style.display = 'block';
               rightSidebarPanel.style.visibility = 'visible';
               rightSidebarPanel.style.opacity = '1';
-              
-              console.log('✅ Layers panel moved to left sidebar successfully', {
-                element: layersContent,
-                hasItems: !!hasLayerItems,
-                viewHasItems: !!viewHasItems,
-                itemCount: layersContent.querySelectorAll('.gjs-layer, .gjs-layer-item').length,
-                className: layersContent.className
-              });
-            } else if (!hasLayerItems && !viewHasItems && attempt < maxAttempts) {
-              console.log(`⚠️ Layers content found but no items (attempt ${attempt}/${maxAttempts}), retrying...`);
-              setTimeout(() => tryMoveLayers(attempt + 1, maxAttempts), 400);
-            } else if (layersContent.parentNode === leftSidebarContainer) {
-              console.log('✅ Layers panel already in left sidebar');
             }
           } else if (attempt < maxAttempts) {
-            console.log(`⚠️ Layers content not found (attempt ${attempt}/${maxAttempts}), retrying...`);
-            setTimeout(() => tryMoveLayers(attempt + 1, maxAttempts), 400);
+            // Layers content not found, retrying...
+            setTimeout(() => tryMoveLayers(attempt + 1, maxAttempts), 200);
           } else {
-            console.error('❌ Failed to find layers content after multiple attempts');
+            // Failed to find layers content after multiple attempts
             // Show right sidebar if we failed
             rightSidebarPanel.style.display = 'block';
             rightSidebarPanel.style.visibility = 'visible';
@@ -1390,7 +1549,7 @@ const PortfolioEdit = () => {
         };
         
         // Start trying after initial delay - give more time for layers to render
-        setTimeout(() => tryMoveLayers(), 800);
+        setTimeout(() => tryMoveLayers(), 100);
       } else {
         // Restore: move layers content back to right sidebar
         const rightSidebarPanelRestore = document.querySelector('.gjs-pn-panel.gjs-pn-views-container, .gjs-pn-panel[data-pn-type="views-container"]');
@@ -1425,7 +1584,7 @@ const PortfolioEdit = () => {
 
     const timer = setTimeout(() => {
       handleLayersPanelToggle();
-    }, 800);
+    }, 200);
 
     // Watch for DOM changes to catch when layers are rendered
     const observer = new MutationObserver(() => {
@@ -2762,7 +2921,7 @@ const PortfolioEdit = () => {
       initializeAllForms();
     }
 
-    setTimeout(initializeAllForms, 1000);
+    setTimeout(initializeAllForms, 200);
   };
 
   const onEditorReady = useCallback((editor) => {
@@ -4074,7 +4233,7 @@ const PortfolioEdit = () => {
       // Update every minute
       setInterval(updateDaySelectors, 60000);
       // Update on page load
-      setTimeout(updateDaySelectors, 1000);
+      setTimeout(updateDaySelectors, 200);
     };
 
     // Initialize auto-update
@@ -4441,7 +4600,7 @@ const PortfolioEdit = () => {
       }
 
       // Initial form detection
-      setTimeout(detectFormsOnPage, 1000);
+      setTimeout(detectFormsOnPage, 200);
       
       // Auto-scroll to form if coming from landing page
       setTimeout(() => {
@@ -4888,18 +5047,38 @@ const PortfolioEdit = () => {
 
       // Add buttons to Commands Panel (appears for ALL components) - Header Theme
       const addButtonsToCommandsPanel = () => {
-        const commandsPanel = document.querySelector('.gjs-cm');
-        if (!commandsPanel) return;
+        let commandsPanel = document.querySelector('.gjs-cm');
         
-        if (commandsPanel.querySelector('.custom-actions-container')) return;
+        // If commands panel doesn't exist, try to find or create it
+        if (!commandsPanel) {
+          console.log('❌ Commands panel not found, searching for alternatives...');
+          // Try alternative selectors
+          commandsPanel = document.querySelector('[class*="gjs-cm"]') || 
+                         document.querySelector('.gjs-toolbar') ||
+                         document.querySelector('[class*="commands"]');
+        }
+        
+        if (!commandsPanel) {
+          console.log('❌ Still no commands panel found');
+          return;
+        }
+        
+        if (commandsPanel.querySelector('.custom-actions-container')) {
+          console.log('✅ Custom actions already exist');
+          return;
+        }
 
+        console.log('🔧 Adding custom actions to commands panel');
+        console.log('Commands panel found:', commandsPanel.className, commandsPanel);
+        
         const container = document.createElement('div');
         container.className = 'custom-actions-container';
-        container.style.cssText = 'display: flex; align-items: center; gap: 2px; margin-left: 8px; padding-left: 8px; border-left: 1px solid #2d2d2d;';
+        container.style.cssText = 'display: flex !important; align-items: center !important; gap: 2px !important; margin-left: 8px !important; padding-left: 8px !important; border-left: 1px solid #2d2d2d !important; visibility: visible !important; opacity: 1 !important;';
 
         const copyBtn = document.createElement('button');
         copyBtn.className = 'gjs-cm-btn custom-copy-btn';
         copyBtn.title = 'Copy';
+        copyBtn.style.cssText = 'display: flex !important; align-items: center !important; justify-content: center !important; width: 26px !important; height: 26px !important; visibility: visible !important; opacity: 1 !important;';
         copyBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
         copyBtn.addEventListener('click', (e) => { 
           e.preventDefault(); 
@@ -4911,6 +5090,7 @@ const PortfolioEdit = () => {
         const duplicateBtn = document.createElement('button');
         duplicateBtn.className = 'gjs-cm-btn custom-duplicate-btn';
         duplicateBtn.title = 'Duplicate';
+        duplicateBtn.style.cssText = 'display: flex !important; align-items: center !important; justify-content: center !important; width: 26px !important; height: 26px !important; visibility: visible !important; opacity: 1 !important;';
         duplicateBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path><path d="M9 9h6v6H9z"></path></svg>';
         duplicateBtn.addEventListener('click', (e) => { 
           e.preventDefault(); 
@@ -4922,6 +5102,7 @@ const PortfolioEdit = () => {
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'gjs-cm-btn custom-delete-btn';
         deleteBtn.title = 'Delete';
+        deleteBtn.style.cssText = 'display: flex !important; align-items: center !important; justify-content: center !important; width: 26px !important; height: 26px !important; visibility: visible !important; opacity: 1 !important;';
         deleteBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
         deleteBtn.addEventListener('click', (e) => { 
           e.preventDefault(); 
@@ -4934,6 +5115,7 @@ const PortfolioEdit = () => {
         container.appendChild(duplicateBtn);
         container.appendChild(deleteBtn);
         commandsPanel.appendChild(container);
+        console.log('✅ Custom actions added successfully');
       };
 
       // Handle text-level operations (when RTE toolbar is visible)
@@ -5108,59 +5290,79 @@ const PortfolioEdit = () => {
           const rect = el.getBoundingClientRect();
           const iframeRect = iframe.getBoundingClientRect();
 
+          // Get layout offsets for proper positioning
+          const pagesSidebarElement = document.querySelector('.pages-sidebar');
+          const editorAreaElement = document.querySelector('.editor-main-area');
+          const containerElement = document.querySelector('.portfolio-edit-container');
+          const containerStyles = containerElement ? window.getComputedStyle(containerElement) : null;
+          const toolsPanelWidth = containerStyles ? parseInt(containerStyles.getPropertyValue('--tools-panel-width'), 10) || 280 : 280;
+          
+          // Calculate sidebar width offset
+          let sidebarOffset = 0;
+          if (pagesSidebarElement && pagesSidebarElement.classList.contains('show')) {
+            sidebarOffset = pagesSidebarElement.getBoundingClientRect().width || 300;
+          }
+          
+          // Calculate tools panel offset based on side and visibility
+          let toolsPanelOffset = 0;
+          const isToolsPanelOpen = document.querySelector('.gjs-pn-panel.gjs-pn-views-container')?.style.opacity === '1';
+          if (isToolsPanelOpen && toolsPanelSideRef.current === 'left') {
+            toolsPanelOffset = toolsPanelWidth;
+          }
+
           const toolbarHeight = 40;
           const toolbarWidth = 100;
           const spacing = 8;
+          const headerHeight = 68; // Header height
 
           let top, left;
 
           // If click position is available, use it (with offset)
           if (clickX !== null && clickY !== null) {
-            // Position toolbar near click position
-            left = clickX - (toolbarWidth / 2);
+            // Position toolbar near click position, accounting for sidebar
+            left = clickX - (toolbarWidth / 2) - sidebarOffset - toolsPanelOffset;
             top = clickY - toolbarHeight - spacing;
             
             // If not enough space above, show below
-            if (top < 10) {
+            if (top < headerHeight + 10) {
               top = clickY + spacing;
             }
           } else if (lastClickX !== null && lastClickY !== null) {
             // Use stored click position
-            left = lastClickX - (toolbarWidth / 2);
+            left = lastClickX - (toolbarWidth / 2) - sidebarOffset - toolsPanelOffset;
             top = lastClickY - toolbarHeight - spacing;
             
-            if (top < 10) {
+            if (top < headerHeight + 10) {
               top = lastClickY + spacing;
             }
           } else {
-            // Fallback: position relative to element
-            // Try to position near the element's center or visible area
+            // Fallback: position relative to element, accounting for sidebar
             const elementCenterX = iframeRect.left + rect.left + (rect.width / 2);
             const elementCenterY = iframeRect.top + rect.top + (rect.height / 2);
             
-            left = elementCenterX - (toolbarWidth / 2);
+            left = elementCenterX - (toolbarWidth / 2) - sidebarOffset - toolsPanelOffset;
             top = elementCenterY - toolbarHeight - spacing;
             
             // If not enough space above, show below
-            if (top < 10) {
+            if (top < headerHeight + 10) {
               top = iframeRect.top + rect.bottom + spacing;
             }
           }
 
-          // Ensure toolbar stays within viewport
+          // Ensure toolbar stays within viewport and doesn't overlap with sidebar
           const viewportWidth = window.innerWidth;
           const viewportHeight = window.innerHeight;
           
           // Adjust horizontal position if needed
-          if (left < 10) {
-            left = 10;
+          if (left < sidebarOffset + toolsPanelOffset + 10) {
+            left = sidebarOffset + toolsPanelOffset + 10;
           } else if (left + toolbarWidth > viewportWidth - 10) {
             left = viewportWidth - toolbarWidth - 10;
           }
           
           // Adjust vertical position if needed
-          if (top < 10) {
-            top = 10;
+          if (top < headerHeight + 10) {
+            top = headerHeight + 10;
           } else if (top + toolbarHeight > viewportHeight - 10) {
             top = viewportHeight - toolbarHeight - 10;
           }
@@ -5267,15 +5469,12 @@ const PortfolioEdit = () => {
         }
       }, true);
 
-      // Show/hide toolbar on component selection
+      // Show/hide toolbar on component selection - REMOVED floating toolbar from single click
       editor.on('component:selected', (component) => {
         setTimeout(() => { 
           addButtonsToCommandsPanel(); 
           addButtonsToRTEToolbar(); 
-          if (!isRTEActive) {
-            // Use stored click position or current mouse position
-            showFloatingToolbar(component, lastClickX, lastClickY);
-          }
+          // Floating toolbar removed from single click - now only shows on double click
         }, 100);
       });
 
@@ -5306,17 +5505,66 @@ const PortfolioEdit = () => {
         }
       });
 
-      editor.on('component:dblclick', () => {
+      editor.on('component:dblclick', (component) => {
+        console.log('🔄 Double click detected!', component);
+        
+        // Store click position immediately
+        const selected = editor.getSelected();
+        if (selected) {
+          const compView = selected.getView?.();
+          if (compView && compView.el) {
+            const rect = compView.el.getBoundingClientRect();
+            lastClickX = rect.left + rect.width / 2;
+            lastClickY = rect.top - 10; // Position above element
+          }
+        }
+        
         setTimeout(() => { 
           addButtonsToCommandsPanel(); 
           addButtonsToRTEToolbar(); 
-        }, 150);
+          
+          // Force show floating toolbar on double click
+          const selected = editor.getSelected();
+          console.log('🎯 Selected component:', selected);
+          console.log('📝 isRTEActive:', isRTEActive);
+          console.log('🔧 floatingToolbar exists:', !!floatingToolbar);
+          console.log('📍 Click position:', lastClickX, lastClickY);
+          
+          if (selected && !isRTEActive && floatingToolbar) {
+            console.log('✅ Showing floating toolbar');
+            // Force toolbar visibility
+            floatingToolbar.style.opacity = '1';
+            floatingToolbar.style.pointerEvents = 'auto';
+            floatingToolbar.style.zIndex = '99999';
+            
+            // Update position
+            updateFloatingToolbarPosition(lastClickX, lastClickY);
+          } else {
+            console.log('❌ Cannot show toolbar - conditions not met');
+            console.log('Selected:', !!selected, 'RTE Active:', isRTEActive, 'Toolbar:', !!floatingToolbar);
+          }
+        }, 100);
       });
       
-      // Initial attempts
+      // Initial attempts - MORE FREQUENT AND AGGRESSIVE
+      setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 100);
       setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 300);
-      setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 800);
+      setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 300);
+      setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 600);
+      setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 900);
+      setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 1200);
       setTimeout(() => { addButtonsToCommandsPanel(); addButtonsToRTEToolbar(); }, 1500);
+      
+      // Keep trying every 2 seconds for the first 10 seconds
+      let attempts = 0;
+      const interval = setInterval(() => {
+        addButtonsToCommandsPanel();
+        addButtonsToRTEToolbar();
+        attempts++;
+        if (attempts >= 5) {
+          clearInterval(interval);
+        }
+      }, 2000);
     }, 1000);
 
     // FIXED: Ensure Right Sidebar Panels are Always Visible and Functional
@@ -6395,9 +6643,9 @@ const PortfolioEdit = () => {
   }
   
   // Execute periodically to catch dynamic forms
-  setTimeout(fillAppointmentForms, 1000);
-  setTimeout(fillAppointmentForms, 3000);
-  setTimeout(fillAppointmentForms, 5000);
+  setTimeout(fillAppointmentForms, 200);
+  setTimeout(fillAppointmentForms, 400);
+  setTimeout(fillAppointmentForms, 600);
 })();
 `;
         
@@ -7295,6 +7543,127 @@ setTimeout(fillAppointmentForms, 5000);
     } catch (error) {
       console.error('Error adding custom code:', error);
       alert('Failed to add custom code. Please check the console for details.');
+    }
+  };
+
+  const handleHtmlUploadSubmit = ({ html }) => {
+    const editor = window.editor || editorInstance;
+    if (!editor) {
+      alert('Editor is not initialized. Please wait and try again.');
+      return;
+    }
+
+    const currentPage = editor.Pages.getSelected();
+    if (!currentPage) {
+      alert('No page is currently selected. Please select a page first.');
+      return;
+    }
+
+    try {
+      // Extract CSS and JS from HTML content
+      let cssContent = '';
+      let jsContent = '';
+      let cleanHtml = html;
+
+      // Extract CSS from <style> tags
+      const styleRegex = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+      const styleMatches = html.match(styleRegex);
+      if (styleMatches) {
+        styleMatches.forEach(match => {
+          const cssContent = match.replace(/<\/?style[^>]*>/gi, '').trim();
+          if (cssContent) {
+            // Add to page CSS
+            let currentCss = currentPage.get('_savedCss') || currentPage.get('styles') || '';
+            currentCss += '\n' + cssContent;
+            currentPage.set('_savedCss', currentCss);
+            currentPage.set('styles', currentCss);
+          }
+        });
+        // Remove style tags from HTML
+        cleanHtml = cleanHtml.replace(styleRegex, '');
+      }
+
+      // Extract JS from <script> tags
+      const scriptRegex = /<script[^>]*>([\s\S]*?)<\/script>/gi;
+      const scriptMatches = html.match(scriptRegex);
+      if (scriptMatches) {
+        scriptMatches.forEach(match => {
+          const jsContent = match.replace(/<\/?script[^>]*>/gi, '').trim();
+          if (jsContent) {
+            // Add to page JS
+            let currentJs = currentPage.get('_savedJs') || currentPage.get('script') || '';
+            currentJs += '\n' + jsContent;
+            currentPage.set('_savedJs', currentJs);
+            currentPage.set('script', currentJs);
+          }
+        });
+        // Remove script tags from HTML
+        cleanHtml = cleanHtml.replace(scriptRegex, '');
+      }
+
+      // Add the clean HTML to the page
+      if (cleanHtml && cleanHtml.trim()) {
+        try {
+          // Use addComponents which adds components at the end by default
+          editor.addComponents(cleanHtml.trim());
+          console.log('✅ HTML content added to page');
+        } catch (error) {
+          console.error('Error adding HTML content:', error);
+          // Fallback: Append to wrapper
+          const wrapper = editor.DomComponents.getWrapper();
+          if (wrapper) {
+            wrapper.append(cleanHtml.trim());
+            console.log('✅ HTML appended to wrapper as fallback');
+          }
+        }
+      }
+
+      // Inject CSS into iframe immediately
+      const iframe = editor.Canvas.getFrameEl();
+      if (iframe && iframe.contentWindow && iframe.contentWindow.document) {
+        const iframeDoc = iframe.contentWindow.document;
+        
+        // Inject extracted CSS
+        if (styleMatches) {
+          styleMatches.forEach(match => {
+            const cssContent = match.replace(/<\/?style[^>]*>/gi, '').trim();
+            if (cssContent) {
+              const styleTag = iframeDoc.createElement('style');
+              styleTag.setAttribute('data-html-upload', 'true');
+              styleTag.textContent = cssContent;
+              iframeDoc.head.appendChild(styleTag);
+            }
+          });
+        }
+
+        // Inject extracted JS
+        if (scriptMatches) {
+          scriptMatches.forEach(match => {
+            const jsContent = match.replace(/<\/?script[^>]*>/gi, '').trim();
+            if (jsContent) {
+              const scriptTag = iframeDoc.createElement('script');
+              scriptTag.setAttribute('data-html-upload', 'true');
+              scriptTag.textContent = jsContent;
+              iframeDoc.body.appendChild(scriptTag);
+            }
+          });
+        }
+      }
+
+      // Refresh the canvas
+      editor.trigger('change:canvas');
+
+      setShowSuccessPopup(true);
+      setSuccessMessage('✅ HTML file uploaded successfully! Content, CSS, and JavaScript have been added to the page.');
+      setShowHtmlUploadPopup(false);
+
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccessPopup(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error uploading HTML file:', error);
+      alert('Failed to upload HTML file. Please check the console for details.');
     }
   };
 
@@ -8622,6 +8991,23 @@ setTimeout(fillAppointmentForms, 5000);
         </div>
       )}
 
+      {showHtmlUploadPopup && (
+        <div className="modal-overlay">
+          <div className="modal-content html-upload-modal-content">
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowHtmlUploadPopup(false)}
+            >
+              ×
+            </button>
+            <HtmlUploadPopup
+              onClose={() => setShowHtmlUploadPopup(false)}
+              onSubmit={handleHtmlUploadSubmit}
+            />
+          </div>
+        </div>
+      )}
+
       {showRedirectPopup && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -8790,6 +9176,16 @@ setTimeout(fillAppointmentForms, 5000);
 
           <div className="btn-divider"></div>
 
+          {/* Upload HTML File Button */}
+          <button
+            onClick={() => setShowHtmlUploadPopup(true)}
+            className="modern-btn secondary-btn"
+            title="Upload External HTML File"
+          >
+            <FaFileAlt />
+            <span>Upload HTML</span>
+          </button>
+
           {hasDirectForms && (
             <button
               onClick={() => setShowRedirectPopup(true)}
@@ -8907,6 +9303,7 @@ setTimeout(fillAppointmentForms, 5000);
         >
           <FaGripVertical />
         </div>
+
       </div>
 
       <style>
@@ -8979,7 +9376,7 @@ setTimeout(fillAppointmentForms, 5000);
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.45);
           display: flex;
           flex-direction: column;
-          z-index: 1001;
+          z-index: 1002;
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease, border-color 0.3s ease;
         }
 
@@ -13612,6 +14009,10 @@ color: gray !important;
           margin-left: 8px !important;
           padding-left: 8px !important;
           border-left: 1px solid #2d2d2d !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          position: relative !important;
+          z-index: 9999 !important;
         }
 
         .custom-copy-btn,
@@ -13620,15 +14021,17 @@ color: gray !important;
           color: #e5e5e5 !important;
           background: transparent !important;
           border: none !important;
+          border-radius: 4px !important;
           cursor: pointer !important;
-          padding: 6px !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          border-radius: 4px !important;
-          transition: all 0.2s ease !important;
-          min-width: 26px !important;
+          width: 26px !important;
           height: 26px !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          position: relative !important;
+          z-index: 9999 !important;
         }
 
         .custom-copy-btn:hover,
@@ -15126,7 +15529,8 @@ color: gray !important;
           .redirect-popup-content,
           .day-selector-popup-content,
           .ai-popup-content,
-          .custom-code-popup-content {
+          .custom-code-popup-content,
+          .html-upload-popup-content {
             min-width: auto;
             width: 100%;
           }
@@ -15902,7 +16306,8 @@ color: gray !important;
         .dark-mode .redirect-popup-content h3,
         .dark-mode .day-selector-popup-content h3,
         .dark-mode .ai-popup-content h3,
-        .dark-mode .custom-code-popup-content h3 {
+        .dark-mode .custom-code-popup-content h3,
+        .dark-mode .html-upload-popup-content h3 {
           color: #e2e8f0 !important;
         }
 
@@ -16018,6 +16423,402 @@ color: gray !important;
           background: #0f172a !important;
           border-color: #334155 !important;
           color: #e2e8f0 !important;
+        }
+
+        /* HTML Upload Popup Styles */
+        .html-upload-popup-content {
+          min-width: 500px;
+          max-width: 570px;
+          width: 90%;
+        }
+
+        .html-upload-popup-header {
+          display: flex;
+          align-items: flex-start;
+          gap: 16px;
+          margin-bottom: 24px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .html-upload-popup-header .popup-header-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 20px;
+          flex-shrink: 0;
+        }
+
+        .html-upload-popup-header .popup-header-text h3 {
+          margin: 0 0 8px 0;
+          font-size: 24px;
+          font-weight: 700;
+          color: #1e293b;
+          line-height: 1.2;
+        }
+
+        .html-upload-popup-header .popup-header-text p {
+          margin: 0;
+          color: #64748b;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .html-upload-area {
+          margin-bottom: 24px;
+        }
+
+        .file-drop-zone {
+          border: 2px dashed #cbd5e1;
+          border-radius: 12px;
+          padding: 32px;
+          text-align: center;
+          background: #f8fafc;
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+
+        .file-drop-zone:hover {
+          border-color: #3b82f6;
+          background: #f0f9ff;
+        }
+
+        .file-drop-label {
+          cursor: pointer;
+          display: block;
+        }
+
+        .file-upload-icon {
+          font-size: 48px;
+          color: #3b82f6;
+          margin-bottom: 16px;
+        }
+
+        .file-upload-text h4 {
+          margin: 0 0 8px 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .file-upload-text p {
+          margin: 0;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .file-selected-area {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 12px;
+          padding: 20px;
+        }
+
+        .file-info {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+
+        .file-info .file-icon {
+          width: 40px;
+          height: 40px;
+          border-radius: 8px;
+          background: #3b82f6;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          flex-shrink: 0;
+        }
+
+        .file-info .file-details {
+          flex: 1;
+        }
+
+        .file-info .file-details h4 {
+          margin: 0 0 4px 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .file-info .file-details p {
+          margin: 0;
+          color: #64748b;
+          font-size: 14px;
+        }
+
+        .remove-file-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          background: #ef4444;
+          color: white;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          transition: background 0.2s ease;
+        }
+
+        .remove-file-btn:hover {
+          background: #dc2626;
+        }
+
+        .file-actions {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .preview-btn {
+          padding: 8px 16px;
+          border: 1px solid #3b82f6;
+          background: white;
+          color: #3b82f6;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .preview-btn:hover {
+          background: #3b82f6;
+          color: white;
+        }
+
+        .html-preview-container {
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          overflow: hidden;
+        }
+
+        .preview-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px 16px;
+          background: #f1f5f9;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .preview-header h5 {
+          margin: 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #1e293b;
+        }
+
+        .preview-size {
+          font-size: 12px;
+          color: #64748b;
+        }
+
+        .html-preview-frame {
+          height: 300px;
+          background: white;
+        }
+
+        .preview-iframe {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
+
+        .processing-message {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          padding: 20px;
+          background: #f0f9ff;
+          border: 1px solid #bae6fd;
+          border-radius: 8px;
+          color: #0369a1;
+          font-size: 14px;
+        }
+
+        .html-upload-popup-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+          padding-top: 16px;
+          border-top: 1px solid #e2e8f0;
+        }
+
+        .popup-info-text {
+          flex: 1;
+          font-size: 13px;
+          color: #64748b;
+          line-height: 1.4;
+        }
+
+        .html-upload-popup-buttons {
+          display: flex;
+          gap: 12px;
+        }
+
+        .html-upload-cancel-btn {
+          padding: 10px 20px;
+          border: 1px solid #e2e8f0;
+          background: white;
+          color: #64748b;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .html-upload-cancel-btn:hover {
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+        }
+
+        .html-upload-cancel-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .html-upload-submit-btn {
+          padding: 10px 20px;
+          border: none;
+          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+          color: white;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.2s ease;
+        }
+
+        .html-upload-submit-btn:hover {
+          background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .html-upload-submit-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+        }
+
+        /* HTML Upload Popup Dark Mode */
+        .dark-mode .html-upload-popup-content {
+          background: #1e293b !important;
+        }
+
+        .dark-mode .html-upload-popup-header {
+          border-bottom-color: #334155 !important;
+        }
+
+        .dark-mode .html-upload-popup-header .popup-header-text h3 {
+          color: #e2e8f0 !important;
+        }
+
+        .dark-mode .html-upload-popup-header .popup-header-text p {
+          color: #94a3b8 !important;
+        }
+
+        .dark-mode .file-drop-zone {
+          background: #0f172a !important;
+          border-color: #334155 !important;
+        }
+
+        .dark-mode .file-drop-zone:hover {
+          border-color: #3b82f6 !important;
+          background: #1e293b !important;
+        }
+
+        .dark-mode .file-upload-text h4 {
+          color: #e2e8f0 !important;
+        }
+
+        .dark-mode .file-upload-text p {
+          color: #94a3b8 !important;
+        }
+
+        .dark-mode .file-selected-area {
+          background: #0f172a !important;
+          border-color: #334155 !important;
+        }
+
+        .dark-mode .file-info .file-details h4 {
+          color: #e2e8f0 !important;
+        }
+
+        .dark-mode .file-info .file-details p {
+          color: #94a3b8 !important;
+        }
+
+        .dark-mode .preview-btn {
+          background: #1e293b !important;
+          border-color: #3b82f6 !important;
+          color: #3b82f6 !important;
+        }
+
+        .dark-mode .preview-btn:hover {
+          background: #3b82f6 !important;
+          color: white !important;
+        }
+
+        .dark-mode .html-preview-container {
+          border-color: #334155 !important;
+        }
+
+        .dark-mode .preview-header {
+          background: #334155 !important;
+          border-bottom-color: #475569 !important;
+        }
+
+        .dark-mode .preview-header h5 {
+          color: #e2e8f0 !important;
+        }
+
+        .dark-mode .preview-size {
+          color: #94a3b8 !important;
+        }
+
+        .dark-mode .processing-message {
+          background: #1e293b !important;
+          border-color: #334155 !important;
+          color: #60a5fa !important;
+        }
+
+        .dark-mode .html-upload-popup-footer {
+          border-top-color: #334155 !important;
+        }
+
+        .dark-mode .popup-info-text {
+          color: #94a3b8 !important;
+        }
+
+        .dark-mode .html-upload-cancel-btn {
+          background: #1e293b !important;
+          border-color: #334155 !important;
+          color: #94a3b8 !important;
+        }
+
+        .dark-mode .html-upload-cancel-btn:hover {
+          background: #334155 !important;
+          border-color: #475569 !important;
         }
 
         /* Pages Sidebar Header Dark Mode */
