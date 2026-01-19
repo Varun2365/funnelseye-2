@@ -74,6 +74,9 @@ const AdminV1Settings = require('./AdminV1Settings');
 const AdminUser = require('./AdminUser');
 const AdminAuditLog = require('./AdminAuditLog');
 
+// Import messaging channel schema
+const MessagingChannel = require('./MessagingChannel');
+
 // Create discriminator models after base models are loaded
 let CoachDiscriminator, ClientDiscriminator, AdminDiscriminator;
 
@@ -168,7 +171,10 @@ const models = {
     AdminSystemSettings,
     AdminV1Settings,
     AdminUser,
-    AdminAuditLog
+    AdminAuditLog,
+
+    // Messaging channel model
+    MessagingChannel
 };
 
 // Validate all models are properly loaded
