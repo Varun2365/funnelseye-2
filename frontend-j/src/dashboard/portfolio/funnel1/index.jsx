@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCoachId, getToken, isAuthenticated, debugAuthState } from '../../../utils/authUtils';
 import { API_BASE_URL } from '../../../config/apiConfig';
-import AppointmentCalendar from './calender.jsx';
 import {
   setStages,
   setSelectedTemplateForStage,
@@ -3559,6 +3558,46 @@ const FunnelEditorIndex = () => {
                         >
                           <FiEdit style={{ width: '14px', height: '14px' }} /> Change Template
                         </button>
+                        {activeStage && pageUrl && (
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '8px', 
+                            padding: '7px 10px', 
+                            backgroundColor: '#f7fafc', 
+                            borderRadius: '6px', 
+                            border: '1px solid #e2e8f0',
+                            width: '100%',
+                            maxWidth: '300px',
+                            overflow: 'hidden'
+                          }}>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              color: '#4a5568', 
+                              maxWidth: 'calc(100% - 30px)', 
+                              overflow: 'hidden', 
+                              textOverflow: 'ellipsis', 
+                              whiteSpace: 'nowrap' 
+                            }}>
+                              {pageUrl}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard(pageUrl)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                color: '#3182ce'
+                              }}
+                              title="Copy page link"
+                            >
+                              <FiCopy style={{ width: '12px', height: '12px' }} />
+                            </button>
+                          </div>
+                        )}
                         {canBeBuilt && (
                           <button
                             onClick={() => handleBuildPage(id)}
@@ -3681,21 +3720,7 @@ const FunnelEditorIndex = () => {
               stageConfig={stageConfig} 
               onUpdate={handleUpdateBasicInfo} 
             />
-            
-            {/* Appointment Settings */}
-            {type === 'appointment-page' && (
-              <div className="content-section animate-fadeIn">
-                <h3 className="section-title">Appointment Settings</h3>
-                <AppointmentCalendar
-                  availabilityRange={contentData.generalSettings.appointment.settings.availabilityRange}
-                  onUpdate={(range) => handleUpdateBasicInfo(
-                    'appointment-page', 
-                    'settings.availabilityRange', 
-                    range
-                  )}
-                />
-              </div>
-            )}
+        
             
             {/* Payment Settings */}
             {type === 'payment-page' && (
@@ -4183,6 +4208,22 @@ const FunnelEditorIndex = () => {
                     title="Preview Page"
                   >
                     <FiEye style={{ width: '14px', height: '14px' }} />
+                  </button>
+                  <button 
+                    type="button" 
+                    className="copy-link-button" 
+                    onClick={async (e) => { 
+                      e.stopPropagation(); 
+                      const stageUrl = await getPageUrl(stage.id);
+                      if (stageUrl) {
+                        copyToClipboard(stageUrl);
+                      } else {
+                        alert('Stage URL not available. Please publish the funnel first.');
+                      }
+                    }}
+                    title="Copy Stage Link"
+                  >
+                    <FiExternalLink style={{ width: '14px', height: '14px' }} />
                   </button>
                   <button 
                     type="button" 
