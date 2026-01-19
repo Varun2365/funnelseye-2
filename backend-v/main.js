@@ -106,6 +106,7 @@ const coachStaffManagementRoutes = require('./routes/coachStaffManagementRoutes'
 const publicPermissionsRoutes = require('./routes/publicPermissionsRoutes');
 const logsRoutes = require('./routes/logsRoutes');
 const centralMessagingRoutes = require('./routes/centralMessagingRoutes');
+const messagingChannelsRoutes = require('./routes/messagingChannels');
 const contentRoutes = require('./routes/contentRoutes');
 const coursePurchaseRoutes = require('./routes/coursePurchaseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -506,6 +507,7 @@ app.use('/whatsapp/scan', require('./routes/whatsappScanRoutes'));
 // New unified messaging endpoint for WhatsApp and Email
 // Features: Credits, Templates, Analytics, Role-based access
 app.use('/api/central-messaging/v1', centralMessagingRoutes);
+app.use('/api/messaging-channels', messagingChannelsRoutes);
 
 // ===== EMAIL CONFIGURATION SYSTEM =====
 // Email configuration management is now integrated into /api/whatsapp/v1

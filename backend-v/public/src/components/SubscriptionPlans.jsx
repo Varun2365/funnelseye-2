@@ -13,17 +13,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Alert, AlertDescription } from './ui/alert';
 import { ScrollArea } from './ui/scroll-area';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Copy, 
-  Eye, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Copy,
+  Eye,
   BarChart3,
   Star,
   CheckCircle,
   Loader2,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import adminApiService from '../services/adminApiService';
 
@@ -770,8 +771,8 @@ const SubscriptionPlans = () => {
       <div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-gradient-to-br from-white to-gray-50 border border-gray-200 rounded-lg p-6 animate-pulse" style={{ borderRadius: '8px' }}>
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -805,7 +806,7 @@ const SubscriptionPlans = () => {
             <p className="text-gray-500">Create your first subscription plan to get started.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {plans.map((plan) => (
               <div
                 key={plan._id}
@@ -847,15 +848,28 @@ const SubscriptionPlans = () => {
                         </Badge>
                       </div>
                     </div>
-                    <Switch
-                      checked={plan.isActive}
-                      onCheckedChange={() => handleToggleStatus(plan._id)}
-                      className={`scale-60 ${
-                        plan.isActive
-                          ? 'data-[state=checked]:bg-[#16a34a]'
-                          : 'data-[state=unchecked]:bg-[#dc2626]'
-                      }`}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => {
+                          setSelectedPlan(plan);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                        variant="ghost"
+                        size="sm"
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                      <Switch
+                        checked={plan.isActive}
+                        onCheckedChange={() => handleToggleStatus(plan._id)}
+                        className={`scale-60 ${
+                          plan.isActive
+                            ? 'data-[state=checked]:bg-[#16a34a]'
+                            : 'data-[state=unchecked]:bg-[#dc2626]'
+                        }`}
+                      />
+                    </div>
                   </div>
 
                   {/* Pricing */}
@@ -887,31 +901,20 @@ const SubscriptionPlans = () => {
                   <div className="flex gap-3">
                     <Button
                       onClick={() => handleEditPlan(plan)}
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-11"
+                      className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 h-8"
                       style={{ borderRadius: '5px' }}
                     >
-                      <Edit className="w-4 h-4 mr-2" />
-                      <span className="font-medium">Edit Plan</span>
+                      <Edit className="w-3 h-3 mr-1" />
+                      <span className="text-sm font-medium">Edit Plan</span>
                     </Button>
                     <Button
                       onClick={() => handleDuplicatePlan(plan._id)}
                       variant="outline"
-                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 h-11"
+                      className="flex-1 border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 h-8"
                       style={{ borderRadius: '5px' }}
                     >
-                      <Copy className="w-4 h-4 mr-2" />
-                      <span className="font-medium">Duplicate</span>
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setSelectedPlan(plan);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                      variant="ghost"
-                      size="sm"
-                      className="px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                    >
-                      <Trash2 className="w-4 h-4" />
+                      <Copy className="w-3 h-3 mr-1" />
+                      <span className="text-sm font-medium">Duplicate</span>
                     </Button>
                   </div>
                 </div>
@@ -2372,19 +2375,83 @@ const SubscriptionPlans = () => {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Delete Subscription Plan</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete "{selectedPlan?.name}"? This action cannot be undone.
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <div className="p-2 bg-red-100 rounded-full">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+              Delete Subscription Plan
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              This action cannot be undone. This will permanently delete the subscription plan and remove it from the system.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+
+          {selectedPlan && (
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-900">Plan Name:</span>
+                  <span className="font-semibold text-gray-800">{selectedPlan.name}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-900">Pricing:</span>
+                  <span className="font-semibold text-gray-800">
+                    {selectedPlan.currency} {selectedPlan.price} / {selectedPlan.billingCycle}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-900">Active Subscribers:</span>
+                  <span className="font-semibold text-gray-800">{selectedPlan.enrolledCoaches || 0} coaches</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-900">Status:</span>
+                  <Badge
+                    variant={selectedPlan.isActive ? "default" : "secondary"}
+                    className={selectedPlan.isActive
+                      ? "bg-green-100 text-green-800 border-green-300"
+                      : "bg-gray-100 text-gray-600"
+                    }
+                  >
+                    {selectedPlan.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(selectedPlan?.enrolledCoaches || 0) > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <div className="flex items-start gap-3">
+                <div className="p-1 bg-amber-100 rounded-full flex-shrink-0">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-amber-800">Warning</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    This plan has active subscribers. Deleting it may affect {selectedPlan.enrolledCoaches} coach{selectedPlan.enrolledCoaches !== 1 ? 'es' : ''}.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="flex-1 sm:flex-none"
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeletePlan}>
-              Delete
+            <Button
+              variant="destructive"
+              onClick={handleDeletePlan}
+              className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Plan
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import environmentConfig from '../config/environment.js';
+import { useToast } from '../contexts/ToastContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -10,7 +11,61 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Textarea } from './ui/textarea';
 import { Alert, AlertDescription } from './ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
+
+// Custom Dialog Component
+const CustomDialog = ({ open, onOpenChange, children }) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60 animate-in fade-in duration-300"
+        onClick={() => onOpenChange(false)}
+      />
+
+      {/* Dialog Content */}
+      <div className="relative z-10 animate-in zoom-in-95 duration-300">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+const CustomDialogContent = ({ className, style, children }) => (
+  <div
+    className={`relative bg-white rounded-[10px] shadow-2xl border border-gray-200/50 overflow-hidden ${className || ''}`}
+    style={{ width: '50vw', ...style }}
+  >
+    {children}
+  </div>
+);
+
+const CustomDialogHeader = ({ className, children }) => (
+  <div className={`px-10 py-4 border-b border-gray-100/80 bg-gradient-to-r from-gray-50/50 to-white ${className || ''}`}>
+    {children}
+  </div>
+);
+
+const CustomDialogTitle = ({ className, children }) => (
+  <h2 className={`text-2xl font-bold text-gray-900 ${className || ''}`}>
+    {children}
+  </h2>
+);
+
+const CustomDialogDescription = ({ className, children }) => (
+  <p className={`text-gray-600 mt-2 ${className || ''}`}>
+    {children}
+  </p>
+);
+
+const CustomDialogFooter = ({ className, children }) => (
+  <div className={`px-10 py-4 bg-gradient-to-r from-gray-50 to-gray-100/50 border-t border-gray-200/50 flex justify-end space-x-4 ${className || ''}`}>
+    {children}
+  </div>
+);
+import { Switch } from './ui/switch';
 import { 
   MessageSquare, 
   Smartphone, 
@@ -18,9 +73,10 @@ import {
   BarChart3, 
   Send, 
   RefreshCw, 
-  CheckCircle, 
-  XCircle, 
+  CheckCircle,
+  XCircle,
   Clock,
+  Loader2,
   Filter,
   Search,
   Download,
@@ -61,15 +117,16 @@ import {
   Activity,
   DollarSign,
   EyeOff,
-  Save
+  Save,
+  QrCode,
+  X
 } from 'lucide-react';
 import axios from 'axios';
 
 const WhatsAppDashboard = () => {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
 
   // Central WhatsApp Configuration
   const [config, setConfig] = useState(null);
@@ -156,6 +213,48 @@ const WhatsAppDashboard = () => {
   const [bulkMessage, setBulkMessage] = useState('');
   const [contactSuggestions, setContactSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Messaging channels state
+  const [createChannelDialogOpen, setCreateChannelDialogOpen] = useState(false);
+  const [channels, setChannels] = useState([]);
+  const [channelsLoading, setChannelsLoading] = useState(false);
+  const [showApiToken, setShowApiToken] = useState(false);
+  const [showSmtpPassword, setShowSmtpPassword] = useState(false);
+
+  // Bailey's WhatsApp Scanner state
+  const [baileySession, setBaileySession] = useState(null);
+  const [baileyQR, setBaileyQR] = useState(null);
+  const [baileyStatus, setBaileyStatus] = useState('disconnected');
+  const [baileyLoading, setBaileyLoading] = useState(false);
+  const [channelForm, setChannelForm] = useState({
+    name: '',
+    type: 'whatsapp_api',
+    whatsappApi: {
+      phoneNumberId: '',
+      accessToken: '',
+      businessAccountId: '',
+      verifyToken: '',
+      webhookUrl: '',
+      apiVersion: 'v18.0'
+    },
+    whatsappBailey: {
+      deviceId: '',
+      sessionId: '',
+      phoneNumber: ''
+    },
+    emailSmtp: {
+      host: '',
+      port: 587,
+      secure: false,
+      auth: {
+        user: '',
+        pass: ''
+      },
+      fromEmail: '',
+      fromName: '',
+      testEmailAddress: ''
+    }
+  });
   
   // Contact editing state
   const [editingContact, setEditingContact] = useState(null);
@@ -335,7 +434,7 @@ const WhatsAppDashboard = () => {
       if (err.message.includes('not configured')) {
         setConfig(null);
       } else {
-        setError(`Failed to load configuration: ${err.message}`);
+        showToast(`Failed to load configuration: ${err.message}`, 'error');
       }
     }
   };
@@ -352,7 +451,7 @@ const WhatsAppDashboard = () => {
       if (err.message.includes('not configured')) {
         setEmailConfig(null);
       } else {
-        setError(`Failed to load email configuration: ${err.message}`);
+        showToast(`Failed to load email configuration: ${err.message}`, 'error');
       }
     }
   };
@@ -364,7 +463,7 @@ const WhatsAppDashboard = () => {
       console.log('🔄 [WHATSAPP] Testing configuration...');
       
       const result = await apiCall('/central-messaging/v1/test-config');
-      setSuccess('Configuration test successful! WhatsApp API is working properly.');
+      showToast('Configuration test successful! WhatsApp API is working properly.', 'success');
       console.log('✅ [WHATSAPP] Configuration test successful');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error testing configuration:', err.message);
@@ -373,11 +472,11 @@ const WhatsAppDashboard = () => {
       if (err.response?.status === 401) {
         const errorData = err.response.data;
         if (errorData?.errorCode === 'TOKEN_EXPIRED') {
-          setError('WhatsApp access token has expired. Please reconfigure your WhatsApp settings using the "Reconfigure" button.');
+          showToast('WhatsApp access token has expired. Please reconfigure your WhatsApp settings using the "Reconfigure" button.', 'error');
         } else if (errorData?.errorCode === 'OAUTH_ERROR') {
-          setError('WhatsApp authentication failed. Please check your credentials and reconfigure.');
+          showToast('WhatsApp authentication failed. Please check your credentials and reconfigure.', 'error');
         } else {
-          setError(`Configuration test failed: ${err.message}`);
+          showToast(`Configuration test failed: ${err.message}`, 'error');
         }
       } else {
         setError(`Configuration test failed: ${err.message}`);
@@ -407,18 +506,18 @@ const WhatsAppDashboard = () => {
       console.log('🔄 [EMAIL] Testing email configuration...');
       
       const result = await apiCall('/central-messaging/v1/admin/email/test-config');
-      setSuccess('Email configuration test successful! Email service is working properly.');
+      showToast('Email configuration test successful! Email service is working properly.', 'success');
       console.log('✅ [EMAIL] Email configuration test successful');
     } catch (err) {
       console.error('❌ [EMAIL] Error testing email configuration:', err.message);
       
       // Handle specific error types
       if (err.response?.status === 401) {
-        setError('Email authentication failed. Please check your email credentials and reconfigure.');
+        showToast('Email authentication failed. Please check your email credentials and reconfigure.', 'error');
       } else if (err.response?.status === 500) {
-        setError('Email server connection failed. Please check your SMTP settings.');
+        showToast('Email server connection failed. Please check your SMTP settings.', 'error');
       } else {
-        setError(`Email configuration test failed: ${err.message}`);
+        showToast(`Email configuration test failed: ${err.message}`, 'error');
       }
     } finally {
       setLoading(false);
@@ -439,11 +538,11 @@ const WhatsAppDashboard = () => {
           message: message || 'This is a test email from FunnelsEye platform.'
         }
       });
-      setSuccess(`Test email sent successfully to ${toEmail}!`);
+      showToast(`Test email sent successfully to ${toEmail}!`, 'success');
       console.log('✅ [EMAIL] Test email sent successfully');
     } catch (err) {
       console.error('❌ [EMAIL] Error sending test email:', err.message);
-      setError(`Failed to send test email: ${err.message}`);
+      showToast(`Failed to send test email: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -453,7 +552,7 @@ const WhatsAppDashboard = () => {
   const setupCentralWhatsApp = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
+      // Error cleared
       console.log('🔄 [WHATSAPP] Setting up Central WhatsApp...');
       
       // Prepare data for update - only include fields that have values
@@ -467,7 +566,7 @@ const WhatsAppDashboard = () => {
       
       // If reconfiguring and no fields provided, show error
       if (config && Object.keys(updateData).length === 0) {
-        setError('Please provide at least one field to update');
+        showToast('Please provide at least one field to update', 'error');
         return;
       }
       
@@ -477,14 +576,14 @@ const WhatsAppDashboard = () => {
       });
       
       const isUpdate = result.data.isUpdate;
-      setSuccess(isUpdate ? 'Central WhatsApp configuration updated successfully!' : 'Central WhatsApp configured successfully!');
+      showToast(isUpdate ? 'Central WhatsApp configuration updated successfully!' : 'Central WhatsApp configured successfully!', 'success');
       setConfigDialogOpen(false);
       setConfigForm({ phoneNumberId: '', accessToken: '' });
       await fetchConfig();
       console.log('✅ [WHATSAPP] Central WhatsApp setup successful');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error setting up Central WhatsApp:', err.message);
-      setError(`Failed to ${config ? 'update' : 'configure'} Central WhatsApp: ${err.message}`);
+      showToast(`Failed to ${config ? 'update' : 'configure'} Central WhatsApp: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -494,7 +593,7 @@ const WhatsAppDashboard = () => {
   const setupEmailConfig = useCallback(async () => {
     try {
       setLoading(true);
-      setError('');
+      // Error cleared
       console.log('🔄 [EMAIL] Setting up email configuration...');
       
       // Prepare configuration data (simplified)
@@ -509,7 +608,7 @@ const WhatsAppDashboard = () => {
       });
       
       const isUpdate = result.data.isUpdate;
-      setSuccess(isUpdate ? 'Email configuration updated successfully!' : 'Email configured successfully!');
+      showToast(isUpdate ? 'Email configuration updated successfully!' : 'Email configured successfully!', 'success');
       setEmailConfigDialogOpen(false);
       setEmailConfigForm({ 
         email: '', 
@@ -701,7 +800,7 @@ const WhatsAppDashboard = () => {
         data: messageData
       });
       
-      setSuccess('Message sent successfully!');
+      showToast('Message sent successfully!', 'success');
       setSendDialogOpen(false);
       resetSendForm();
       await fetchMessages(messagesPage);
@@ -832,7 +931,7 @@ const WhatsAppDashboard = () => {
           name: contactEditForm.name
         }
       });
-      setSuccess('Contact updated successfully!');
+      showToast('Contact updated successfully!', 'success');
       setContactEditDialog(false);
       await fetchContacts(); // Refresh contacts
     } catch (err) {
@@ -917,7 +1016,7 @@ const WhatsAppDashboard = () => {
         data: messageData
       });
       
-      setSuccess(`Bulk messages sent successfully to ${selectedContacts.length} contacts!`);
+      showToast(`Bulk messages sent successfully to ${selectedContacts.length} contacts!`, 'success');
       setBulkMode(false);
       setSelectedContacts([]);
       setBulkMessage('');
@@ -954,7 +1053,7 @@ const WhatsAppDashboard = () => {
         data: messageData
       });
       
-      setSuccess('Test message sent successfully!');
+      showToast('Test message sent successfully!', 'success');
       console.log('✅ [WHATSAPP] Test message sent successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error sending test message:', err.message);
@@ -972,15 +1071,228 @@ const WhatsAppDashboard = () => {
       const result = await apiCall('/central-messaging/v1/admin/whatsapp/templates/sync', {
         method: 'POST'
       });
-      setSuccess(`Templates synced successfully! ${result.data.syncedCount || 0} templates processed.`);
+      showToast(`Templates synced successfully! ${result.data.syncedCount || 0} templates processed.`, 'success');
       await fetchTemplates();
       console.log('✅ [WHATSAPP] Templates synced successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error syncing templates:', err.message);
-      setError(`Failed to sync templates: ${err.message}`);
+      showToast(`Failed to sync templates: ${err.message}`, 'error');
     } finally {
       setSyncLoading(false);
     }
+  };
+
+  // Messaging channels functions
+  const loadChannels = async () => {
+    try {
+      setChannelsLoading(true);
+
+      const response = await fetch('/api/messaging-channels', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setChannels(result.data || []);
+      } else {
+        showToast(result.message || 'Failed to load channels', 'error');
+      }
+    } catch (error) {
+      console.error('Error loading channels:', error);
+      showToast('Failed to load messaging channels', 'error');
+    } finally {
+      setChannelsLoading(false);
+    }
+  };
+
+  const handleCreateChannel = async () => {
+    try {
+      setChannelsLoading(true);
+
+      const response = await fetch('/api/messaging-channels', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify(channelForm)
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setCreateChannelDialogOpen(false);
+        setShowApiToken(false);
+        setShowSmtpPassword(false);
+        // Reset Bailey state
+        disconnectBaileySession();
+
+        setChannelForm({
+          name: '',
+          type: 'whatsapp_api',
+          whatsappApi: {
+            phoneNumberId: '',
+            accessToken: '',
+            businessAccountId: '',
+            verifyToken: '',
+            webhookUrl: '',
+            apiVersion: 'v18.0'
+          },
+          whatsappBailey: {
+            deviceId: '',
+            sessionId: '',
+            phoneNumber: ''
+          },
+          emailSmtp: {
+            host: '',
+            port: 587,
+            secure: false,
+            auth: {
+              user: '',
+              pass: ''
+            },
+            fromEmail: '',
+            fromName: '',
+            testEmailAddress: ''
+          }
+        });
+        await loadChannels();
+        showToast('Messaging channel created successfully', 'success');
+      } else {
+        showToast(result.message || 'Failed to create channel', 'error');
+      }
+    } catch (error) {
+      console.error('Error creating channel:', error);
+      showToast('Failed to create messaging channel', 'error');
+    } finally {
+      setChannelsLoading(false);
+    }
+  };
+
+  // Bailey's WhatsApp Scanner functions
+  const initBaileySession = async () => {
+    try {
+      setBaileyLoading(true);
+      const response = await fetch('/api/messaging-channels/bailey/init', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({
+          deviceName: channelForm.name || 'FunnelsEye Device'
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setBaileySession(result.data);
+        setBaileyStatus('initializing');
+        pollBaileyStatus(result.data.sessionId);
+        showToast('Bailey session initialized. Generating QR code...', 'info');
+      } else {
+        showToast(result.message || 'Failed to initialize Bailey session', 'error');
+      }
+    } catch (error) {
+      console.error('Error initializing Bailey session:', error);
+      showToast('Failed to initialize Bailey session', 'error');
+    } finally {
+      setBaileyLoading(false);
+    }
+  };
+
+  const pollBaileyStatus = (sessionId) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/messaging-channels/bailey/${sessionId}/status`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          const status = result.data.status;
+          setBaileyStatus(status);
+
+          if (status === 'qr_ready') {
+            // Get QR code
+            const qrResponse = await fetch(`/api/messaging-channels/bailey/${sessionId}/qr`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+              }
+            });
+
+            const qrResult = await qrResponse.json();
+            if (qrResult.success && qrResult.data.qrCode) {
+              // Generate QR code image from the raw Bailey's data
+              const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrResult.data.qrCode)}&format=png`;
+              setBaileyQR(qrImageUrl);
+              clearInterval(pollInterval);
+
+              // Log QR code data to console
+              console.log('🎯 Bailey\'s Raw QR Data:', qrResult.data.qrCode);
+              console.log('🖼️ Generated QR Image URL:', qrImageUrl);
+              if (qrResult.data.qrData) {
+                console.log('📄 QR Data (duplicate):', qrResult.data.qrData);
+              }
+
+              showToast('QR code ready! Scan with WhatsApp on your phone.', 'success');
+            }
+          } else if (status === 'connected') {
+            clearInterval(pollInterval);
+            // Auto-fill the form with connection details
+            setChannelForm({
+              ...channelForm,
+              whatsappBailey: {
+                ...channelForm.whatsappBailey,
+                deviceId: result.data.deviceId,
+                sessionId: result.data.sessionId
+              }
+            });
+            setBaileySession(null);
+            setBaileyQR(null);
+            showToast('WhatsApp scanner connected successfully!', 'success');
+          }
+        }
+      } catch (error) {
+        console.error('Error polling Bailey status:', error);
+        clearInterval(pollInterval);
+      }
+    }, 2000);
+
+    // Clear polling after 5 minutes
+    setTimeout(() => {
+      clearInterval(pollInterval);
+      if (baileyStatus !== 'connected') {
+        setBaileyStatus('timeout');
+        showToast('QR code expired. Please try again.', 'warning');
+      }
+    }, 300000); // 5 minutes
+  };
+
+  const disconnectBaileySession = async () => {
+    if (baileySession?.sessionId) {
+      try {
+        await fetch(`/api/messaging-channels/bailey/${baileySession.sessionId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+      } catch (error) {
+        console.error('Error disconnecting Bailey session:', error);
+      }
+    }
+
+    setBaileySession(null);
+    setBaileyQR(null);
+    setBaileyStatus('disconnected');
   };
 
   // Redirect to Meta Business Manager to create template
@@ -1001,7 +1313,7 @@ const WhatsAppDashboard = () => {
     window.open(metaTemplateUrl, '_blank');
     
     setTemplateDialogOpen(false);
-    setSuccess('Opening Meta Business Manager. After creating your template there, come back and click "Sync Templates" to import it.');
+    showToast('Opening Meta Business Manager. After creating your template there, come back and click "Sync Templates" to import it.', 'info');
   };
 
   // Fetch credit settings
@@ -1026,7 +1338,7 @@ const WhatsAppDashboard = () => {
         method: 'PUT',
         data: settings
       });
-      setSuccess('Credit settings updated successfully!');
+      showToast('Credit settings updated successfully!', 'success');
       await fetchCreditSettings();
       console.log('✅ [WHATSAPP] Credit settings updated successfully');
     } catch (err) {
@@ -1099,7 +1411,7 @@ const WhatsAppDashboard = () => {
       console.log('🔄 [WHATSAPP] Performing health check...');
       
       const result = await apiCall('/central-messaging/v1/health');
-      setSuccess('Health check successful! All systems operational.');
+      showToast('Health check successful! All systems operational.', 'success');
       console.log('✅ [WHATSAPP] Health check successful');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error in health check:', err.message);
@@ -1113,7 +1425,7 @@ const WhatsAppDashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      setError('');
+      // Error cleared
       
       try {
         // Always fetch configs first
@@ -1288,7 +1600,7 @@ const WhatsAppDashboard = () => {
   };
 
   // Overview Tab Content
-  const OverviewContent = () => (
+  const OverviewContent = ({ setCreateChannelDialogOpen }) => (
     <div className="space-y-6">
       {/* Configuration Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1565,6 +1877,81 @@ const WhatsAppDashboard = () => {
           </Card>
         </>
       )}
+
+      {/* Messaging Channels Overview */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="flex items-center space-x-2">
+              <Network className="h-5 w-5 text-purple-600" />
+              <span>Messaging Channels</span>
+            </span>
+            <Button variant="outline" size="sm" onClick={() => setActiveTab('channels')}>
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Channels
+            </Button>
+          </CardTitle>
+          <CardDescription>
+            Overview of all configured messaging channels
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Channel Status Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg border border-green-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-green-800">WhatsApp API</p>
+                    <p className="text-2xl font-bold text-green-900">{config ? '1' : '0'}</p>
+                  </div>
+                  <MessageCircle className="h-8 w-8 text-green-600" />
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-blue-800">Bailey Scanner</p>
+                    <p className="text-2xl font-bold text-blue-900">0</p>
+                  </div>
+                  <Smartphone className="h-8 w-8 text-blue-600" />
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg border border-purple-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-purple-800">Email SMTP</p>
+                    <p className="text-2xl font-bold text-purple-900">{emailConfig ? '1' : '0'}</p>
+                  </div>
+                  <Mail className="h-8 w-8 text-purple-600" />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-3 pt-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCreateChannelDialogOpen(true)}
+                className="flex items-center space-x-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Add Channel</span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveTab('channels')}
+                className="flex items-center space-x-2"
+              >
+                <Eye className="h-4 w-4" />
+                <span>View All Channels</span>
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -2450,21 +2837,269 @@ const WhatsAppDashboard = () => {
     </div>
   );
 
+  // Messaging Channels Content Component
+  const ChannelsContent = ({
+    createChannelDialogOpen,
+    setCreateChannelDialogOpen,
+    channels,
+    setChannels,
+    channelsLoading,
+    channelForm,
+    setChannelForm,
+    handleCreateChannel,
+    loadChannels
+  }) => {
+    const [selectedChannelType, setSelectedChannelType] = useState('');
+
+    useEffect(() => {
+      if (activeTab === 'channels') {
+        loadChannels();
+      }
+    }, [activeTab]);
+
+    // Toggle channel status
+    const handleToggleChannel = async (channelId) => {
+      try {
+        const response = await fetch(`/api/messaging-channels/${channelId}/toggle`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          await loadChannels();
+        } else {
+          showToast(result.message || 'Failed to toggle channel status', 'error');
+        }
+      } catch (error) {
+        console.error('Error toggling channel:', error);
+        showToast('Failed to toggle channel status', 'error');
+      }
+    };
+
+    // Delete channel
+    const handleDeleteChannel = async (channelId) => {
+      if (!confirm('Are you sure you want to delete this messaging channel? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/messaging-channels/${channelId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+          }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          await loadChannels();
+          showToast('Messaging channel deleted successfully', 'success');
+        } else {
+          showToast(result.message || 'Failed to delete channel', 'error');
+        }
+      } catch (error) {
+        console.error('Error deleting channel:', error);
+        setChannelsError('Failed to delete messaging channel');
+      }
+    };
+
+    const getChannelTypeIcon = (type) => {
+      switch (type) {
+        case 'whatsapp_api':
+          return <MessageCircle className="h-4 w-4 text-green-600" />;
+        case 'whatsapp_bailey':
+          return <Smartphone className="h-4 w-4 text-blue-600" />;
+        case 'email_smtp':
+          return <Mail className="h-4 w-4 text-purple-600" />;
+        default:
+          return <Settings className="h-4 w-4" />;
+      }
+    };
+
+    const getChannelTypeLabel = (type) => {
+      switch (type) {
+        case 'whatsapp_api':
+          return 'WhatsApp API';
+        case 'whatsapp_bailey':
+          return 'Bailey Scanner';
+        case 'email_smtp':
+          return 'Email SMTP';
+        default:
+          return type;
+      }
+    };
+
+    const getChannelStatusBadge = (channel) => {
+      if (!channel.isActive) {
+        return <Badge variant="secondary">Inactive</Badge>;
+      }
+
+      if (channel.type === 'whatsapp_api') {
+        return <Badge className="bg-green-100 text-green-800">API Connected</Badge>;
+      } else if (channel.type === 'whatsapp_bailey') {
+        return channel.whatsappBailey?.isConnected ?
+          <Badge className="bg-blue-100 text-blue-800">Scanner Connected</Badge> :
+          <Badge variant="outline">Scanner Disconnected</Badge>;
+      } else if (channel.type === 'email_smtp') {
+        return channel.configMetadata?.testStatus === 'success' ?
+          <Badge className="bg-purple-100 text-purple-800">SMTP Verified</Badge> :
+          <Badge variant="outline">SMTP Unverified</Badge>;
+      }
+
+      return <Badge variant="outline">Configured</Badge>;
+    };
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Messaging Channels</h2>
+            <p className="text-muted-foreground">
+              Manage different messaging channels (WhatsApp API, Bailey Scanner, Email SMTP)
+            </p>
+          </div>
+          <Button onClick={() => setCreateChannelDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Channel
+          </Button>
+        </div>
+
+        {/* Channels Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Configured Channels</CardTitle>
+            <CardDescription>
+              All messaging channels configured in your system
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {channelsLoading ? (
+              <div className="flex justify-center items-center h-32">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : channels.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Network className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">No messaging channels configured</h3>
+                <p className="text-sm">Create your first messaging channel to get started.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Channel</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Messages Sent</TableHead>
+                    <TableHead>Default</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {channels.map((channel) => (
+                    <TableRow key={channel._id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{channel.name}</div>
+                          <div className="text-sm text-muted-foreground">{channel.description}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getChannelTypeIcon(channel.type)}
+                          <span>{getChannelTypeLabel(channel.type)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {getChannelStatusBadge(channel)}
+                          <Switch
+                            checked={channel.isActive}
+                            onCheckedChange={() => handleToggleChannel(channel._id)}
+                            size="sm"
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium">{channel.statistics?.totalMessagesSent || 0}</div>
+                          <div className="text-muted-foreground">
+                            Today: {channel.statistics?.messagesSentToday || 0}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {channel.isDefault && (
+                          <Badge variant="default" className="bg-blue-100 text-blue-800">
+                            Default
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteChannel(channel._id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+      </div>
+    );
+  };
+
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
+    <>
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f9fafb;
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 10px;
+            transition: background-color 0.2s ease;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+          }
+          .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #d1d5db #f9fafb;
+          }
+        `
+      }} />
+      <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Central WhatsApp Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Central Messaging</h1>
           <p className="text-muted-foreground mt-2">
             Manage centralized WhatsApp messaging and templates
           </p>
         </div>
         <div className="flex items-center space-x-3">
-          <Button onClick={refreshData} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh All
-        </Button>
           {config && (
             <Button onClick={() => setSendDialogOpen(true)} size="sm">
               <Send className="h-4 w-4 mr-2" />
@@ -2474,23 +3109,11 @@ const WhatsAppDashboard = () => {
         </div>
       </div>
 
-      {/* Error/Success Messages */}
-      {error && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      {success && (
-        <Alert>
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
+      {/* Error/Success Messages - Now shown as toast notifications */}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-8 w-full">
+        <TabsList className="grid grid-cols-9 w-full">
           <TabsTrigger value="overview" className="flex items-center space-x-2 px-3">
             <BarChart3 className="h-4 w-4" />
             <span>Overview</span>
@@ -2519,6 +3142,10 @@ const WhatsAppDashboard = () => {
             <Activity className="h-4 w-4" />
             <span>Analytics</span>
           </TabsTrigger>
+          <TabsTrigger value="channels" className="flex items-center space-x-2 px-3">
+            <Network className="h-4 w-4" />
+            <span>Channels</span>
+          </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center space-x-2 px-3">
             <Settings className="h-4 w-4" />
             <span>Settings</span>
@@ -2526,7 +3153,7 @@ const WhatsAppDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewContent />
+          <OverviewContent setCreateChannelDialogOpen={setCreateChannelDialogOpen} />
         </TabsContent>
 
         <TabsContent value="inbox">
@@ -2551,6 +3178,20 @@ const WhatsAppDashboard = () => {
 
         <TabsContent value="analytics">
           <AnalyticsContent />
+        </TabsContent>
+
+        <TabsContent value="channels">
+          <ChannelsContent
+            createChannelDialogOpen={createChannelDialogOpen}
+            setCreateChannelDialogOpen={setCreateChannelDialogOpen}
+            channels={channels}
+            setChannels={setChannels}
+            channelsLoading={channelsLoading}
+            channelForm={channelForm}
+            setChannelForm={setChannelForm}
+            handleCreateChannel={handleCreateChannel}
+            loadChannels={loadChannels}
+          />
         </TabsContent>
 
         <TabsContent value="settings">
@@ -3626,8 +4267,457 @@ const WhatsAppDashboard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Channel Dialog */}
+      <CustomDialog open={createChannelDialogOpen} onOpenChange={(open) => {
+        setCreateChannelDialogOpen(open);
+        if (!open) {
+          setShowApiToken(false);
+          setShowSmtpPassword(false);
+          // Cleanup Bailey session on dialog close
+          if (baileySession) {
+            disconnectBaileySession();
+          }
+        }
+      }}>
+        <CustomDialogContent
+          className="flex flex-col"
+          style={{
+            height: '70vh',
+            background: '#ffffff'
+          }}
+        >
+          <CustomDialogHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <MessageCircle className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <CustomDialogTitle>Create Messaging Channel</CustomDialogTitle>
+                  <CustomDialogDescription>
+                    Add a new messaging channel to your platform
+                  </CustomDialogDescription>
+                </div>
+              </div>
+              <button
+                onClick={() => setCreateChannelDialogOpen(false)}
+                className="p-2 hover:bg-gray-200 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+          </CustomDialogHeader>
+
+          <div className="flex-1 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-2 h-full divide-x divide-gray-200">
+              {/* Left Column - Basic Information */}
+              <div className="p-8 space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Channel Setup</h3>
+                  <p className="text-sm text-gray-600">Configure your messaging channel</p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="channel-name" className="text-sm font-medium text-gray-700">Channel Name</Label>
+                    <Input
+                      id="channel-name"
+                      placeholder="e.g., Main Business Channel"
+                      value={channelForm.name}
+                      onChange={(e) => setChannelForm({...channelForm, name: e.target.value})}
+                      className="h-11 mt-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="channel-type" className="text-sm font-medium text-gray-700">Channel Type</Label>
+                    <Select value={channelForm.type} onValueChange={(value) => setChannelForm({...channelForm, type: value})}>
+                      <SelectTrigger className="h-11 mt-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500">
+                        <SelectValue placeholder="Select channel type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="whatsapp_api">
+                          <div className="flex items-center space-x-2">
+                            <MessageCircle className="h-4 w-4 text-green-600" />
+                            <span>Meta WhatsApp</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="whatsapp_bailey">
+                          <div className="flex items-center space-x-2">
+                            <Smartphone className="h-4 w-4 text-blue-600" />
+                            <span>WhatsApp Scanner</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="email_smtp">
+                          <div className="flex items-center space-x-2">
+                            <Mail className="h-4 w-4 text-purple-600" />
+                            <span>Email SMTP</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Configuration */}
+              <div className="p-8">
+                {/* WhatsApp API Configuration */}
+                {channelForm.type === 'whatsapp_api' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Meta WhatsApp Configuration</h3>
+                      <p className="text-sm text-gray-600">Configure your WhatsApp Business API</p>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="phone-number-id" className="text-sm font-medium text-gray-700">Phone Number ID</Label>
+                        <Input
+                          id="phone-number-id"
+                          placeholder="Enter your WhatsApp phone number ID"
+                          value={channelForm.whatsappApi.phoneNumberId}
+                          onChange={(e) => setChannelForm({
+                            ...channelForm,
+                            whatsappApi: {...channelForm.whatsappApi, phoneNumberId: e.target.value}
+                          })}
+                          className="h-11 mt-2 border-gray-200 focus:border-green-500 focus:ring-green-500 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="access-token" className="text-sm font-medium text-gray-700">Access Token</Label>
+                        <div className="relative mt-2">
+                          <Input
+                            id="access-token"
+                            type={showApiToken ? "text" : "password"}
+                            placeholder="Enter your WhatsApp access token"
+                            value={channelForm.whatsappApi.accessToken}
+                            onChange={(e) => setChannelForm({
+                              ...channelForm,
+                              whatsappApi: {...channelForm.whatsappApi, accessToken: e.target.value}
+                            })}
+                            className="h-11 pr-12 border-gray-200 focus:border-green-500 focus:ring-green-500 text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowApiToken(!showApiToken)}
+                            className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            {showApiToken ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="business-account-id" className="text-sm font-medium text-gray-700">Business Account ID</Label>
+                        <Input
+                          id="business-account-id"
+                          placeholder="Enter your business account ID"
+                          value={channelForm.whatsappApi.businessAccountId}
+                          onChange={(e) => setChannelForm({
+                            ...channelForm,
+                            whatsappApi: {...channelForm.whatsappApi, businessAccountId: e.target.value}
+                          })}
+                          className="h-11 mt-2 border-gray-200 focus:border-green-500 focus:ring-green-500 text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bailey's Scanner Configuration */}
+                {channelForm.type === 'whatsapp_bailey' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">WhatsApp Scanner Setup</h3>
+                      <p className="text-sm text-gray-600">Connect using Bailey's WhatsApp integration</p>
+                    </div>
+
+                    <div className="space-y-6">
+                      {/* QR Code Display */}
+                      <div className="text-center">
+                        {!baileySession ? (
+                          <div className="py-8">
+                            <QrCode className="h-16 w-16 mx-auto text-gray-400 mb-4" />
+                            <p className="text-sm text-gray-600 mb-6">
+                              Generate a QR code to connect your WhatsApp scanner
+                            </p>
+                            <Button
+                              onClick={initBaileySession}
+                              disabled={baileyLoading}
+                              className="bg-blue-600 hover:bg-blue-700 px-6"
+                            >
+                              {baileyLoading ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Initializing...
+                                </>
+                              ) : (
+                                <>
+                                  <QrCode className="h-4 w-4 mr-2" />
+                                  Generate QR Code
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            {baileyStatus === 'initializing' && (
+                              <div className="py-8">
+                                <Loader2 className="h-10 w-10 animate-spin mx-auto text-blue-600 mb-4" />
+                                <p className="text-sm text-gray-600">Initializing WhatsApp scanner...</p>
+                              </div>
+                            )}
+
+                            {baileyStatus === 'qr_ready' && baileyQR && (
+                              <div className="py-4">
+                                <div className="bg-gray-50 p-6 rounded-lg border-2 border-dashed border-gray-300 mb-4">
+                                  <img
+                                    src={baileyQR}
+                                    alt="WhatsApp QR Code"
+                                    className="w-full max-w-sm mx-auto"
+                                    onError={(e) => {
+                                      console.warn('❌ Primary QR code failed to load, trying fallback...');
+                                      // Try to use fallback QR if available (would need to be passed from API)
+                                      e.target.src = `data:image/svg+xml;base64,${btoa(`
+                                        <svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+                                          <rect width="256" height="256" fill="white"/>
+                                          <rect x="32" y="32" width="192" height="192" fill="black"/>
+                                          <rect x="64" y="64" width="128" height="128" fill="white"/>
+                                          <rect x="96" y="96" width="64" height="64" fill="black"/>
+                                          <text x="128" y="140" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="white">QR Code</text>
+                                          <text x="128" y="160" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="white">Loading...</text>
+                                        </svg>
+                                      `)}`;
+                                    }}
+                                  />
+                                </div>
+                                <div className="space-y-3">
+                                  <p className="text-sm font-semibold text-gray-800">Scan QR Code</p>
+                                  <p className="text-xs text-gray-600 leading-relaxed">
+                                    Open WhatsApp on your phone → Settings → Linked Devices → Link a Device
+                                  </p>
+                                  <div className="flex items-center justify-center space-x-2 text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-md">
+                                    <Clock className="h-3 w-3" />
+                                    <span>Expires in 2 minutes</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {baileyStatus === 'connected' && (
+                              <div className="py-8">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <CheckCircle className="h-8 w-8 text-green-600" />
+                                </div>
+                                <p className="text-sm font-semibold text-green-800 mb-2">Connected Successfully!</p>
+                                <p className="text-xs text-gray-600">Your WhatsApp scanner is now ready to use.</p>
+                              </div>
+                            )}
+
+                            {baileyStatus === 'timeout' && (
+                              <div className="py-8">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <XCircle className="h-8 w-8 text-red-600" />
+                                </div>
+                                <p className="text-sm font-semibold text-red-800 mb-2">QR Code Expired</p>
+                                <p className="text-xs text-gray-600 mb-4">Please generate a new QR code.</p>
+                                <Button
+                                  onClick={initBaileySession}
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Try Again
+                                </Button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Device Configuration */}
+                      {(channelForm.whatsappBailey.deviceId || channelForm.whatsappBailey.sessionId) && (
+                        <div className="border-t pt-6">
+                          <h4 className="text-sm font-semibold text-gray-800 mb-4">Device Configuration</h4>
+                          <div className="space-y-4">
+                            <div>
+                              <Label htmlFor="device-id" className="text-sm font-medium text-gray-700">Device ID</Label>
+                              <Input
+                                id="device-id"
+                                placeholder="Auto-filled after QR scan"
+                                value={channelForm.whatsappBailey.deviceId}
+                                onChange={(e) => setChannelForm({
+                                  ...channelForm,
+                                  whatsappBailey: {...channelForm.whatsappBailey, deviceId: e.target.value}
+                                })}
+                                className="h-11 mt-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                readOnly={!!channelForm.whatsappBailey.deviceId}
+                              />
+                              {channelForm.whatsappBailey.deviceId && (
+                                <p className="text-xs text-green-600 mt-1 flex items-center">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Connected and ready
+                                </p>
+                              )}
+                            </div>
+
+                            <div>
+                              <Label htmlFor="session-id" className="text-sm font-medium text-gray-700">Session ID</Label>
+                              <Input
+                                id="session-id"
+                                placeholder="Auto-filled after connection"
+                                value={channelForm.whatsappBailey.sessionId}
+                                onChange={(e) => setChannelForm({
+                                  ...channelForm,
+                                  whatsappBailey: {...channelForm.whatsappBailey, sessionId: e.target.value}
+                                })}
+                                className="h-11 mt-2 border-gray-200 focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                readOnly={!!channelForm.whatsappBailey.sessionId}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <Alert className="border-blue-200 bg-blue-50">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-sm text-blue-800">
+                          After scanning the QR code, your device ID and session information will be automatically filled.
+                          The channel will be ready to use once connected.
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </div>
+                )}
+
+                {/* Email SMTP Configuration */}
+                {channelForm.type === 'email_smtp' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 mb-2">Email SMTP Configuration</h3>
+                      <p className="text-sm text-gray-600">Configure your email SMTP settings</p>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="smtp-host" className="text-sm font-medium text-gray-700">SMTP Host</Label>
+                        <Input
+                          id="smtp-host"
+                          placeholder="smtp.gmail.com"
+                          value={channelForm.emailSmtp.host}
+                          onChange={(e) => setChannelForm({
+                            ...channelForm,
+                            emailSmtp: {...channelForm.emailSmtp, host: e.target.value}
+                          })}
+                          className="h-11 mt-2 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="smtp-port" className="text-sm font-medium text-gray-700">Port</Label>
+                          <Input
+                            id="smtp-port"
+                            type="number"
+                            placeholder="587"
+                            value={channelForm.emailSmtp.port}
+                            onChange={(e) => setChannelForm({
+                              ...channelForm,
+                              emailSmtp: {...channelForm.emailSmtp, port: parseInt(e.target.value)}
+                            })}
+                            className="h-11 mt-2 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="smtp-user" className="text-sm font-medium text-gray-700">Email</Label>
+                          <Input
+                            id="smtp-user"
+                            type="email"
+                            placeholder="your-email@gmail.com"
+                            value={channelForm.emailSmtp.auth.user}
+                            onChange={(e) => setChannelForm({
+                              ...channelForm,
+                              emailSmtp: {
+                                ...channelForm.emailSmtp,
+                                auth: {...channelForm.emailSmtp.auth, user: e.target.value},
+                                fromEmail: channelForm.emailSmtp.fromEmail || e.target.value
+                              }
+                            })}
+                            className="h-11 mt-2 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="smtp-pass" className="text-sm font-medium text-gray-700">App Password</Label>
+                        <div className="relative mt-2">
+                          <Input
+                            id="smtp-pass"
+                            type={showSmtpPassword ? "text" : "password"}
+                            placeholder="Enter your app password"
+                            value={channelForm.emailSmtp.auth.pass}
+                            onChange={(e) => setChannelForm({
+                              ...channelForm,
+                              emailSmtp: {
+                                ...channelForm.emailSmtp,
+                                auth: {...channelForm.emailSmtp.auth, pass: e.target.value}
+                              }
+                            })}
+                            className="h-11 pr-12 border-gray-200 focus:border-purple-500 focus:ring-purple-500 text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSmtpPassword(!showSmtpPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                          >
+                            {showSmtpPassword ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          </div>
+
+          <CustomDialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCreateChannelDialogOpen(false)}
+              className="border-gray-300 hover:bg-gray-100"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateChannel}
+              disabled={channelsLoading || !channelForm.name || !channelForm.type}
+              className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+            >
+              {channelsLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Channel
+                </>
+              )}
+            </Button>
+          </CustomDialogFooter>
+        </CustomDialogContent>
+      </CustomDialog>
     </div>
-  );
+  </>
+);
 };
 
 export default WhatsAppDashboard;
