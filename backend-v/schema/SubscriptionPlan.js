@@ -444,6 +444,39 @@ const subscriptionPlanSchema = new mongoose.Schema({
         default: []
     },
     
+    // Assigned Content - Content that will be automatically assigned to users who purchase this plan
+    assignedContent: {
+        // Assigned Funnels - These funnels will be automatically available in the user's dashboard
+        funnels: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AdminFunnel'
+        }],
+        
+        // Assigned Message Templates - These templates will be automatically available in the user's dashboard
+        messageTemplates: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'MessageTemplate'
+        }],
+        
+        // Assigned Courses - These courses will be automatically available in the user's dashboard
+        courses: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'ContentCourse'
+        }],
+        
+        // Assigned Ads Campaigns - These ad templates will be automatically available in the user's dashboard
+        adsCampaigns: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AdTemplate'
+        }],
+        
+        // Assigned Automation Rules - These automation rules will be automatically available in the user's dashboard
+        automationRules: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AutomationRule'
+        }]
+    },
+    
     // Plan Metadata
     isPopular: {
         type: Boolean,
@@ -609,6 +642,17 @@ subscriptionPlanSchema.pre('save', function(next) {
     // Ensure pricing.currency matches currency
     if (this.pricing && !this.pricing.currency) {
         this.pricing.currency = this.currency;
+    }
+    
+    // Ensure assignedContent structure exists
+    if (!this.assignedContent) {
+        this.assignedContent = {
+            funnels: [],
+            messageTemplates: [],
+            courses: [],
+            adsCampaigns: [],
+            automationRules: []
+        };
     }
     
     next();

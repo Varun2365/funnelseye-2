@@ -3,20 +3,10 @@ const crypto = require('crypto');
 
 class AIService {
     constructor() {
-        this.openaiApiKey = process.env.OPENAI_API_KEY;
-        this.openrouterApiKey = process.env.OPENROUTER_API_KEY;
-        this.openaiBaseUrl = 'https://api.openai.com/v1';
         this.openrouterBaseUrl = 'https://openrouter.ai/api/v1';
         
-        // Model configurations
+        // OpenRouter model configurations
         this.models = {
-            openai: {
-                gpt4: 'gpt-4',
-                gpt4Turbo: 'gpt-4-turbo-preview',
-                gpt35: 'gpt-3.5-turbo',
-                gpt35Turbo: 'gpt-3.5-turbo-16k'
-            },
-            openrouter: {
                 gpt4: 'openai/gpt-4',
                 gpt4Turbo: 'openai/gpt-4-turbo-preview',
                 gpt35: 'openai/gpt-3.5-turbo',
@@ -24,10 +14,9 @@ class AIService {
                 claude: 'anthropic/claude-3-sonnet',
                 gemini: 'google/gemini-pro',
                 llama: 'meta-llama/llama-2-70b-chat'
-            }
         };
         
-        this.defaultModel = 'gpt-3.5-turbo';
+        this.defaultModel = 'openai/gpt-3.5-turbo';
         this.maxRetries = 0; // Disable automatic retries to prevent duplicate charges
         this.retryDelay = 1000;
         
@@ -35,87 +24,78 @@ class AIService {
         this.inFlightRequests = new Map();
     }
 
-    // Get the best available API configuration
+    // Get OpenRouter API configuration from database
     async getApiConfig() {
-        // Try to get settings from database FIRST
+        // ALWAYS check database - this is the only source of truth
         let defaultModel = this.defaultModel;
-        let useOpenRouter = false;
         let openrouterApiKey = null;
         
         try {
             const AdminSystemSettings = require('../schema/AdminSystemSettings');
             const settings = await AdminSystemSettings.findOne({ settingId: 'global' });
+            
+            console.log('[AIService] Database settings check:', {
+                hasSettings: !!settings,
+                hasOpenRouter: !!settings?.aiServices?.openrouter,
+                enabled: settings?.aiServices?.openrouter?.enabled,
+                hasApiKey: !!settings?.aiServices?.openrouter?.apiKey,
+                apiKeyLength: settings?.aiServices?.openrouter?.apiKey?.length,
+                defaultModel: settings?.aiServices?.openrouter?.defaultModel
+            });
+            
             if (settings?.aiServices?.openrouter) {
                 // Check if OpenRouter is enabled
-                if (settings.aiServices.openrouter.enabled) {
-                    useOpenRouter = true;
-                    // Get API key from settings (it's stored in database)
-                    openrouterApiKey = settings.aiServices.openrouter.apiKey;
-                    // Only use if it's a valid non-empty string
-                    if (!openrouterApiKey || typeof openrouterApiKey !== 'string' || openrouterApiKey.trim() === '') {
-                        openrouterApiKey = null; // Reset if invalid
-                    }
+                if (!settings.aiServices.openrouter.enabled) {
+                    throw new Error('OpenRouter is not enabled in database settings. Please enable OpenRouter and configure the API key in the AI Features settings.');
                 }
+                
+                // Get API key from database - THIS IS THE ONLY SOURCE
+                openrouterApiKey = settings.aiServices.openrouter.apiKey;
+                // Only use if it's a valid non-empty string
+                if (!openrouterApiKey || typeof openrouterApiKey !== 'string' || openrouterApiKey.trim() === '') {
+                    console.error('[AIService] ❌ OpenRouter enabled but API key is missing or invalid in database');
+                    throw new Error('OpenRouter is enabled but no valid API key is configured in the database. Please set the API key in settings.');
+                }
+                
                 // Get default model from settings
                 if (settings.aiServices.openrouter.defaultModel) {
                     defaultModel = settings.aiServices.openrouter.defaultModel;
                 }
+            } else {
+                throw new Error('OpenRouter settings not found in database. Please configure OpenRouter in the AI Features settings.');
             }
         } catch (error) {
-            console.warn('Could not load settings from database:', error.message);
+            // If it's our custom error, re-throw it
+            if (error.message.includes('OpenRouter') || error.message.includes('API key')) {
+                throw error;
+            }
+            console.error('[AIService] ❌ Error loading settings from database:', error.message);
+            throw new Error(`Failed to load OpenRouter settings from database: ${error.message}. Please check your database connection.`);
         }
 
-        // ALWAYS prioritize OpenRouter if enabled in settings (even if no API key in env)
-        if (useOpenRouter) {
-            // Validate API key - must be a non-empty string
-            if (!openrouterApiKey || typeof openrouterApiKey !== 'string' || openrouterApiKey.trim() === '') {
-                throw new Error('OpenRouter is enabled but no valid API key is configured. Please set the API key in settings.');
-            }
-            
-            const trimmedKey = openrouterApiKey.trim();
-            // Update instance variable for future use
-            this.openrouterApiKey = trimmedKey;
-            process.env.OPENROUTER_API_KEY = trimmedKey;
-            
-            // Validate default model exists
-            if (!defaultModel || defaultModel.trim() === '') {
-                console.warn('[AIService] No default model set in database, using fallback');
-                defaultModel = this.defaultModel;
-            }
-            
-            console.log(`[AIService] ✅ OpenRouter ENABLED - Using model from database: ${defaultModel}, API key length: ${trimmedKey.length}`);
-            console.log(`[AIService] ⚠️  OpenRouter is enabled - OpenAI will NOT be used even if available`);
-            
-            return {
-                provider: 'openrouter',
-                apiKey: trimmedKey,
-                baseURL: this.openrouterBaseUrl,
-                models: this.models.openrouter,
-                defaultModel: defaultModel.trim()
-            };
+        // Validate API key - must be a non-empty string
+        if (!openrouterApiKey || typeof openrouterApiKey !== 'string' || openrouterApiKey.trim() === '') {
+            throw new Error('OpenRouter API key is missing or invalid in the database. Please set the API key in settings.');
         }
         
-        // If OpenRouter is not enabled in settings, check environment variables
-        // Prioritize OpenRouter API key from env if available
-        if (this.openrouterApiKey && typeof this.openrouterApiKey === 'string' && this.openrouterApiKey.trim() !== '') {
-            return {
-                provider: 'openrouter',
-                apiKey: this.openrouterApiKey.trim(),
-                baseURL: this.openrouterBaseUrl,
-                models: this.models.openrouter,
-                defaultModel: defaultModel
-            };
-        } else if (this.openaiApiKey && typeof this.openaiApiKey === 'string' && this.openaiApiKey.trim() !== '') {
-            return {
-                provider: 'openai',
-                apiKey: this.openaiApiKey.trim(),
-                baseURL: this.openaiBaseUrl,
-                models: this.models.openai,
-                defaultModel: defaultModel
-            };
+        const trimmedKey = openrouterApiKey.trim();
+        
+        // Validate default model exists
+        if (!defaultModel || defaultModel.trim() === '') {
+            console.warn('[AIService] ⚠️  No default model set in database, using fallback');
+            defaultModel = this.defaultModel;
         }
         
-        throw new Error('No AI API key configured. Please set OPENAI_API_KEY or OPENROUTER_API_KEY');
+        console.log(`[AIService] ✅ Using OpenRouter API key from database (length: ${trimmedKey.length})`);
+        console.log(`[AIService] ✅ Using default model from database: ${defaultModel}`);
+        
+            return {
+                provider: 'openrouter',
+            apiKey: trimmedKey,
+                baseURL: this.openrouterBaseUrl,
+            models: this.models,
+            defaultModel: defaultModel.trim()
+            };
     }
 
     // Generic chat completion method
@@ -133,33 +113,21 @@ class AIService {
             retries = options.retries !== undefined ? options.retries : this.maxRetries // Allow override but default to 0
         } = options;
 
-        // ALWAYS use the default model from database config when OpenRouter is enabled
+        // Always use the default model from database config
         // Only use model from options if explicitly provided AND it's not undefined/null/empty
         let modelToUse;
-        if (config.provider === 'openrouter') {
-            // For OpenRouter: Always use default model from database unless explicitly overridden
-            if (options.model && options.model.trim() !== '') {
-                modelToUse = options.model.trim();
-                console.log(`[AIService] Using explicitly provided model: ${modelToUse}`);
-            } else {
-                // Use the default model from database
-                modelToUse = config.defaultModel || this.defaultModel;
-                console.log(`[AIService] Using default model from database: ${modelToUse}`);
-            }
+        // Always use default model from database unless explicitly overridden
+        if (options.model && options.model.trim() !== '') {
+            modelToUse = options.model.trim();
+            console.log(`[AIService] Using explicitly provided model: ${modelToUse}`);
         } else {
-            // For OpenAI: Use provided model or default
-            modelToUse = options.model || config.defaultModel || this.defaultModel;
+            // Use the default model from database
+            modelToUse = config.defaultModel || this.defaultModel;
+            console.log(`[AIService] Using default model from database: ${modelToUse}`);
         }
 
-        // For OpenRouter, use the model ID directly; for OpenAI, try to map it
-        let modelForRequest = modelToUse;
-        if (config.provider === 'openrouter') {
-            // OpenRouter uses model IDs directly (e.g., 'openai/gpt-3.5-turbo')
-            modelForRequest = modelToUse;
-        } else {
-            // OpenAI uses mapped model names
-            modelForRequest = config.models[modelToUse] || modelToUse;
-        }
+        // OpenRouter uses model IDs directly (e.g., 'openai/gpt-3.5-turbo')
+        const modelForRequest = modelToUse;
 
         const payload = {
             model: modelForRequest,
@@ -169,23 +137,26 @@ class AIService {
             stream: false
         };
 
-        // Add OpenRouter specific headers
+        // Use ONLY the API key from config (which comes from database)
         const apiKey = config.apiKey.trim();
         if (!apiKey || apiKey === '') {
-            throw new Error(`AI API Error: API key is empty for ${config.provider}. Please configure a valid API key in settings.`);
+            throw new Error(`AI API Error: OpenRouter API key is empty. Please configure a valid API key in settings.`);
+        }
+        
+        // Validate that we're using the correct model format for OpenRouter
+        if (!modelForRequest.includes('/') && !modelForRequest.includes(':')) {
+            console.warn(`[AIService] ⚠️  Warning: Model "${modelForRequest}" doesn't look like an OpenRouter model ID (should be like 'openai/gpt-3.5-turbo')`);
         }
         
         const headers = {
             'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'HTTP-Referer': process.env.APP_URL || 'https://funnelseye.com',
+            'X-Title': 'FunnelsEye AI Service'
         };
-
-        if (config.provider === 'openrouter') {
-            headers['HTTP-Referer'] = process.env.APP_URL || 'https://funnelseye.com';
-            headers['X-Title'] = 'FunnelsEye AI Service';
-        }
         
-        console.log(`[AIService] Making ${config.provider} request to ${config.baseURL}/chat/completions with model: ${modelForRequest}`);
+        console.log(`[AIService] Making OpenRouter request to ${config.baseURL}/chat/completions with model: ${modelForRequest}`);
+        console.log(`[AIService] Using API key from database (length: ${apiKey.length})`);
 
         const startTime = Date.now();
         const requestId = crypto.randomUUID();
@@ -704,38 +675,40 @@ class AIService {
         }
     }
 
-    // Calculate prompt price based on model and tokens
+    // Calculate prompt price based on model and tokens (OpenRouter models only)
     calculatePromptPrice(model, tokens) {
-        // Default pricing per 1M tokens (approximate)
+        // Default pricing per 1M tokens (approximate) for OpenRouter models
         const pricing = {
-            'gpt-4': 30.0,
-            'gpt-4-turbo': 10.0,
-            'gpt-3.5-turbo': 0.5,
             'openai/gpt-4': 30.0,
             'openai/gpt-4-turbo': 10.0,
+            'openai/gpt-4-turbo-preview': 10.0,
             'openai/gpt-3.5-turbo': 0.5,
+            'openai/gpt-3.5-turbo-16k': 0.5,
             'anthropic/claude-3-sonnet': 3.0,
             'anthropic/claude-3-opus': 15.0,
-            'google/gemini-pro': 0.5
+            'google/gemini-pro': 0.5,
+            'google/gemini-2.0-flash-lite-001': 0.1,
+            'meta-llama/llama-2-70b-chat': 0.7
         };
         
         const pricePerMillion = pricing[model] || 1.0;
         return (pricePerMillion / 1000000) * tokens;
     }
 
-    // Calculate completion price based on model and tokens
+    // Calculate completion price based on model and tokens (OpenRouter models only)
     calculateCompletionPrice(model, tokens) {
-        // Default pricing per 1M tokens (approximate)
+        // Default pricing per 1M tokens (approximate) for OpenRouter models
         const pricing = {
-            'gpt-4': 60.0,
-            'gpt-4-turbo': 30.0,
-            'gpt-3.5-turbo': 1.5,
             'openai/gpt-4': 60.0,
             'openai/gpt-4-turbo': 30.0,
+            'openai/gpt-4-turbo-preview': 30.0,
             'openai/gpt-3.5-turbo': 1.5,
+            'openai/gpt-3.5-turbo-16k': 1.5,
             'anthropic/claude-3-sonnet': 15.0,
             'anthropic/claude-3-opus': 75.0,
-            'google/gemini-pro': 1.5
+            'google/gemini-pro': 1.5,
+            'google/gemini-2.0-flash-lite-001': 0.1,
+            'meta-llama/llama-2-70b-chat': 2.0
         };
         
         const pricePerMillion = pricing[model] || 2.0;

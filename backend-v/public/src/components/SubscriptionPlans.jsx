@@ -93,6 +93,13 @@ const createDefaultPlanForm = () => ({
   courseAccess: { ...defaultCourseAccess },
   courseBundles: [],
   funnelBundles: [],
+  assignedContent: {
+    funnels: [],
+    messageTemplates: [],
+    courses: [],
+    adsCampaigns: [],
+    automationRules: []
+  },
   addons: {
     ...defaultAddons,
     availableAddons: []
@@ -315,35 +322,53 @@ const SubscriptionPlans = () => {
   const handleFunnelToggle = (funnel, checked) => {
     const funnelId = funnel.id || funnel._id;
     setPlanForm((prev) => {
-      const existing = prev.funnelBundles || [];
+      const existingBundles = prev.funnelBundles || [];
+      const existingAssigned = prev.assignedContent?.funnels || [];
+      const funnelIdStr = String(funnelId);
+      
       if (checked) {
-        // Check if funnel is already in bundles using string comparison
-        const funnelIdStr = String(funnelId);
-        if (existing.some((bundle) => {
+        // Check if funnel is already in bundles or assigned content
+        const isInBundles = existingBundles.some((bundle) => {
           const bundleFunnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
           return String(bundleFunnelId) === funnelIdStr;
-        })) {
+        });
+        const isInAssigned = existingAssigned.some((assignedId) => {
+          return String(assignedId) === funnelIdStr;
+        });
+        
+        if (isInBundles || isInAssigned) {
           return prev;
         }
+        
         return {
           ...prev,
-          funnelBundles: [...existing, {
+          funnelBundles: [...existingBundles, {
             funnel: funnelId,
             funnelName: funnel.name,
             funnelUrl: funnel.funnelUrl,
             targetAudience: funnel.targetAudience || 'customer',
             stageCount: funnel.stageCount || 0
-          }]
+          }],
+          assignedContent: {
+            ...prev.assignedContent,
+            funnels: [...existingAssigned, funnelId]
+          }
         };
       }
-      // Remove funnel from bundles using string comparison
-      const funnelIdStr = String(funnelId);
+      
+      // Remove funnel from both bundles and assigned content
       return {
         ...prev,
-        funnelBundles: existing.filter((bundle) => {
+        funnelBundles: existingBundles.filter((bundle) => {
           const bundleFunnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
           return String(bundleFunnelId) !== funnelIdStr;
-        })
+        }),
+        assignedContent: {
+          ...prev.assignedContent,
+          funnels: existingAssigned.filter((assignedId) => {
+            return String(assignedId) !== funnelIdStr;
+          })
+        }
       };
     });
   };
@@ -351,10 +376,21 @@ const SubscriptionPlans = () => {
   const getFunnelBundle = (funnelId) => {
     if (!funnelId) return null;
     const funnelIdStr = String(funnelId);
-    return (planForm.funnelBundles || []).find((bundle) => {
+    
+    // Check in funnelBundles
+    const bundle = (planForm.funnelBundles || []).find((bundle) => {
       const bundleFunnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
       return String(bundleFunnelId) === funnelIdStr;
     });
+    
+    if (bundle) return bundle;
+    
+    // Also check in assignedContent.funnels
+    const isAssigned = (planForm.assignedContent?.funnels || []).some((assignedId) => {
+      return String(assignedId) === funnelIdStr;
+    });
+    
+    return isAssigned ? { funnel: funnelId } : null;
   };
 
   // Load analytics
@@ -444,6 +480,13 @@ const SubscriptionPlans = () => {
         courseAccess: courseAccessPayload,
         courseBundles: courseBundlesPayload,
         funnelBundles: planForm.funnelBundles || [],
+        assignedContent: planForm.assignedContent || {
+          funnels: [],
+          messageTemplates: [],
+          courses: [],
+          adsCampaigns: [],
+          automationRules: []
+        },
         addons: addonsPayload,
         isPopular: planForm.isPopular,
         trialDays: parseInt(planForm.trialDays) || 0,
@@ -503,6 +546,13 @@ const SubscriptionPlans = () => {
         limits: planForm.limits,
         courseBundles: planForm.courseBundles || [],
         funnelBundles: planForm.funnelBundles || [],
+        assignedContent: planForm.assignedContent || {
+          funnels: [],
+          messageTemplates: [],
+          courses: [],
+          adsCampaigns: [],
+          automationRules: []
+        },
         isPopular: planForm.isPopular,
         trialDays: parseInt(planForm.trialDays) || 0,
         setupFee: parseFloat(planForm.setupFee) || 0,
@@ -657,6 +707,29 @@ const SubscriptionPlans = () => {
         }))
       : [];
 
+    // Normalize assignedContent - merge with bundles if needed
+    const normalizedAssignedContent = {
+      funnels: Array.isArray(plan.assignedContent?.funnels) 
+        ? plan.assignedContent.funnels.map(id => id?._id || id)
+        : (normalizedFunnelBundles.length > 0 
+            ? normalizedFunnelBundles.map(b => b.funnel?._id || b.funnel).filter(Boolean)
+            : []),
+      messageTemplates: Array.isArray(plan.assignedContent?.messageTemplates)
+        ? plan.assignedContent.messageTemplates.map(id => id?._id || id)
+        : [],
+      courses: Array.isArray(plan.assignedContent?.courses)
+        ? plan.assignedContent.courses.map(id => id?._id || id)
+        : (normalizedBundles.length > 0 
+            ? normalizedBundles.map(b => b.course?._id || b.course).filter(Boolean)
+            : []),
+      adsCampaigns: Array.isArray(plan.assignedContent?.adsCampaigns)
+        ? plan.assignedContent.adsCampaigns.map(id => id?._id || id)
+        : [],
+      automationRules: Array.isArray(plan.assignedContent?.automationRules)
+        ? plan.assignedContent.automationRules.map(id => id?._id || id)
+        : []
+    };
+
     setPlanForm({
       name: plan.name || '',
       description: plan.description || '',
@@ -669,6 +742,7 @@ const SubscriptionPlans = () => {
       courseAccess: normalizedCourseAccess,
       courseBundles: normalizedBundles,
       funnelBundles: normalizedFunnelBundles,
+      assignedContent: normalizedAssignedContent,
       addons: normalizedAddons,
       restrictions: plan.restrictions || {},
       pricing: {
@@ -746,32 +820,68 @@ const SubscriptionPlans = () => {
 
   const handleCourseBundleToggle = (course, checked) => {
     setPlanForm((prev) => {
-      const existing = prev.courseBundles || [];
+      const existingBundles = prev.courseBundles || [];
+      const existingAssigned = prev.assignedContent?.courses || [];
+      const courseId = course._id;
+      const courseIdStr = String(courseId);
+      
       if (checked) {
-        if (existing.some((bundle) => bundle.course === course._id)) {
+        // Check if course is already in bundles or assigned content
+        const isInBundles = existingBundles.some((bundle) => String(bundle.course) === courseIdStr);
+        const isInAssigned = existingAssigned.some((assignedId) => String(assignedId) === courseIdStr);
+        
+        if (isInBundles || isInAssigned) {
           return prev;
         }
+        
         return {
           ...prev,
-          courseBundles: [...existing, createBundleForCourse(course)]
+          courseBundles: [...existingBundles, createBundleForCourse(course)],
+          assignedContent: {
+            ...prev.assignedContent,
+            courses: [...existingAssigned, courseId]
+          }
         };
       }
+      
+      // Remove course from both bundles and assigned content
       return {
         ...prev,
-        courseBundles: existing.filter((bundle) => bundle.course !== course._id)
+        courseBundles: existingBundles.filter((bundle) => String(bundle.course) !== courseIdStr),
+        assignedContent: {
+          ...prev.assignedContent,
+          courses: existingAssigned.filter((assignedId) => String(assignedId) !== courseIdStr)
+        }
       };
     });
   };
 
   const removeCourseBundle = (courseId) => {
+    const courseIdStr = String(courseId);
     setPlanForm((prev) => ({
       ...prev,
-      courseBundles: (prev.courseBundles || []).filter((bundle) => bundle.course !== courseId)
+      courseBundles: (prev.courseBundles || []).filter((bundle) => String(bundle.course) !== courseIdStr),
+      assignedContent: {
+        ...prev.assignedContent,
+        courses: (prev.assignedContent?.courses || []).filter((assignedId) => String(assignedId) !== courseIdStr)
+      }
     }));
   };
 
   const getCourseBundle = (courseId) => {
-    return (planForm.courseBundles || []).find((bundle) => bundle.course === courseId);
+    const courseIdStr = String(courseId);
+    
+    // Check in courseBundles
+    const bundle = (planForm.courseBundles || []).find((bundle) => String(bundle.course) === courseIdStr);
+    
+    if (bundle) return bundle;
+    
+    // Also check in assignedContent.courses
+    const isAssigned = (planForm.assignedContent?.courses || []).some((assignedId) => {
+      return String(assignedId) === courseIdStr;
+    });
+    
+    return isAssigned ? { course: courseId } : null;
   };
 
   const handleCourseBundleChange = (courseId, field, value) => {
@@ -1531,7 +1641,7 @@ const SubscriptionPlans = () => {
                         return (
                           <div key={category} className="space-y-3">
                             <h5 className="font-semibold text-sm text-gray-600 border-b pb-2">
-                              {category === 'customer_course' ? 'Customer Courses' : 'Coach Courses'} ({categoryCourses.length})
+                              {category === 'customer_course' ? 'Customer Courses' : 'Learning Content'} ({categoryCourses.length})
                             </h5>
                             <div className="grid grid-cols-1 gap-3">
                               {categoryCourses.map((course) => {
@@ -2231,7 +2341,7 @@ const SubscriptionPlans = () => {
                         return (
                           <div key={category} className="space-y-3">
                             <h5 className="font-semibold text-sm text-gray-600 border-b pb-2">
-                              {category === 'customer_course' ? 'Customer Courses' : 'Coach Courses'} ({categoryCourses.length})
+                              {category === 'customer_course' ? 'Customer Courses' : 'Learning Content'} ({categoryCourses.length})
                             </h5>
                             <div className="grid grid-cols-1 gap-3">
                               {categoryCourses.map((course) => {
