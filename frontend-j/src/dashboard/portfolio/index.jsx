@@ -1363,7 +1363,7 @@ function FunnelManagementComponent() {
                   <VStack align={{ base: 'center', md: 'start' }} spacing={2}>
                     <HStack spacing={3}>
                       <Heading size="lg" color={textColor} fontWeight="bold">
-                        Funnel Management 
+                        Funnels Management
                       </Heading>
                     </HStack>
                     <Text color={secondaryTextColor} fontSize="sm" fontWeight="medium">
@@ -1387,7 +1387,7 @@ function FunnelManagementComponent() {
                       _hover={{ transform: 'translateY(-2px)', boxShadow: '0 18px 38px -24px rgba(59,130,246,1)' }}
                       _active={{ transform: 'translateY(0)' }}
                     >
-                      New Funnel
+                      Create Funnel
                     </Button>
                   </HStack>
                 </Flex>

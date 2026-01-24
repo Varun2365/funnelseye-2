@@ -238,7 +238,6 @@ const adminSystemSettingsSchema = new mongoose.Schema({
             requireTwoFactor: { type: Boolean, default: false }
         },
         apiSecurity: {
-            rateLimitPerMinute: { type: Number, default: 100, min: 10 },
             maxRequestsPerHour: { type: Number, default: 1000, min: 100 },
             allowedOrigins: [{ type: String }],
             requireApiKey: { type: Boolean, default: false }
@@ -287,7 +286,8 @@ const adminSystemSettingsSchema = new mongoose.Schema({
         openrouter: {
             enabled: { type: Boolean, default: false },
             apiKey: { type: String, default: '' },
-            baseUrl: { type: String, default: 'https://openrouter.ai/api/v1' }
+            baseUrl: { type: String, default: 'https://openrouter.ai/api/v1' },
+            defaultModel: { type: String, default: 'openai/gpt-3.5-turbo' }
         },
         models: {
             openai: {

@@ -110,6 +110,34 @@ const courseAccessSchema = new mongoose.Schema({
     }
 }, { _id: false });
 
+const funnelBundleSchema = new mongoose.Schema({
+    funnel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AdminFunnel',
+        required: true
+    },
+    funnelName: {
+        type: String,
+        trim: true,
+        maxlength: 200
+    },
+    funnelUrl: {
+        type: String,
+        trim: true,
+        maxlength: 200
+    },
+    targetAudience: {
+        type: String,
+        enum: ['customer', 'coach', 'both'],
+        default: 'customer'
+    },
+    stageCount: {
+        type: Number,
+        default: 0,
+        min: 0
+    }
+}, { _id: false });
+
 const subscriptionPlanSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -408,6 +436,12 @@ const subscriptionPlanSchema = new mongoose.Schema({
     courseAccess: {
         type: courseAccessSchema,
         default: {}
+    },
+    
+    // Funnel Bundles
+    funnelBundles: {
+        type: [funnelBundleSchema],
+        default: []
     },
     
     // Plan Metadata

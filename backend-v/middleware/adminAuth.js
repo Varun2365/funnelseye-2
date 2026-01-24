@@ -153,9 +153,10 @@ const checkAdminPermission = (permission) => {
             //console.log('🔐 [ADMIN_AUTH] checkAdminPermission - Admin role:', req.admin.role);
             //console.log('🔐 [ADMIN_AUTH] checkAdminPermission - Admin permissions:', req.admin.permissions);
 
-            // Super admin has all permissions
-            if (req.admin.role === 'super_admin') {
-                //console.log('✅ [ADMIN_AUTH] checkAdminPermission - Super admin, bypassing permission check');
+            // Super admin and admin have all permissions - bypass permission check
+            const adminRole = req.admin.role?.toLowerCase();
+            if (adminRole === 'super_admin' || adminRole === 'admin') {
+                //console.log('✅ [ADMIN_AUTH] checkAdminPermission - Super admin/Admin, bypassing permission check');
                 return next();
             }
 

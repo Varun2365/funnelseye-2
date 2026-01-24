@@ -8,43 +8,52 @@ const User = require('../schema/User');
 // @access  Private (Admin)
 exports.getAllAdminSettings = asyncHandler(async (req, res) => {
     const { page = 1, limit = 20, search, isActive } = req.query;
-    
+
     let query = {
         ownerType: 'admin',
         isActive: isActive !== 'false'
     };
-    
+
     if (search) {
         query.$or = [
             { name: { $regex: search, $options: 'i' } },
             { description: { $regex: search, $options: 'i' } }
         ];
     }
-    
-    const options = {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-        sort: { createdAt: -1 },
-        populate: [
+
+    const pageNum = parseInt(page, 10);
+    const limitNum = parseInt(limit, 10);
+    const skip = (pageNum - 1) * limitNum;
+
+    // Get total count for pagination
+    const total = await WhatsAppCustomSettings.countDocuments(query);
+
+    // Get paginated results
+    const settings = await WhatsAppCustomSettings.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .populate([
             { path: 'createdBy', select: 'name email' },
             { path: 'updatedBy', select: 'name email' }
-        ]
-    };
-    
-    const result = await WhatsAppCustomSettings.paginate(query, options);
-    
+        ]);
+
+    const totalPages = Math.ceil(total / limitNum);
+    const hasNextPage = pageNum < totalPages;
+    const hasPrevPage = pageNum > 1;
+
     res.status(200).json({
         success: true,
-        data: result.docs,
+        data: settings,
         pagination: {
-            totalDocs: result.totalDocs,
-            limit: result.limit,
-            page: result.page,
-            totalPages: result.totalPages,
-            nextPage: result.nextPage,
-            prevPage: result.prevPage,
-            hasPrevPage: result.hasPrevPage,
-            hasNextPage: result.hasNextPage
+            totalDocs: total,
+            limit: limitNum,
+            page: pageNum,
+            totalPages: totalPages,
+            nextPage: hasNextPage ? pageNum + 1 : null,
+            prevPage: hasPrevPage ? pageNum - 1 : null,
+            hasPrevPage: hasPrevPage,
+            hasNextPage: hasNextPage
         }
     });
 });

@@ -3,34 +3,62 @@ import apiConfig from '../config/apiConfig.js';
 
 class AdminApiService {
     constructor() {
-        this.token = localStorage.getItem('adminToken');
+        // Don't cache token - always read from localStorage dynamically
         this.apiBaseUrl = apiConfig.apiBaseUrl;
-        console.log('🔐 [AdminApiService] Initialized with token:', this.token ? `${this.token.substring(0, 20)}...` : 'NO TOKEN');
+        this.isRedirecting = false; // Prevent multiple redirects
+        const token = this.getToken();
+        console.log('🔐 [AdminApiService] Initialized with token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
         console.log('🔗 [AdminApiService] Using API Base URL:', this.apiBaseUrl);
+    }
+
+    // Always get token from localStorage (don't cache)
+    getToken() {
+        return localStorage.getItem('adminToken');
     }
 
     // Set authentication token
     setToken(token) {
-        this.token = token;
         localStorage.setItem('adminToken', token);
     }
 
     // Handle token expiration
     handleTokenExpiration() {
+        // Prevent multiple redirects
+        if (this.isRedirecting) {
+            console.log('🔐 [AdminApiService] Already redirecting, skipping...');
+            return;
+        }
+        
+        // Check if we're already on the login page
+        if (typeof window !== 'undefined' && window.location.pathname.includes('admin-login')) {
+            console.log('🔐 [AdminApiService] Already on login page, skipping redirect');
+            return;
+        }
+        
+        // Don't redirect from ai-features route - let ProtectedRoute handle it
+        // Also don't clear the token - let ProtectedRoute handle authentication checks
+        if (typeof window !== 'undefined' && window.location.pathname.includes('ai-features')) {
+            console.log('🔐 [AdminApiService] On ai-features route, skipping token handling - ProtectedRoute will handle');
+            // Don't clear token or redirect - ProtectedRoute will handle it
+            return;
+        }
+        
         console.log('🔐 [AdminApiService] Handling token expiration...');
+        this.isRedirecting = true;
+        
         // Clear the token
-        this.token = null;
         localStorage.removeItem('adminToken');
         
-        // Redirect to login page
+        // Redirect to login page (only if not on ai-features route)
         if (typeof window !== 'undefined') {
-            window.location.href = '/admin-login.html';
+            // Use the correct route path (without .html extension)
+            window.location.href = '/admin-login';
         }
     }
 
     // Get authentication headers
     getHeaders() {
-        const token = this.token || localStorage.getItem('adminToken');
+        const token = this.getToken(); // Always read from localStorage
         console.log('🔐 [AdminApiService] Using token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
         return {
             'Content-Type': 'application/json',
@@ -55,16 +83,47 @@ class AdminApiService {
 
         try {
             const response = await fetch(url, config);
-            const data = await response.json();
+            let data;
+            
+            // Try to parse JSON, but handle non-JSON responses
+            try {
+                const text = await response.text();
+                data = text ? JSON.parse(text) : {};
+            } catch (parseError) {
+                console.error('Failed to parse response as JSON:', parseError);
+                data = { message: `HTTP error! status: ${response.status}` };
+            }
 
             console.log(`📊 [AdminApiService] Response status: ${response.status}`);
             console.log(`📄 [AdminApiService] Response data:`, data);
 
             if (!response.ok) {
-                // Handle token expiration
+                // Handle token expiration - only for 401 Unauthorized
+                // Don't redirect for 403 Forbidden (permission issues) or other errors
                 if (response.status === 401) {
-                    console.log('🔐 [AdminApiService] Token expired or invalid, redirecting to login');
-                    this.handleTokenExpiration();
+                    console.log('🔐 [AdminApiService] Token expired or invalid (401)');
+                    // Check if we're on ai-features route - don't clear token or redirect from there
+                    // Let ProtectedRoute handle authentication checks
+                    const isOnAiFeatures = typeof window !== 'undefined' && window.location.pathname.includes('ai-features');
+                    
+                    if (isOnAiFeatures) {
+                        console.log('🔐 [AdminApiService] On ai-features route, skipping token handling - ProtectedRoute will handle');
+                        // Don't clear token or redirect - just let the error propagate
+                        // ProtectedRoute will handle authentication
+                    } else {
+                        // Check if token exists before redirecting (might be a different auth issue)
+                        const currentToken = this.getToken();
+                        if (currentToken && !this.isRedirecting) {
+                            console.log('🔐 [AdminApiService] Token exists but was rejected - likely expired or invalid');
+                            // Token exists but was rejected - likely expired or invalid
+                            // Use setTimeout to allow the error to be thrown first, but only redirect once
+                            setTimeout(() => {
+                                this.handleTokenExpiration();
+                            }, 100);
+                        } else {
+                            console.log('🔐 [AdminApiService] No token found or already redirecting, but got 401');
+                        }
+                    }
                 }
                 throw new Error(data.message || `HTTP error! status: ${response.status}`);
             }
@@ -602,7 +661,7 @@ class AdminApiService {
         const response = await fetch(apiConfig.getApiUrl(endpoint), {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${this.token}`
+                'Authorization': `Bearer ${this.getToken()}`
             },
             body: formData
         });
@@ -617,7 +676,7 @@ class AdminApiService {
     async downloadFile(endpoint, filename) {
         const response = await fetch(apiConfig.getApiUrl(endpoint), {
             headers: {
-                'Authorization': `Bearer ${this.token}`
+                'Authorization': `Bearer ${this.getToken()}`
             }
         });
 
@@ -638,12 +697,11 @@ class AdminApiService {
 
     // Check if user is authenticated
     isAuthenticated() {
-        return !!this.token;
+        return !!this.getToken();
     }
 
     // Clear authentication
     clearAuth() {
-        this.token = null;
         localStorage.removeItem('adminToken');
     }
 
@@ -952,6 +1010,63 @@ class AdminApiService {
         const queryString = new URLSearchParams(params).toString();
         return this.apiCall(`/content/admin/courses${queryString ? `?${queryString}` : ''}`);
     }
+
+    // ========== FUNNEL METHODS ==========
+
+    // Get all funnels
+    async getFunnels(params = {}) {
+        console.log(`🚀 [AdminApiService] Getting funnels with params:`, params);
+        const queryString = new URLSearchParams(params).toString();
+        return this.apiCall(`/admin/funnels/all${queryString ? `?${queryString}` : ''}`);
+    }
+
+    // Get specific funnel
+    async getFunnel(funnelId) {
+        console.log(`🚀 [AdminApiService] Getting funnel:`, funnelId);
+        return this.apiCall(`/funnels/admin/${funnelId}`);
+    }
+
+    // Create new funnel
+    async createFunnel(funnelData) {
+        console.log(`🚀 [AdminApiService] Creating funnel:`, funnelData);
+        return this.apiCall('/funnels/admin', {
+            method: 'POST',
+            body: JSON.stringify(funnelData)
+        });
+    }
+
+    // Update existing funnel
+    async updateFunnel(funnelId, funnelData) {
+        console.log(`🚀 [AdminApiService] Updating funnel:`, funnelId, funnelData);
+        return this.apiCall(`/funnels/admin/${funnelId}`, {
+            method: 'PUT',
+            body: JSON.stringify(funnelData)
+        });
+    }
+
+    // Delete funnel
+    async deleteFunnel(funnelId) {
+        console.log(`🚀 [AdminApiService] Deleting funnel:`, funnelId);
+        return this.apiCall(`/funnels/admin/${funnelId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Duplicate funnel
+    async duplicateFunnel(funnelId) {
+        console.log(`🚀 [AdminApiService] Duplicating funnel:`, funnelId);
+        return this.apiCall(`/funnels/admin/${funnelId}/duplicate`, {
+            method: 'POST'
+        });
+    }
+
+    // Get funnel analytics
+    async getFunnelAnalytics(funnelId, params = {}) {
+        console.log(`🚀 [AdminApiService] Getting funnel analytics:`, funnelId, params);
+        const queryString = new URLSearchParams(params).toString();
+        return this.apiCall(`/funnels/admin/${funnelId}/analytics${queryString ? `?${queryString}` : ''}`);
+    }
+
 }
 
 // Create singleton instance

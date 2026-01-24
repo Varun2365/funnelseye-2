@@ -1933,5 +1933,8 @@ router.get('/admin/queue-stats',
     unifiedMessagingController.getQueueStats
 );
 
+// ===== MESSAGING V3 ROUTES (Enhanced Version) =====
+// This will be moved to a separate file: messagingV3Routes.js
+
 module.exports = router;
 

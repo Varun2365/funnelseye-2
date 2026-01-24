@@ -3095,6 +3095,34 @@ const buildCourseBundlesPayload = async (bundles = []) => {
         }));
 };
 
+const buildFunnelBundlesPayload = (bundles = []) => {
+    if (!Array.isArray(bundles) || bundles.length === 0) {
+        return [];
+    }
+
+    const AdminFunnel = require('../schema/AdminFunnel');
+
+    return bundles
+        .filter((bundle) => bundle && bundle.funnel)
+        .map((bundle) => {
+            const funnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
+            
+            // Validate ObjectId
+            if (!mongoose.Types.ObjectId.isValid(funnelId)) {
+                return null;
+            }
+
+            return {
+                funnel: funnelId,
+                funnelName: bundle.funnelName || bundle.funnel?.name || '',
+                funnelUrl: bundle.funnelUrl || bundle.funnel?.funnelUrl || '',
+                targetAudience: bundle.targetAudience || bundle.funnel?.targetAudience || 'customer',
+                stageCount: toInt(bundle.stageCount || bundle.funnel?.stageCount || bundle.funnel?.stages?.length || 0, 0)
+            };
+        })
+        .filter(Boolean); // Remove null entries
+};
+
 /**
  * @desc    Create new subscription plan
  * @route   POST /api/admin/v1/subscription-plans
@@ -3142,6 +3170,7 @@ exports.createSubscriptionPlan = asyncHandler(async (req, res) => {
         }
 
         const normalizedCourseBundles = await buildCourseBundlesPayload(courseBundles);
+        const normalizedFunnelBundles = buildFunnelBundlesPayload(req.body.funnelBundles || []);
 
         // Create subscription plan
         const planData = {
@@ -3154,6 +3183,7 @@ exports.createSubscriptionPlan = asyncHandler(async (req, res) => {
             features: buildFeaturePayload(features, limits), // Pass limits to map limit values to features
             limits: buildLimitsPayload(limits),
             courseBundles: normalizedCourseBundles,
+            funnelBundles: normalizedFunnelBundles,
             courseAccess: buildCourseAccessPayload(courseAccess),
             addons: buildAddonsPayload(addons),
             isPopular,
@@ -3180,7 +3210,8 @@ exports.createSubscriptionPlan = asyncHandler(async (req, res) => {
 
         const populatedPlan = await SubscriptionPlan.findById(plan._id)
             .populate('createdBy', 'firstName lastName email')
-            .populate('courseBundles.course', 'title thumbnail price currency category');
+            .populate('courseBundles.course', 'title thumbnail price currency category')
+            .populate('funnelBundles.funnel', 'name description funnelUrl targetAudience stages');
 
         res.status(201).json({
             success: true,
@@ -3302,6 +3333,7 @@ exports.getSubscriptionPlans = asyncHandler(async (req, res) => {
             .populate('createdBy', 'firstName lastName email')
             .populate('updatedBy', 'firstName lastName email')
             .populate('courseBundles.course', 'title thumbnail price currency category')
+            .populate('funnelBundles.funnel', 'name description funnelUrl targetAudience stages')
             .sort(sort)
             .limit(limit * 1)
             .skip((page - 1) * limit);
@@ -3349,7 +3381,8 @@ exports.getSubscriptionPlanById = asyncHandler(async (req, res) => {
         const plan = await SubscriptionPlan.findById(planId)
             .populate('createdBy', 'firstName lastName email')
             .populate('updatedBy', 'firstName lastName email')
-            .populate('courseBundles.course', 'title thumbnail price currency category');
+            .populate('courseBundles.course', 'title thumbnail price currency category')
+            .populate('funnelBundles.funnel', 'name description funnelUrl targetAudience stages');
 
         if (!plan) {
             return res.status(404).json({
@@ -3432,6 +3465,9 @@ exports.updateSubscriptionPlan = asyncHandler(async (req, res) => {
         if (courseBundles !== undefined) {
             plan.courseBundles = await buildCourseBundlesPayload(courseBundles);
         }
+        if (req.body.funnelBundles !== undefined) {
+            plan.funnelBundles = buildFunnelBundlesPayload(req.body.funnelBundles);
+        }
         if (isPopular !== undefined) plan.isPopular = normalizeBoolean(isPopular);
         if (trialDays !== undefined) plan.trialDays = toInt(trialDays, plan.trialDays);
         if (setupFee !== undefined) plan.setupFee = toFloat(setupFee, plan.setupFee);
@@ -3466,7 +3502,8 @@ exports.updateSubscriptionPlan = asyncHandler(async (req, res) => {
         const populatedPlan = await SubscriptionPlan.findById(planId)
             .populate('createdBy', 'firstName lastName email')
             .populate('updatedBy', 'firstName lastName email')
-            .populate('courseBundles.course', 'title thumbnail price currency category');
+            .populate('courseBundles.course', 'title thumbnail price currency category')
+            .populate('funnelBundles.funnel', 'name description funnelUrl targetAudience stages');
 
         res.json({
             success: true,
@@ -3493,12 +3530,28 @@ exports.deleteSubscriptionPlan = asyncHandler(async (req, res) => {
     try {
         const { planId } = req.params;
 
+        if (!planId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Plan ID is required'
+            });
+        }
+
         const SubscriptionPlan = require('../schema/SubscriptionPlan');
         const CoachSubscription = require('../schema/CoachSubscription');
 
+        // Check if plan exists first
+        const plan = await SubscriptionPlan.findById(planId);
+        if (!plan) {
+            return res.status(404).json({
+                success: false,
+                message: 'Subscription plan not found'
+            });
+        }
+
         // Check if any coaches are subscribed to this plan
         const activeSubscriptions = await CoachSubscription.countDocuments({
-            planId,
+            planId: planId,
             status: { $in: ['active', 'trial'] }
         });
 
@@ -3509,14 +3562,8 @@ exports.deleteSubscriptionPlan = asyncHandler(async (req, res) => {
             });
         }
 
-        const plan = await SubscriptionPlan.findByIdAndDelete(planId);
-
-        if (!plan) {
-            return res.status(404).json({
-                success: false,
-                message: 'Subscription plan not found'
-            });
-        }
+        // Delete the plan
+        await SubscriptionPlan.findByIdAndDelete(planId);
 
         res.json({
             success: true,
@@ -3856,60 +3903,6 @@ exports.subscribeCoachToPlan = asyncHandler(async (req, res) => {
 });
 
 // ===== ADDITIONAL SUBSCRIPTION MANAGEMENT METHODS =====
-
-/**
- * @desc    Delete subscription plan
- * @route   DELETE /api/admin/v1/subscription-plans/:id
- * @access  Private (Admin)
- */
-exports.deleteSubscriptionPlan = asyncHandler(async (req, res) => {
-    try {
-        const { id } = req.params;
-        const SubscriptionPlan = require('../schema/SubscriptionPlan');
-        
-        // Check if plan exists
-        const plan = await SubscriptionPlan.findById(id);
-        if (!plan) {
-            return res.status(404).json({
-                success: false,
-                message: 'Subscription plan not found'
-            });
-        }
-        
-        // Check if plan is being used by any active subscriptions
-        const CoachSubscription = require('../schema/CoachSubscription');
-        const activeSubscriptions = await CoachSubscription.countDocuments({
-            planId: id,
-            status: { $in: ['active', 'trial'] }
-        });
-        
-        if (activeSubscriptions > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `Cannot delete plan. ${activeSubscriptions} active subscriptions are using this plan.`
-            });
-        }
-        
-        // Soft delete by setting isActive to false
-        await SubscriptionPlan.findByIdAndUpdate(id, {
-            isActive: false,
-            updatedBy: req.admin._id
-        });
-        
-        res.json({
-            success: true,
-            message: 'Subscription plan deleted successfully'
-        });
-        
-    } catch (error) {
-        console.error('Error deleting subscription plan:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error deleting subscription plan',
-            error: error.message
-        });
-    }
-});
 
 /**
  * @desc    Get all coach subscriptions with filtering

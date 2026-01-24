@@ -57,6 +57,7 @@ const staffCalendarRoutes = require('./routes/staffCalendarRoutes.js');
 const staffAppointmentRoutes = require('./routes/staffAppointmentRoutes.js');
 const adsRoutes = require('./routes/adsRoutes');
 const aiAdsRoutes = require('./routes/aiAdsRoutes');
+const adTemplateRoutes = require('./routes/adTemplateRoutes');
 const workflowRoutes = require('./routes/workflowRoutes');
 const coachDashboardRoutes = require('./routes/coachDashboardRoutes');
 const permissionsRoutes = require('./routes/permissionsRoutes');
@@ -88,6 +89,7 @@ const marketingV1Routes = require('./routes/marketingV1Routes');
 const coachFinancialRoutes = require('./routes/coachFinancialRoutes');
 const adminHierarchyRoutes = require('./routes/adminHierarchyRoutes');
 const adminV1Routes = require('./routes/adminV1Routes');
+const adminFunnelRoutes = require('./routes/adminFunnelRoutes');
 const centralWhatsAppRoutes = require('./routes/centralWhatsAppRoutes');
 // Email routes moved to centralWhatsAppRoutes
 // const emailConfigRoutes = require('./routes/emailConfigRoutes');
@@ -107,6 +109,7 @@ const publicPermissionsRoutes = require('./routes/publicPermissionsRoutes');
 const logsRoutes = require('./routes/logsRoutes');
 const centralMessagingRoutes = require('./routes/centralMessagingRoutes');
 const messagingChannelsRoutes = require('./routes/messagingChannels');
+const messagingV3Routes = require('./routes/messagingV3Routes');
 const contentRoutes = require('./routes/contentRoutes');
 const coursePurchaseRoutes = require('./routes/coursePurchaseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -479,6 +482,7 @@ app.use('/api/coach-transactions', coachTransactionRoutes);
 // ===== MARKETING & ADVERTISING =====
 app.use('/api/ads', adsRoutes);
 app.use('/api/ai-ads', aiAdsRoutes);
+app.use('/api/ad-templates', adTemplateRoutes);
 app.use('/api/coach-marketing-credentials', coachMarketingCredentialsRoutes);
 
 // ===== NEW MARKETING V1 API =====
@@ -492,6 +496,9 @@ app.use('/api/admin/hierarchy', adminHierarchyRoutes);
 
 // ===== ADMIN V1 MASTER API =====
 app.use('/api/admin/v1', adminV1Routes);
+
+// ===== ADMIN FUNNEL MANAGEMENT =====
+app.use('/api/admin/funnels', adminFunnelRoutes);
 
 
 // ===== UNIFIED WHATSAPP V1 SYSTEM =====
@@ -508,6 +515,11 @@ app.use('/whatsapp/scan', require('./routes/whatsappScanRoutes'));
 // Features: Credits, Templates, Analytics, Role-based access
 app.use('/api/central-messaging/v1', centralMessagingRoutes);
 app.use('/api/messaging-channels', messagingChannelsRoutes);
+
+// ===== MESSAGING V3 SYSTEM =====
+// Enhanced messaging system with multi-channel support and high-throughput worker
+// Features: Meta WhatsApp, Bailey's WhatsApp, Email, Credits, Templates, High-throughput
+app.use('/api/messaging/v3', messagingV3Routes);
 
 // ===== EMAIL CONFIGURATION SYSTEM =====
 // Email configuration management is now integrated into /api/whatsapp/v1
@@ -544,7 +556,8 @@ app.use('/api/coach-hierarchy', coachHierarchyRoutes);
 // // ===== UTILITIES & ADMIN =====
 app.use('/api/files', uploadRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/funnels', webpageRenderRoutes);
+// Funnel rendering routes - must be registered before other routes to catch /preview/funnels
+app.use('/', webpageRenderRoutes);
 
 // ===== CONTENT MANAGEMENT =====
 app.use('/api/content', contentRoutes);

@@ -164,7 +164,6 @@ export const SecuritySettings = ({ config, onSave, saving }) => {
             requireTwoFactor: config?.sessionSettings?.requireTwoFactor || false
         },
         apiSecurity: {
-            rateLimitPerMinute: config?.apiSecurity?.rateLimitPerMinute || 100,
             maxRequestsPerHour: config?.apiSecurity?.maxRequestsPerHour || 1000,
             requireApiKey: config?.apiSecurity?.requireApiKey || false
         },
@@ -337,16 +336,6 @@ export const SecuritySettings = ({ config, onSave, saving }) => {
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="rateLimitPerMinute">Rate Limit Per Minute</Label>
-                                <Input
-                                    id="rateLimitPerMinute"
-                                    type="number"
-                                    min="10"
-                                    value={formData.apiSecurity.rateLimitPerMinute}
-                                    onChange={(e) => handleChange('apiSecurity.rateLimitPerMinute', parseInt(e.target.value))}
-                                />
-                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="maxRequestsPerHour">Max Requests Per Hour</Label>
                                 <Input

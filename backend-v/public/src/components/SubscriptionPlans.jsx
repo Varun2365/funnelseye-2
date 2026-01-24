@@ -1,3 +1,4 @@
+// SubscriptionPlans.jsx - Subscription plan management component
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -24,7 +25,10 @@ import {
   CheckCircle,
   Loader2,
   X,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle,
+  Save,
+  ExternalLink
 } from 'lucide-react';
 import adminApiService from '../services/adminApiService';
 
@@ -88,6 +92,7 @@ const createDefaultPlanForm = () => ({
   limits: { ...defaultLimits },
   courseAccess: { ...defaultCourseAccess },
   courseBundles: [],
+  funnelBundles: [],
   addons: {
     ...defaultAddons,
     availableAddons: []
@@ -135,6 +140,13 @@ const SubscriptionPlans = () => {
   const [coursesLoaded, setCoursesLoaded] = useState(false);
   const [courseSearch, setCourseSearch] = useState('');
   const [isCourseSelectorOpen, setIsCourseSelectorOpen] = useState(false);
+  
+  // Funnel state
+  const [availableFunnels, setAvailableFunnels] = useState([]);
+  const [funnelsLoading, setFunnelsLoading] = useState(false);
+  const [funnelLoadError, setFunnelLoadError] = useState('');
+  const [funnelsLoaded, setFunnelsLoaded] = useState(false);
+  const [funnelSearch, setFunnelSearch] = useState('');
 
   const mergedCourses = useMemo(() => {
     const base = Array.isArray(availableCourses) ? availableCourses : [];
@@ -264,6 +276,87 @@ const SubscriptionPlans = () => {
     }
   };
 
+  // Load available funnels
+  const loadAvailableFunnels = async () => {
+    try {
+      setFunnelsLoading(true);
+      setFunnelLoadError('');
+      
+      const response = await adminApiService.getFunnels({ limit: 1000 });
+      
+      if (response.success && response.data) {
+        const funnels = Array.isArray(response.data) ? response.data : [];
+        setAvailableFunnels(funnels);
+        setFunnelsLoaded(true);
+      } else {
+        setFunnelLoadError(response.message || 'Failed to load funnels');
+      }
+    } catch (error) {
+      console.error('Error loading admin funnels:', error);
+      setFunnelLoadError(error.message || 'Failed to load admin funnels');
+    } finally {
+      setFunnelsLoading(false);
+    }
+  };
+
+  // Filtered funnels based on search
+  const filteredFunnels = useMemo(() => {
+    if (!funnelSearch.trim()) {
+      return availableFunnels;
+    }
+    const query = funnelSearch.toLowerCase();
+    return availableFunnels.filter((funnel) =>
+      (funnel.name || '').toLowerCase().includes(query) ||
+      (funnel.description || '').toLowerCase().includes(query)
+    );
+  }, [availableFunnels, funnelSearch]);
+
+  // Handle funnel toggle
+  const handleFunnelToggle = (funnel, checked) => {
+    const funnelId = funnel.id || funnel._id;
+    setPlanForm((prev) => {
+      const existing = prev.funnelBundles || [];
+      if (checked) {
+        // Check if funnel is already in bundles using string comparison
+        const funnelIdStr = String(funnelId);
+        if (existing.some((bundle) => {
+          const bundleFunnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
+          return String(bundleFunnelId) === funnelIdStr;
+        })) {
+          return prev;
+        }
+        return {
+          ...prev,
+          funnelBundles: [...existing, {
+            funnel: funnelId,
+            funnelName: funnel.name,
+            funnelUrl: funnel.funnelUrl,
+            targetAudience: funnel.targetAudience || 'customer',
+            stageCount: funnel.stageCount || 0
+          }]
+        };
+      }
+      // Remove funnel from bundles using string comparison
+      const funnelIdStr = String(funnelId);
+      return {
+        ...prev,
+        funnelBundles: existing.filter((bundle) => {
+          const bundleFunnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
+          return String(bundleFunnelId) !== funnelIdStr;
+        })
+      };
+    });
+  };
+
+  const getFunnelBundle = (funnelId) => {
+    if (!funnelId) return null;
+    const funnelIdStr = String(funnelId);
+    return (planForm.funnelBundles || []).find((bundle) => {
+      const bundleFunnelId = bundle.funnel?._id || bundle.funnel?.id || bundle.funnel;
+      return String(bundleFunnelId) === funnelIdStr;
+    });
+  };
+
   // Load analytics
   const loadAnalytics = async () => {
     try {
@@ -350,6 +443,7 @@ const SubscriptionPlans = () => {
         limits: planForm.limits,
         courseAccess: courseAccessPayload,
         courseBundles: courseBundlesPayload,
+        funnelBundles: planForm.funnelBundles || [],
         addons: addonsPayload,
         isPopular: planForm.isPopular,
         trialDays: parseInt(planForm.trialDays) || 0,
@@ -407,6 +501,8 @@ const SubscriptionPlans = () => {
         duration: parseInt(planForm.duration),
         features: planForm.features,
         limits: planForm.limits,
+        courseBundles: planForm.courseBundles || [],
+        funnelBundles: planForm.funnelBundles || [],
         isPopular: planForm.isPopular,
         trialDays: parseInt(planForm.trialDays) || 0,
         setupFee: parseFloat(planForm.setupFee) || 0,
@@ -551,6 +647,16 @@ const SubscriptionPlans = () => {
         }))
       : [];
 
+    const normalizedFunnelBundles = Array.isArray(plan.funnelBundles)
+      ? plan.funnelBundles.map((bundle) => ({
+          funnel: bundle.funnel?._id || bundle.funnel?.id || bundle.funnel,
+          funnelName: bundle.funnel?.name || bundle.funnelName || '',
+          funnelUrl: bundle.funnel?.funnelUrl || bundle.funnelUrl || '',
+          targetAudience: bundle.funnel?.targetAudience || bundle.targetAudience || 'customer',
+          stageCount: bundle.funnel?.stageCount || bundle.stageCount || 0
+        }))
+      : [];
+
     setPlanForm({
       name: plan.name || '',
       description: plan.description || '',
@@ -562,6 +668,7 @@ const SubscriptionPlans = () => {
       limits: normalizedLimits,
       courseAccess: normalizedCourseAccess,
       courseBundles: normalizedBundles,
+      funnelBundles: normalizedFunnelBundles,
       addons: normalizedAddons,
       restrictions: plan.restrictions || {},
       pricing: {
@@ -612,6 +719,13 @@ const SubscriptionPlans = () => {
       loadAvailableCourses();
     }
   }, [isCreateDialogOpen, isEditDialogOpen, coursesLoaded]);
+
+  // Auto-load funnels when edit dialog opens (similar to courses)
+  useEffect(() => {
+    if (isEditDialogOpen && !funnelsLoaded) {
+      loadAvailableFunnels();
+    }
+  }, [isEditDialogOpen, funnelsLoaded]);
 
   const createBundleForCourse = (course) => ({
     course: course._id,
@@ -950,279 +1064,308 @@ const SubscriptionPlans = () => {
       {/* Create Plan Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent
-          className="max-w-6xl p-0 overflow-hidden"
-          style={{ width: '90vw', maxWidth: '1200px', height: '85vh' }}
+          className="max-w-6xl p-0 overflow-hidden border-0 shadow-2xl flex flex-col"
+          style={{ width: '90vw', maxWidth: '1200px', height: '90vh', maxHeight: '90vh' }}
         >
-          <div className="flex h-full flex-col bg-white">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b bg-white">
-              <DialogTitle className="text-2xl font-semibold text-slate-900">
-                Create New Subscription Plan
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-500">
-                Configure the plan details, included features, and bundled courses in a few simple steps.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="flex flex-col h-full bg-gradient-to-br from-white via-slate-50/30 to-white">
+            {/* Elegant Header */}
+            <DialogHeader className="px-8 pt-8 pb-6 border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1.5">
+                  <DialogTitle className="text-3xl font-bold tracking-tight text-slate-900">
+                    Create Subscription Plan
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-slate-600 font-normal">
+                    Design a comprehensive subscription plan with features, limits, and bundled content
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
           
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
-              <Tabs defaultValue="basic" className="w-full h-full">
-                <TabsList className="flex flex-wrap gap-2 rounded-full bg-slate-100/70 p-1">
-                  <TabsTrigger value="basic" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Basic Info
-                  </TabsTrigger>
-                  <TabsTrigger value="features" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Features
-                  </TabsTrigger>
-                  <TabsTrigger value="limits" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Limits
-                  </TabsTrigger>
-                  <TabsTrigger value="courses" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Courses
-                  </TabsTrigger>
-                  <TabsTrigger value="advanced" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Advanced
-                  </TabsTrigger>
-            </TabsList>
-            
-                <TabsContent value="basic" className="space-y-4 pt-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Plan Name *</Label>
-                  <Input
-                    id="name"
-                    value={planForm.name}
-                    onChange={(e) => setPlanForm({...planForm, name: e.target.value})}
-                    placeholder="e.g., Professional Plan"
-                  />
+            {/* Scrollable Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+              <Tabs defaultValue="basic" className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+                {/* Refined Tab Navigation */}
+                <div className="px-8 pt-6 pb-4 bg-white/50 border-b border-slate-100 flex-shrink-0">
+                  <TabsList className="inline-flex h-11 items-center justify-start rounded-lg bg-slate-100/50 p-1.5 w-full">
+                    <TabsTrigger 
+                      value="basic" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Basic Info
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="limits" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Limits
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="courses" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Courses
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="funnels" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Funnels
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Select value={planForm.category} onValueChange={(value) => setPlanForm({...planForm, category: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="starter">Starter</SelectItem>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="enterprise">Enterprise</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={planForm.description}
-                  onChange={(e) => setPlanForm({...planForm, description: e.target.value})}
-                  placeholder="Plan description..."
-                  rows={3}
-                />
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="price">Price *</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={planForm.price}
-                    onChange={(e) => setPlanForm({...planForm, price: parseFloat(e.target.value) || 0})}
-                    placeholder="99.99"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="currency">Currency</Label>
-                  <Select value={planForm.currency} onValueChange={(value) => setPlanForm({...planForm, currency: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INR">INR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="billingCycle">Billing Cycle *</Label>
-                  <Select value={planForm.billingCycle} onValueChange={(value) => setPlanForm({...planForm, billingCycle: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="duration">Duration (months) *</Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  value={planForm.duration}
-                  onChange={(e) => setPlanForm({...planForm, duration: parseInt(e.target.value) || 1})}
-                  placeholder="1"
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="features" className="space-y-6 pt-6">
-              
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Automation & AI</h4>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'aiFeatures', label: 'AI Features', key: 'aiFeatures' },
-                    { id: 'whatsappAutomation', label: 'WhatsApp Automation', key: 'whatsappAutomation' },
-                    { id: 'emailAutomation', label: 'Email Automation', key: 'emailAutomation' }
-                  ].map(({ id, label, key }) => (
-                    <div className="flex items-center space-x-2" key={id}>
-                    <Switch
-                        id={id}
-                      className="h-6 w-11"
-                        checked={planForm.features[key]}
-                      onCheckedChange={(checked) => setPlanForm({
-                        ...planForm, 
-                          features: { ...planForm.features, [key]: checked }
-                      })}
-                    />
-                      <Label htmlFor={id}>{label}</Label>
-                  </div>
-                  ))}
-                </div>
-              </div>
+                
+                {/* Scrollable Content Area */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-8 py-6" style={{ minHeight: 0 }}>
+                  <TabsContent value="basic" className="space-y-8 mt-0">
+                    {/* Plan Identity Section */}
+                    <div className="bg-white rounded-xl p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full"></div>
+                        <h3 className="text-xl font-bold text-slate-900">Plan Details</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="name" className="text-sm font-semibold text-slate-700">
+                            Plan Name <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            id="name"
+                            value={planForm.name}
+                            onChange={(e) => setPlanForm({...planForm, name: e.target.value})}
+                            placeholder="e.g., Professional Plan"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="category" className="text-sm font-semibold text-slate-700">
+                            Category
+                          </Label>
+                          <Select value={planForm.category} onValueChange={(value) => setPlanForm({...planForm, category: value})}>
+                            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="starter">Starter</SelectItem>
+                              <SelectItem value="professional">Professional</SelectItem>
+                              <SelectItem value="enterprise">Enterprise</SelectItem>
+                              <SelectItem value="custom">Custom</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mt-6">
+                        <Label htmlFor="description" className="text-sm font-semibold text-slate-700">
+                          Description <span className="text-red-500">*</span>
+                        </Label>
+                        <Textarea
+                          id="description"
+                          value={planForm.description}
+                          onChange={(e) => setPlanForm({...planForm, description: e.target.value})}
+                          placeholder="Describe what this plan offers to coaches..."
+                          rows={4}
+                          className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
+                        />
+                      </div>
+                    </div>
 
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Support</h4>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'prioritySupport', label: 'Priority Support', key: 'prioritySupport' }
-                  ].map(({ id, label, key }) => (
-                    <div className="flex items-center space-x-2" key={id}>
-                    <Switch
-                        id={id}
-                      className="h-6 w-11"
-                        checked={planForm.features[key]}
-                      onCheckedChange={(checked) => setPlanForm({
-                        ...planForm, 
-                          features: { ...planForm.features, [key]: checked }
-                      })}
-                    />
-                      <Label htmlFor={id}>{label}</Label>
-                  </div>
-                  ))}
-                </div>
-              </div>
+                    {/* Pricing & Billing Section */}
+                    <div className="bg-white rounded-xl p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-1 h-8 bg-gradient-to-b from-emerald-600 to-teal-600 rounded-full"></div>
+                        <h3 className="text-xl font-bold text-slate-900">Pricing & Billing</h3>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="price" className="text-sm font-semibold text-slate-700">
+                            Price <span className="text-red-500">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="price"
+                              type="number"
+                              step="0.01"
+                              value={planForm.price}
+                              onChange={(e) => setPlanForm({...planForm, price: parseFloat(e.target.value) || 0})}
+                              placeholder="0.00"
+                              className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 pl-8"
+                            />
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₹</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="currency" className="text-sm font-semibold text-slate-700">
+                            Currency
+                          </Label>
+                          <Select value={planForm.currency} onValueChange={(value) => setPlanForm({...planForm, currency: value})}>
+                            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INR">INR (₹)</SelectItem>
+                              <SelectItem value="USD">USD ($)</SelectItem>
+                              <SelectItem value="EUR">EUR (€)</SelectItem>
+                              <SelectItem value="GBP">GBP (£)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="billingCycle" className="text-sm font-semibold text-slate-700">
+                            Billing Cycle <span className="text-red-500">*</span>
+                          </Label>
+                          <Select value={planForm.billingCycle} onValueChange={(value) => setPlanForm({...planForm, billingCycle: value})}>
+                            <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="monthly">Monthly</SelectItem>
+                              <SelectItem value="quarterly">Quarterly</SelectItem>
+                              <SelectItem value="yearly">Yearly</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-2 mt-6">
+                        <Label htmlFor="duration" className="text-sm font-semibold text-slate-700">
+                          Duration (months) <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="duration"
+                          type="number"
+                          value={planForm.duration}
+                          onChange={(e) => setPlanForm({...planForm, duration: parseInt(e.target.value) || 1})}
+                          placeholder="1"
+                          className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 max-w-xs"
+                        />
+                      </div>
+                    </div>
 
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Branding & Integrations</h4>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'customDomain', label: 'Custom Domain', key: 'customDomain' },
-                    { id: 'customBranding', label: 'Custom Branding', key: 'customBranding' },
-                    { id: 'whiteLabel', label: 'White Label', key: 'whiteLabel' },
-                    { id: 'apiAccess', label: 'API Access', key: 'apiAccess' },
-                    { id: 'webhooks', label: 'Webhooks', key: 'webhooks' },
-                    { id: 'advancedReporting', label: 'Advanced Reporting', key: 'advancedReporting' }
-                  ].map(({ id, label, key }) => (
-                    <div className="flex items-center space-x-2" key={id}>
-                    <Switch
-                        id={id}
-                      className="h-6 w-11"
-                        checked={planForm.features[key]}
-                      onCheckedChange={(checked) => setPlanForm({
-                        ...planForm, 
-                          features: { ...planForm.features, [key]: checked }
-                      })}
-                    />
-                      <Label htmlFor={id}>{label}</Label>
-                  </div>
-                  ))}
-                </div>
-                <div className="mt-4">
-                  <Label htmlFor="integrations">Supported Integrations (comma separated)</Label>
-                  <Textarea
-                    id="integrations"
-                    rows={2}
-                    value={(planForm.features.integrations || []).join(', ')}
-                    onChange={(e) => setPlanForm({
-                      ...planForm,
-                      features: { ...planForm.features, integrations: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) }
-                    })}
-                    placeholder="zapier, webhook, slack..."
-                  />
-                </div>
-              </div>
-            </TabsContent>
+                    {/* Automation & AI Features Section */}
+                    <div className="bg-white rounded-xl p-6 shadow-sm">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
+                        <h3 className="text-xl font-bold text-slate-900">Automation & AI Features</h3>
+                      </div>
+                      
+                      <div className="grid md:grid-cols-3 gap-4">
+                        {[
+                          { id: 'aiFeatures', label: 'AI Features', key: 'aiFeatures', desc: 'Access to AI-powered tools and features' },
+                          { id: 'whatsappAutomation', label: 'WhatsApp Automation', key: 'whatsappAutomation', desc: 'Automated WhatsApp messaging' },
+                          { id: 'emailAutomation', label: 'Email Automation', key: 'emailAutomation', desc: 'Automated email campaigns' }
+                        ].map(({ id, label, key, desc }) => (
+                          <div className="flex items-start gap-3 p-4 rounded-lg border border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50 transition-all" key={id}>
+                            <Switch
+                              id={id}
+                              className="h-5 w-9 mt-0.5 flex-shrink-0"
+                              checked={planForm.features[key]}
+                              onCheckedChange={(checked) => setPlanForm({
+                                ...planForm, 
+                                features: { ...planForm.features, [key]: checked }
+                              })}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <Label htmlFor={id} className="text-sm font-semibold text-slate-900 cursor-pointer block">
+                                {label}
+                              </Label>
+                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                  </TabsContent>
             
-            <TabsContent value="limits" className="space-y-4 pt-6">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Core Resources</h4>
-                <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="maxFunnels">Max Funnels</Label>
-                  <Input
-                    id="maxFunnels"
-                    type="number"
+                <TabsContent value="limits" className="space-y-8 mt-0">
+              {/* Core Resources Section */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                  <div className="w-1 h-6 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900">Core Resources</h3>
+                </div>
+                <div className="grid md:grid-cols-3 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="maxFunnels" className="text-sm font-semibold text-slate-700">
+                      Max Funnels
+                    </Label>
+                    <Input
+                      id="maxFunnels"
+                      type="number"
                       value={planForm.limits.maxFunnels}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
                         limits: { ...planForm.limits, maxFunnels: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxStaff">Max Staff</Label>
-                  <Input
-                    id="maxStaff"
-                    type="number"
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxStaff" className="text-sm font-semibold text-slate-700">
+                      Max Staff Members
+                    </Label>
+                    <Input
+                      id="maxStaff"
+                      type="number"
                       value={planForm.limits.maxStaff}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
                         limits: { ...planForm.limits, maxStaff: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxDevices">Max Devices</Label>
-                  <Input
-                    id="maxDevices"
-                    type="number"
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxDevices" className="text-sm font-semibold text-slate-700">
+                      Max Devices
+                    </Label>
+                    <Input
+                      id="maxDevices"
+                      type="number"
                       value={planForm.limits.maxDevices}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
                         limits: { ...planForm.limits, maxDevices: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
                 </div>
               </div>
 
-                <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Automation & Credits</h4>
-                <div className="grid md:grid-cols-4 gap-4">
-                  <div>
-                    <Label htmlFor="automationRules">Automation Rules</Label>
-                  <Input
-                      id="automationRules"
-                    type="number"
-                      value={planForm.limits.automationRules}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
-                        limits: { ...planForm.limits, automationRules: parseInt(e.target.value) || 0 }
-                    })}
-                  />
+              {/* Automation & Credits Section */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                  <div className="w-1 h-6 bg-gradient-to-b from-teal-600 to-cyan-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900">Automation & Credits</h3>
                 </div>
-                  <div>
-                    <Label htmlFor="emailCredits">Email Credits</Label>
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="automationRules" className="text-sm font-semibold text-slate-700">
+                      Automation Rules
+                    </Label>
+                    <Input
+                      id="automationRules"
+                      type="number"
+                      value={planForm.limits.automationRules}
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
+                        limits: { ...planForm.limits, automationRules: parseInt(e.target.value) || 0 }
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="emailCredits" className="text-sm font-semibold text-slate-700">
+                      Email Credits
+                    </Label>
                     <Input
                       id="emailCredits"
                       type="number"
@@ -1231,10 +1374,14 @@ const SubscriptionPlans = () => {
                         ...planForm, 
                         limits: { ...planForm.limits, emailCredits: parseInt(e.target.value) || 0 }
                       })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="smsCredits">SMS Credits</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="smsCredits" className="text-sm font-semibold text-slate-700">
+                      SMS Credits
+                    </Label>
                     <Input
                       id="smsCredits"
                       type="number"
@@ -1243,10 +1390,14 @@ const SubscriptionPlans = () => {
                         ...planForm, 
                         limits: { ...planForm.limits, smsCredits: parseInt(e.target.value) || 0 }
                       })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="storageGB">Storage (GB)</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="storageGB" className="text-sm font-semibold text-slate-700">
+                      Storage (GB)
+                    </Label>
                     <Input
                       id="storageGB"
                       type="number"
@@ -1255,59 +1406,84 @@ const SubscriptionPlans = () => {
                         ...planForm, 
                         limits: { ...planForm.limits, storageGB: parseInt(e.target.value) || 0 }
                       })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
                     />
                   </div>
-                  </div>
-                  </div>
-
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Business Operations</h4>
-                <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="maxLeads">Max Leads</Label>
-                  <Input
-                    id="maxLeads"
-                    type="number"
-                    value={planForm.limits.maxLeads}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
-                        limits: { ...planForm.limits, maxLeads: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxAppointments">Max Appointments</Label>
-                  <Input
-                    id="maxAppointments"
-                    type="number"
-                    value={planForm.limits.maxAppointments}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
-                        limits: { ...planForm.limits, maxAppointments: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="maxCampaigns">Max Campaigns</Label>
-                  <Input
-                    id="maxCampaigns"
-                    type="number"
-                    value={planForm.limits.maxCampaigns}
-                    onChange={(e) => setPlanForm({
-                      ...planForm, 
-                        limits: { ...planForm.limits, maxCampaigns: parseInt(e.target.value) || 0 }
-                    })}
-                  />
-                </div>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-500">Use -1 for unlimited access.</p>
+              {/* Business Operations Section */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100">
+                  <div className="w-1 h-6 bg-gradient-to-b from-rose-600 to-pink-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900">Business Operations</h3>
+                </div>
+                <div className="grid md:grid-cols-3 gap-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="maxLeads" className="text-sm font-semibold text-slate-700">
+                      Max Leads
+                    </Label>
+                    <Input
+                      id="maxLeads"
+                      type="number"
+                      value={planForm.limits.maxLeads}
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
+                        limits: { ...planForm.limits, maxLeads: parseInt(e.target.value) || 0 }
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxAppointments" className="text-sm font-semibold text-slate-700">
+                      Max Appointments
+                    </Label>
+                    <Input
+                      id="maxAppointments"
+                      type="number"
+                      value={planForm.limits.maxAppointments}
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
+                        limits: { ...planForm.limits, maxAppointments: parseInt(e.target.value) || 0 }
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxCampaigns" className="text-sm font-semibold text-slate-700">
+                      Max Campaigns
+                    </Label>
+                    <Input
+                      id="maxCampaigns"
+                      type="number"
+                      value={planForm.limits.maxCampaigns}
+                      onChange={(e) => setPlanForm({
+                        ...planForm, 
+                        limits: { ...planForm.limits, maxCampaigns: parseInt(e.target.value) || 0 }
+                      })}
+                      className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
+                  <p className="text-xs text-slate-600 font-medium">
+                  <span className="font-semibold text-blue-700">Tip:</span> Use <code className="px-1.5 py-0.5 bg-white rounded text-blue-600 font-mono text-xs">-1</code> for unlimited access to any resource.
+                </p>
+              </div>
             </TabsContent>
             
-            <TabsContent value="courses" className="space-y-4 pt-6">
+                <TabsContent value="courses" className="space-y-6 mt-0">
                 <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Included Courses</h4>
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100 mb-4">
+                  <div className="w-1 h-6 bg-gradient-to-b from-emerald-600 to-green-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900">Included Courses</h3>
+                </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   Select courses from the platform's library to include in this subscription plan. Coaches subscribed to this plan will gain access to these courses based on the permissions you set.
                 </p>
@@ -1499,382 +1675,369 @@ const SubscriptionPlans = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="advanced" className="space-y-4 pt-6">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="trialDays">Trial Days</Label>
-                  <Input
-                    id="trialDays"
-                    type="number"
-                    value={planForm.trialDays}
-                    onChange={(e) => setPlanForm({ ...planForm, trialDays: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="setupFee">Setup Fee</Label>
-                  <Input
-                    id="setupFee"
-                    type="number"
-                    step="0.01"
-                    value={planForm.setupFee}
-                    onChange={(e) => setPlanForm({ ...planForm, setupFee: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="sortOrder">Sort Order</Label>
-                  <Input
-                    id="sortOrder"
-                    type="number"
-                    value={planForm.sortOrder}
-                    onChange={(e) => setPlanForm({ ...planForm, sortOrder: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-
+                  <TabsContent value="funnels" className="space-y-6 mt-0">
               <div>
-                <Label htmlFor="annualDiscount">Annual Discount (%)</Label>
-                <Input
-                  id="annualDiscount"
-                  type="number"
-                  step="0.1"
-                  value={planForm.pricing?.annualDiscount ?? 0}
-                  onChange={(e) => setPlanForm({
-                    ...planForm,
-                    pricing: { ...planForm.pricing, annualDiscount: parseFloat(e.target.value) || 0 }
-                  })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="allowAddonPurchases"
-                    className="h-6 w-11"
-                    checked={planForm.addons.allowAddonPurchases}
-                    onCheckedChange={(checked) => setPlanForm({
-                      ...planForm,
-                      addons: { ...planForm.addons, allowAddonPurchases: checked }
-                    })}
+                <div className="flex items-center gap-3 pb-2 border-b border-slate-100 mb-4">
+                  <div className="w-1 h-6 bg-gradient-to-b from-violet-600 to-purple-600 rounded-full"></div>
+                  <h3 className="text-lg font-semibold text-slate-900">Included Funnels</h3>
+                </div>
+                <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+                  Select funnels from the platform's library to include in this subscription plan. Coaches subscribed to this plan will gain access to these funnels.
+                </p>
+                
+                <div className="flex items-center gap-2 mb-4">
+                  <Input
+                    placeholder="Search funnels..."
+                    value={funnelSearch}
+                    onChange={(e) => setFunnelSearch(e.target.value)}
+                    className="flex-1"
                   />
-                  <Label htmlFor="allowAddonPurchases">Allow optional add-on purchases</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={loadAvailableFunnels} disabled={funnelsLoading}>
+                    {funnelsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {funnelsLoading ? 'Loading...' : 'Load Funnels'}
+                  </Button>
                 </div>
 
-                {planForm.addons.allowAddonPurchases && (
-                  <div className="space-y-3">
-                    {(planForm.addons.availableAddons || []).map((addon, index) => (
-                      <div key={index} className="border rounded-md p-3 space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="font-medium">Addon #{index + 1}</div>
-                          <Button variant="ghost" size="icon" onClick={() => removeAddon(index)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>Name</Label>
-                            <Input
-                              value={addon.name}
-                              onChange={(e) => updateAddonField(index, 'name', e.target.value)}
-                              placeholder="Addon name"
-                            />
-                          </div>
-                          <div>
-                            <Label>Price</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={addon.price}
-                              onChange={(e) => updateAddonField(index, 'price', parseFloat(e.target.value) || 0)}
-                              placeholder="0.00"
-                            />
-                          </div>
-                          <div>
-                            <Label>Billing Cycle</Label>
-                            <Select
-                              value={addon.billingCycle || 'one-time'}
-                              onValueChange={(value) => updateAddonField(index, 'billingCycle', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="one-time">One-time</SelectItem>
-                                <SelectItem value="monthly">Monthly</SelectItem>
-                                <SelectItem value="quarterly">Quarterly</SelectItem>
-                                <SelectItem value="yearly">Yearly</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <div>
-                          <Label>Description</Label>
-                          <Textarea
-                            rows={3}
-                            value={addon.description}
-                            onChange={(e) => updateAddonField(index, 'description', e.target.value)}
-                            placeholder="What does this addon include?"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" onClick={addNewAddon}>
-                      Add addon
-                    </Button>
+                {funnelLoadError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{funnelLoadError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {funnelsLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
+                ) : filteredFunnels.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="mb-2">No funnels found.</p>
+                    <p className="text-sm">Click "Load Funnels" to fetch available funnels from the platform.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[500px] w-full">
+                    <div className="space-y-2">
+                      {filteredFunnels.map((funnel) => {
+                        const funnelId = funnel.id || funnel._id;
+                        const isFunnelIncluded = !!getFunnelBundle(funnelId);
+                        
+                        const funnelUrl = funnel.funnelUrl;
+                        const pageId = funnel.indexPageId || (funnel.stages && funnel.stages.length > 0 ? (funnel.stages[0]?.pageId || funnel.stages[0]?._id) : null);
+                        const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                          ? 'http://localhost:8080' 
+                          : 'https://api.funnelseye.com';
+                        const fullUrl = funnelUrl && pageId ? `${baseUrl}/preview/funnels/${funnelUrl}/${pageId}` : null;
+                        
+                        return (
+                          <div
+                            key={funnelId}
+                            onClick={() => handleFunnelToggle(funnel, !isFunnelIncluded)}
+                            className="group flex items-center gap-3 p-3 rounded-lg transition-all hover:bg-slate-50/50 cursor-pointer"
+                          >
+                            <Checkbox
+                              id={`funnel-${funnelId}`}
+                              checked={isFunnelIncluded}
+                              onCheckedChange={(checked) => handleFunnelToggle(funnel, checked)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-3 mb-1">
+                                <Label htmlFor={`funnel-${funnelId}`} className="font-semibold text-sm text-slate-900 cursor-pointer group-hover:text-blue-600 transition-colors">
+                                  {funnel.name}
+                                </Label>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {fullUrl && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(fullUrl, '_blank');
+                                      }}
+                                      title="Open funnel"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  <Badge 
+                                    className={`text-xs px-2 py-0.5 h-5 ${
+                                      funnel.isActive 
+                                        ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' 
+                                        : 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
+                                    }`}
+                                  >
+                                    {funnel.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-slate-500">
+                                <span className="truncate max-w-[200px]">{funnelUrl || 'N/A'}</span>
+                                <span className="flex-shrink-0">•</span>
+                                <span className="flex-shrink-0">{funnel.stageCount || 0} stages</span>
+                                {funnel.targetAudience && (
+                                  <>
+                                    <span className="flex-shrink-0">•</span>
+                                    <span className="flex-shrink-0 capitalize">{funnel.targetAudience}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
                 )}
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isPopular"
-                    className="h-6 w-11"
-                    checked={planForm.isPopular}
-                    onCheckedChange={(checked) => setPlanForm({ ...planForm, isPopular: checked })}
-                  />
-                  <Label htmlFor="isPopular">Mark as popular</Label>
+                  </TabsContent>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isActive"
-                    className="h-6 w-11"
-                    checked={planForm.isActive}
-                    onCheckedChange={(checked) => setPlanForm({ ...planForm, isActive: checked })}
-                  />
-                  <Label htmlFor="isActive">Active</Label>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
+              </Tabs>
+            </div>
           
-        <DialogFooter className="px-6 py-4 border-t bg-white">
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+        {/* Elegant Footer - Fixed at Bottom */}
+        <DialogFooter className="px-8 py-5 border-t border-slate-200 bg-gradient-to-r from-white to-slate-50/50 flex-shrink-0">
+          <div className="flex items-center justify-between w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCreateDialogOpen(false)}
+              className="h-11 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-medium"
+            >
               Cancel
             </Button>
-            <Button onClick={handleCreatePlan}>
-              Create Plan
+            <Button 
+              onClick={handleCreatePlan}
+              className="h-11 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Create Subscription Plan
             </Button>
-          </DialogFooter>
-      </div>
+          </div>
+        </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* Edit Plan Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent
-          className="max-w-6xl p-0 overflow-hidden"
-          style={{ width: '90vw', maxWidth: '1200px', height: '85vh' }}
+          className="max-w-6xl p-0 overflow-hidden border-0 shadow-2xl flex flex-col"
+          style={{ width: '90vw', maxWidth: '1200px', height: '90vh', maxHeight: '90vh' }}
         >
-          <div className="flex h-full flex-col bg-white">
-            <DialogHeader className="px-6 pt-6 pb-4 border-b bg-white">
-              <DialogTitle className="text-2xl font-semibold text-slate-900">
-                Edit Subscription Plan
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-500">
-                Update any section of the plan while keeping the layout focused and easy to scan.
-            </DialogDescription>
-          </DialogHeader>
+          <div className="flex flex-col h-full bg-gradient-to-br from-white via-slate-50/30 to-white">
+            {/* Elegant Header */}
+            <DialogHeader className="px-8 pt-8 pb-6 border-b border-slate-200/60 bg-white/80 backdrop-blur-sm">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1.5">
+                  <DialogTitle className="text-3xl font-bold tracking-tight text-slate-900">
+                    Edit Subscription Plan
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-slate-600 font-normal">
+                    Update any section of the plan while keeping the layout focused and easy to scan
+                  </DialogDescription>
+                </div>
+              </div>
+            </DialogHeader>
           
-          {/* Same form structure as create dialog */}
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
-              <Tabs defaultValue="basic" className="w-full h-full">
-                <TabsList className="flex flex-wrap gap-2 rounded-full bg-slate-100/70 p-1">
-                  <TabsTrigger value="basic" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Basic Info
-                  </TabsTrigger>
-                  <TabsTrigger value="features" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Features
-                  </TabsTrigger>
-                  <TabsTrigger value="limits" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Limits
-                  </TabsTrigger>
-                  <TabsTrigger value="courses" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Courses
-                  </TabsTrigger>
-                  <TabsTrigger value="advanced" className="px-4 py-2 rounded-full data-[state=active]:bg-white data-[state=active]:shadow-sm text-sm font-medium">
-                    Advanced
-                  </TabsTrigger>
-            </TabsList>
-            
-                <TabsContent value="basic" className="space-y-4 pt-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="edit-name">Plan Name *</Label>
-                  <Input
-                    id="edit-name"
-                    value={planForm.name}
-                    onChange={(e) => setPlanForm({...planForm, name: e.target.value})}
-                    placeholder="e.g., Professional Plan"
-                  />
+            {/* Scrollable Content Area */}
+            <div className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+              <Tabs defaultValue="basic" className="flex-1 flex flex-col overflow-hidden" style={{ minHeight: 0 }}>
+                {/* Refined Tab Navigation */}
+                <div className="px-8 pt-6 pb-4 bg-white/50 border-b border-slate-100 flex-shrink-0">
+                  <TabsList className="inline-flex h-11 items-center justify-start rounded-lg bg-slate-100/50 p-1.5 w-full">
+                    <TabsTrigger 
+                      value="basic" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Basic Info
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="limits" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Limits
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="courses" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Courses
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="funnels" 
+                      className="px-5 py-2.5 rounded-md text-sm font-medium text-slate-600 data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm transition-all duration-200"
+                    >
+                      Funnels
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-                <div>
-                  <Label htmlFor="edit-category">Category</Label>
-                  <Select value={planForm.category} onValueChange={(value) => setPlanForm({...planForm, category: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="starter">Starter</SelectItem>
-                      <SelectItem value="professional">Professional</SelectItem>
-                      <SelectItem value="enterprise">Enterprise</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-description">Description *</Label>
-                <Textarea
-                  id="edit-description"
-                  value={planForm.description}
-                  onChange={(e) => setPlanForm({...planForm, description: e.target.value})}
-                  placeholder="Plan description..."
-                  rows={3}
-                />
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="edit-price">Price *</Label>
-                  <Input
-                    id="edit-price"
-                    type="number"
-                    step="0.01"
-                    value={planForm.price}
-                    onChange={(e) => setPlanForm({...planForm, price: parseFloat(e.target.value) || 0})}
-                    placeholder="99.99"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-currency">Currency</Label>
-                  <Select value={planForm.currency} onValueChange={(value) => setPlanForm({...planForm, currency: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="INR">INR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="GBP">GBP</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="edit-billingCycle">Billing Cycle *</Label>
-                  <Select value={planForm.billingCycle} onValueChange={(value) => setPlanForm({...planForm, billingCycle: value})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="yearly">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="edit-duration">Duration (months) *</Label>
-                <Input
-                  id="edit-duration"
-                  type="number"
-                  value={planForm.duration}
-                  onChange={(e) => setPlanForm({...planForm, duration: parseInt(e.target.value) || 1})}
-                  placeholder="1"
-                />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="features" className="space-y-6 pt-6">
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Automation & AI</h4>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'edit-aiFeatures', label: 'AI Features', key: 'aiFeatures' },
-                    { id: 'edit-whatsappAutomation', label: 'WhatsApp Automation', key: 'whatsappAutomation' },
-                    { id: 'edit-emailAutomation', label: 'Email Automation', key: 'emailAutomation' }
-                  ].map(({ id, label, key }) => (
-                    <div className="flex items-center space-x-2" key={id}>
-                    <Switch
-                        id={id}
-                      className="h-6 w-11"
-                        checked={planForm.features[key]}
-                      onCheckedChange={(checked) => setPlanForm({
-                        ...planForm, 
-                          features: { ...planForm.features, [key]: checked }
-                      })}
-                    />
-                      <Label htmlFor={id}>{label}</Label>
+                
+                {/* Scrollable Content Area */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden px-6 py-6" style={{ minHeight: 0 }}>
+                  <TabsContent value="basic" className="space-y-8 mt-0">
+                  {/* Plan Identity Section */}
+                  <div className="bg-white rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full"></div>
+                      <h3 className="text-xl font-bold text-slate-900">Plan Details</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-name" className="text-sm font-semibold text-slate-700">
+                          Plan Name <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="edit-name"
+                          value={planForm.name}
+                          onChange={(e) => setPlanForm({...planForm, name: e.target.value})}
+                          placeholder="e.g., Professional Plan"
+                          className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-category" className="text-sm font-semibold text-slate-700">
+                          Category
+                        </Label>
+                        <Select value={planForm.category} onValueChange={(value) => setPlanForm({...planForm, category: value})}>
+                          <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="starter">Starter</SelectItem>
+                            <SelectItem value="professional">Professional</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            <SelectItem value="custom">Custom</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 mt-6">
+                      <Label htmlFor="edit-description" className="text-sm font-semibold text-slate-700">
+                        Description <span className="text-red-500">*</span>
+                      </Label>
+                      <Textarea
+                        id="edit-description"
+                        value={planForm.description}
+                        onChange={(e) => setPlanForm({...planForm, description: e.target.value})}
+                        placeholder="Describe what this plan offers to coaches..."
+                        rows={4}
+                        className="border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 resize-none"
+                      />
+                    </div>
                   </div>
-                  ))}
-                </div>
-              </div>
 
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Support</h4>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'edit-prioritySupport', label: 'Priority Support', key: 'prioritySupport' }
-                  ].map(({ id, label, key }) => (
-                    <div className="flex items-center space-x-2" key={id}>
-                    <Switch
-                        id={id}
-                      className="h-6 w-11"
-                        checked={planForm.features[key]}
-                      onCheckedChange={(checked) => setPlanForm({
-                        ...planForm, 
-                          features: { ...planForm.features, [key]: checked }
-                      })}
-                    />
-                      <Label htmlFor={id}>{label}</Label>
+                  {/* Pricing & Billing Section */}
+                  <div className="bg-white rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-1 h-8 bg-gradient-to-b from-emerald-600 to-teal-600 rounded-full"></div>
+                      <h3 className="text-xl font-bold text-slate-900">Pricing & Billing</h3>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-price" className="text-sm font-semibold text-slate-700">
+                          Price <span className="text-red-500">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="edit-price"
+                            type="number"
+                            step="0.01"
+                            value={planForm.price}
+                            onChange={(e) => setPlanForm({...planForm, price: parseFloat(e.target.value) || 0})}
+                            placeholder="0.00"
+                            className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 pl-8"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">₹</span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-currency" className="text-sm font-semibold text-slate-700">
+                          Currency
+                        </Label>
+                        <Select value={planForm.currency} onValueChange={(value) => setPlanForm({...planForm, currency: value})}>
+                          <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="INR">INR (₹)</SelectItem>
+                            <SelectItem value="USD">USD ($)</SelectItem>
+                            <SelectItem value="EUR">EUR (€)</SelectItem>
+                            <SelectItem value="GBP">GBP (£)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-billingCycle" className="text-sm font-semibold text-slate-700">
+                          Billing Cycle <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={planForm.billingCycle} onValueChange={(value) => setPlanForm({...planForm, billingCycle: value})}>
+                          <SelectTrigger className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                            <SelectItem value="quarterly">Quarterly</SelectItem>
+                            <SelectItem value="yearly">Yearly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 mt-6">
+                      <Label htmlFor="edit-duration" className="text-sm font-semibold text-slate-700">
+                        Duration (months) <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="edit-duration"
+                        type="number"
+                        value={planForm.duration}
+                        onChange={(e) => setPlanForm({...planForm, duration: parseInt(e.target.value) || 1})}
+                        placeholder="1"
+                        className="h-11 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 max-w-xs"
+                      />
+                    </div>
                   </div>
-                  ))}
-                </div>
-              </div>
 
-              <div>
-                <h4 className="font-semibold text-sm text-gray-700 mb-2">Branding & Integrations</h4>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[
-                    { id: 'edit-customDomain', label: 'Custom Domain', key: 'customDomain' },
-                    { id: 'edit-customBranding', label: 'Custom Branding', key: 'customBranding' },
-                    { id: 'edit-whiteLabel', label: 'White Label', key: 'whiteLabel' },
-                    { id: 'edit-apiAccess', label: 'API Access', key: 'apiAccess' },
-                    { id: 'edit-webhooks', label: 'Webhooks', key: 'webhooks' },
-                    { id: 'edit-advancedReporting', label: 'Advanced Reporting', key: 'advancedReporting' }
-                  ].map(({ id, label, key }) => (
-                    <div className="flex items-center space-x-2" key={id}>
-                    <Switch
-                        id={id}
-                      className="h-6 w-11"
-                        checked={planForm.features[key]}
-                      onCheckedChange={(checked) => setPlanForm({
-                        ...planForm, 
-                          features: { ...planForm.features, [key]: checked }
-                      })}
-                    />
-                      <Label htmlFor={id}>{label}</Label>
+                  {/* Automation & AI Features Section */}
+                  <div className="bg-white rounded-xl p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className="w-1 h-8 bg-gradient-to-b from-purple-600 to-pink-600 rounded-full"></div>
+                      <h3 className="text-xl font-bold text-slate-900">Automation & AI Features</h3>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {[
+                        { id: 'edit-aiFeatures', label: 'AI Features', key: 'aiFeatures', desc: 'Access to AI-powered tools and features' },
+                        { id: 'edit-whatsappAutomation', label: 'WhatsApp Automation', key: 'whatsappAutomation', desc: 'Automated WhatsApp messaging' },
+                        { id: 'edit-emailAutomation', label: 'Email Automation', key: 'emailAutomation', desc: 'Automated email campaigns' }
+                      ].map(({ id, label, key, desc }) => (
+                        <div className="flex items-start gap-3 p-4 rounded-lg border border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50 transition-all" key={id}>
+                          <Switch
+                            id={id}
+                            className="h-5 w-9 mt-0.5 flex-shrink-0"
+                            checked={planForm.features[key]}
+                            onCheckedChange={(checked) => setPlanForm({
+                              ...planForm, 
+                              features: { ...planForm.features, [key]: checked }
+                            })}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <Label htmlFor={id} className="text-sm font-semibold text-slate-900 cursor-pointer block">
+                              {label}
+                            </Label>
+                            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  ))}
-                </div>
-                <div className="mt-4">
-                  <Label htmlFor="edit-integrations">Supported Integrations (comma separated)</Label>
-                  <Textarea
-                    id="edit-integrations"
-                    rows={2}
-                    value={(planForm.features.integrations || []).join(', ')}
-                    onChange={(e) => setPlanForm({
-                      ...planForm,
-                      features: { ...planForm.features, integrations: e.target.value.split(',').map((item) => item.trim()).filter(Boolean) }
-                    })}
-                    placeholder="zapier, webhook, slack..."
-                  />
-                </div>
-              </div>
-            </TabsContent>
+
+                </TabsContent>
             
             <TabsContent value="limits" className="space-y-4 pt-6">
               <div>
@@ -2212,164 +2375,145 @@ const SubscriptionPlans = () => {
               </div>
             </TabsContent>
             
-            <TabsContent value="advanced" className="space-y-4 pt-6">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="edit-trialDays">Trial Days</Label>
-                  <Input
-                    id="edit-trialDays"
-                    type="number"
-                    value={planForm.trialDays}
-                    onChange={(e) => setPlanForm({ ...planForm, trialDays: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-setupFee">Setup Fee</Label>
-                  <Input
-                    id="edit-setupFee"
-                    type="number"
-                    step="0.01"
-                    value={planForm.setupFee}
-                    onChange={(e) => setPlanForm({ ...planForm, setupFee: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="edit-sortOrder">Sort Order</Label>
-                  <Input
-                    id="edit-sortOrder"
-                    type="number"
-                    value={planForm.sortOrder}
-                    onChange={(e) => setPlanForm({ ...planForm, sortOrder: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-
+            <TabsContent value="funnels" className="space-y-4 pt-6">
               <div>
-                <Label htmlFor="edit-annualDiscount">Annual Discount (%)</Label>
-                <Input
-                  id="edit-annualDiscount"
-                  type="number"
-                  step="0.1"
-                  value={planForm.pricing?.annualDiscount ?? 0}
-                  onChange={(e) => setPlanForm({
-                    ...planForm,
-                    pricing: { ...planForm.pricing, annualDiscount: parseFloat(e.target.value) || 0 }
-                  })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-allowAddonPurchases"
-                    className="h-6 w-11"
-                    checked={planForm.addons.allowAddonPurchases}
-                    onCheckedChange={(checked) => setPlanForm({
-                      ...planForm,
-                      addons: { ...planForm.addons, allowAddonPurchases: checked }
-                    })}
+                <h4 className="font-semibold text-sm text-gray-700 mb-2">Included Funnels</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Select funnels from the platform's library to include in this subscription plan. Coaches subscribed to this plan will gain access to these funnels.
+                </p>
+                
+                <div className="flex items-center gap-2 mb-4">
+                  <Input
+                    placeholder="Search funnels..."
+                    value={funnelSearch}
+                    onChange={(e) => setFunnelSearch(e.target.value)}
+                    className="flex-1"
                   />
-                  <Label htmlFor="edit-allowAddonPurchases">Allow optional add-on purchases</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={loadAvailableFunnels} disabled={funnelsLoading}>
+                    {funnelsLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {funnelsLoading ? 'Loading...' : 'Load Funnels'}
+                  </Button>
                 </div>
 
-                {planForm.addons.allowAddonPurchases && (
-                  <div className="space-y-3">
-                    {(planForm.addons.availableAddons || []).map((addon, index) => (
-                      <div key={index} className="border rounded-md p-3 space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="font-medium">Addon #{index + 1}</div>
-                          <Button variant="ghost" size="icon" onClick={() => removeAddon(index)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>Name</Label>
-                            <Input
-                              value={addon.name}
-                              onChange={(e) => updateAddonField(index, 'name', e.target.value)}
-                              placeholder="Addon name"
-                            />
-                          </div>
-                          <div>
-                            <Label>Price</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={addon.price}
-                              onChange={(e) => updateAddonField(index, 'price', parseFloat(e.target.value) || 0)}
-                              placeholder="0.00"
-                            />
-                          </div>
-                          <div>
-                            <Label>Billing Cycle</Label>
-                            <Select
-                              value={addon.billingCycle || 'one-time'}
-                              onValueChange={(value) => updateAddonField(index, 'billingCycle', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="one-time">One-time</SelectItem>
-                                <SelectItem value="monthly">Monthly</SelectItem>
-                                <SelectItem value="quarterly">Quarterly</SelectItem>
-                                <SelectItem value="yearly">Yearly</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                        <div>
-                          <Label>Description</Label>
-                          <Textarea
-                            rows={3}
-                            value={addon.description}
-                            onChange={(e) => updateAddonField(index, 'description', e.target.value)}
-                            placeholder="What does this addon include?"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" onClick={addNewAddon}>
-                      Add addon
-                    </Button>
+                {funnelLoadError && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{funnelLoadError}</AlertDescription>
+                  </Alert>
+                )}
+
+                {funnelsLoading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin" />
                   </div>
+                ) : filteredFunnels.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="mb-2">No funnels found.</p>
+                    <p className="text-sm">Click "Load Funnels" to fetch available funnels from the platform.</p>
+                  </div>
+                ) : (
+                  <ScrollArea className="h-[500px] w-full">
+                    <div className="space-y-2">
+                      {filteredFunnels.map((funnel) => {
+                        const funnelId = funnel.id || funnel._id;
+                        const isFunnelIncluded = !!getFunnelBundle(funnelId);
+                        
+                        const funnelUrl = funnel.funnelUrl;
+                        const pageId = funnel.indexPageId || (funnel.stages && funnel.stages.length > 0 ? (funnel.stages[0]?.pageId || funnel.stages[0]?._id) : null);
+                        const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                          ? 'http://localhost:8080' 
+                          : 'https://api.funnelseye.com';
+                        const fullUrl = funnelUrl && pageId ? `${baseUrl}/preview/funnels/${funnelUrl}/${pageId}` : null;
+                        
+                        return (
+                          <div
+                            key={funnelId}
+                            onClick={() => handleFunnelToggle(funnel, !isFunnelIncluded)}
+                            className="group flex items-center gap-3 p-3 rounded-lg transition-all hover:bg-slate-50/50 cursor-pointer"
+                          >
+                            <Checkbox
+                              id={`edit-funnel-${funnelId}`}
+                              checked={isFunnelIncluded}
+                              onCheckedChange={(checked) => handleFunnelToggle(funnel, checked)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-3 mb-1">
+                                <Label htmlFor={`edit-funnel-${funnelId}`} className="font-semibold text-sm text-slate-900 cursor-pointer group-hover:text-blue-600 transition-colors">
+                                  {funnel.name}
+                                </Label>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  {fullUrl && (
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 hover:bg-blue-50 hover:text-blue-600"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        window.open(fullUrl, '_blank');
+                                      }}
+                                      title="Open funnel"
+                                    >
+                                      <ExternalLink className="h-3.5 w-3.5" />
+                                    </Button>
+                                  )}
+                                  <Badge 
+                                    className={`text-xs px-2 py-0.5 h-5 ${
+                                      funnel.isActive 
+                                        ? 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200' 
+                                        : 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200'
+                                    }`}
+                                  >
+                                    {funnel.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-slate-500">
+                                <span className="truncate max-w-[200px]">{funnelUrl || 'N/A'}</span>
+                                <span className="flex-shrink-0">•</span>
+                                <span className="flex-shrink-0">{funnel.stageCount || 0} stages</span>
+                                {funnel.targetAudience && (
+                                  <>
+                                    <span className="flex-shrink-0">•</span>
+                                    <span className="flex-shrink-0 capitalize">{funnel.targetAudience}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
                 )}
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-isPopular"
-                    className="h-6 w-11"
-                    checked={planForm.isPopular}
-                    onCheckedChange={(checked) => setPlanForm({ ...planForm, isPopular: checked })}
-                  />
-                  <Label htmlFor="edit-isPopular">Mark as popular</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="edit-isActive"
-                    className="h-6 w-11"
-                    checked={planForm.isActive}
-                    onCheckedChange={(checked) => setPlanForm({ ...planForm, isActive: checked })}
-                  />
-                  <Label htmlFor="edit-isActive">Active</Label>
-                </div>
-              </div>
             </TabsContent>
-          </Tabs>
-        </div>
+                </div>
+              </Tabs>
+            </div>
           
-        <DialogFooter className="px-6 py-4 border-t bg-white">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+        {/* Elegant Footer - Fixed at Bottom */}
+        <DialogFooter className="px-8 py-5 border-t border-slate-200 bg-gradient-to-r from-white to-slate-50/50 flex-shrink-0">
+          <div className="flex items-center justify-between w-full">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsEditDialogOpen(false)}
+              className="h-11 px-6 border-slate-300 hover:bg-slate-50 text-slate-700 font-medium"
+            >
               Cancel
             </Button>
-            <Button onClick={handleUpdatePlan}>
-              Update Plan
+            <Button 
+              onClick={handleUpdatePlan}
+              className="h-11 px-8 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Update Subscription Plan
             </Button>
-          </DialogFooter>
-      </div>
+          </div>
+        </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
