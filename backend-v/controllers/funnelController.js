@@ -140,6 +140,38 @@ const createFunnel = asyncHandler(async (req, res, next) => {
         }
     }
     
+    // If no stages provided, add a default welcome page
+    if (!req.body.stages || !Array.isArray(req.body.stages) || req.body.stages.length === 0) {
+        const firstStagePageId = `welcome-page-${Date.now()}`;
+        req.body.stages = [{
+            pageId: firstStagePageId,
+            name: 'Welcome Page',
+            type: 'welcome-page',
+            order: 0,
+            html: `<h1>Welcome to ${req.body.name || 'Your Funnel'}</h1><p>Get started with your journey.</p>`,
+            css: '',
+            js: '',
+            assets: [],
+            isEnabled: true,
+            basicInfo: {
+                title: req.body.name || 'Welcome Page',
+                description: req.body.description || '',
+                slug: (req.body.name || 'welcome-page').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+                keywords: '',
+                favicon: null,
+                socialTitle: '',
+                socialImage: null,
+                socialDescription: '',
+                customHtmlHead: '',
+                customHtmlBody: ''
+            }
+        }];
+        // Set the first stage as the index page
+        if (!req.body.indexPageId) {
+            req.body.indexPageId = firstStagePageId;
+        }
+    }
+    
     // Ensure stages have required fields (html and basicInfo.title)
     if (req.body.stages && Array.isArray(req.body.stages)) {
         req.body.stages = req.body.stages.map((stage, index) => {

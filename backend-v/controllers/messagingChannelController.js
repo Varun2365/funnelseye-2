@@ -1,4 +1,12 @@
 const MessagingChannel = require('../schema/MessagingChannel');
+const {
+    makeWASocket,
+    DisconnectReason,
+    useMultiFileAuthState,
+    makeCacheableSignalKeyStore,
+    Browsers
+} = require('@whiskeysockets/baileys');
+const pino = require('pino');
 
 // @desc    Get all messaging channels
 // @route   GET /api/messaging-channels
@@ -12,26 +20,33 @@ const getMessagingChannels = async (req, res) => {
         if (type) query.type = type;
         if (isActive !== undefined) query.isActive = isActive === 'true';
 
-        const options = {
-            page: parseInt(page),
-            limit: parseInt(limit),
-            sort: { priority: -1, createdAt: -1 },
-            populate: {
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        // Get total count for pagination
+        const total = await MessagingChannel.countDocuments(query);
+
+        // Get paginated results
+        const channels = await MessagingChannel.find(query)
+            .sort({ priority: -1, createdAt: -1 })
+            .skip(skip)
+            .limit(limitNum)
+            .populate({
                 path: 'configuredBy',
                 select: 'name email'
-            }
-        };
+            });
 
-        const result = await MessagingChannel.paginate(query, options);
+        const totalPages = Math.ceil(total / limitNum);
 
         res.json({
             success: true,
-            data: result.docs,
+            data: channels,
             pagination: {
-                page: result.page,
-                pages: result.totalPages,
-                total: result.totalDocs,
-                limit: result.limit
+                page: pageNum,
+                pages: totalPages,
+                total: total,
+                limit: limitNum
             }
         });
     } catch (error) {
@@ -445,7 +460,9 @@ const initBaileySession = async (req, res) => {
         // Generate unique session ID
         const sessionId = `bailey_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        // Initialize Bailey session (placeholder - would integrate with actual Bailey's library)
+        console.log('🚀 Initializing Bailey WhatsApp session:', sessionId);
+
+        // Initialize Bailey session data
         const sessionData = {
             sessionId,
             deviceName,
@@ -453,50 +470,96 @@ const initBaileySession = async (req, res) => {
             qrCode: null,
             phoneNumber: null,
             deviceId: null,
+            socket: null, // Will store the actual Bailey's socket
             createdAt: new Date(),
             lastActivity: new Date()
         };
 
-        // Store session
+        // Store session first
         activeBaileySessions.set(sessionId, sessionData);
 
-        // Simulate Bailey's QR code generation
-        // In production, this would be the actual QR string returned by Bailey's WhatsApp library
-        setTimeout(() => {
-          // Generate authentic Bailey's-style QR data
-          // This simulates what @adiwajshing/baileys would return
-          const serverId = Math.random().toString(36).substring(2, 8);
-          const browserId = Math.random().toString(36).substring(2, 8);
-          const secret = Math.random().toString(36).substring(2, 16);
+        // Initialize Bailey's WhatsApp connection
+        const { state, saveCreds } = await useMultiFileAuthState(`./sessions/bailey/${sessionId}`);
 
-          // Bailey's QR format: "2@session_id,browser_id,secret,timestamp"
-          const qrData = `2@${sessionId},${browserId},${secret},${Date.now()}`;
+        // Create Pino logger for Bailey's
+        const logger = pino({
+            level: 'silent' // Reduce Bailey's internal logging noise
+        });
 
-          console.log('🎯 Bailey\'s Generated QR Code Data:', qrData);
-          console.log('📊 QR Components:', {
-            sessionId,
-            browserId,
-            secret,
-            timestamp: Date.now()
-          });
+        const sock = makeWASocket({
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, {
+                    // In production, implement proper key store persistence
+                })
+            },
+            printQRInTerminal: false,
+            browser: Browsers.macOS('FunnelsEye'),
+            logger: logger
+        });
 
-          // Store only the raw QR data - frontend will handle QR generation
-          sessionData.qrCode = qrData;
-          sessionData.qrData = qrData;
-          sessionData.status = 'qr_ready';
-          sessionData.lastActivity = new Date();
-        }, 2000);
+        // Store socket in session
+        sessionData.socket = sock;
+
+        // Listen for QR code events
+        sock.ev.on('qr', (qr) => {
+            console.log('📱 Bailey\'s QR Code Generated:', qr);
+            console.log('🔍 QR Data Length:', qr.length);
+            console.log('🎯 QR Data Preview:', qr.substring(0, 50) + '...');
+
+            // Update session with real QR code
+            sessionData.qrCode = qr;
+            sessionData.qrData = qr;
+            sessionData.status = 'qr_ready';
+            sessionData.lastActivity = new Date();
+
+            console.log('✅ QR Code stored in session:', sessionId);
+        });
+
+        // Listen for connection updates
+        sock.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect, qr } = update;
+
+            console.log('🔄 Bailey Connection Update:', {
+                sessionId,
+                connection,
+                lastDisconnectReason: lastDisconnect?.error?.output?.statusCode
+            });
+
+            if (connection === 'close') {
+                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+
+                if (shouldReconnect) {
+                    console.log('🔄 Reconnecting Bailey session:', sessionId);
+                    sessionData.status = 'reconnecting';
+                } else {
+                    console.log('❌ Bailey session logged out:', sessionId);
+                    sessionData.status = 'disconnected';
+                    activeBaileySessions.delete(sessionId);
+                }
+            } else if (connection === 'open') {
+                console.log('✅ Bailey session connected:', sessionId);
+                sessionData.status = 'connected';
+                sessionData.phoneNumber = sock.user?.id?.split('@')[0];
+                sessionData.deviceId = sock.user?.id;
+            }
+        });
+
+        // Listen for credentials update
+        sock.ev.on('creds.update', saveCreds);
+
+        console.log('🎯 Bailey WhatsApp socket created, waiting for QR...');
 
         res.json({
             success: true,
             data: {
                 sessionId,
                 status: 'initializing',
-                message: 'Bailey session initialized. QR code will be available shortly.'
+                message: 'Bailey session initialized. Waiting for QR code generation...'
             }
         });
     } catch (error) {
-        console.error('Error initializing Bailey session:', error);
+        console.error('❌ Error initializing Bailey session:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to initialize Bailey session',
@@ -665,6 +728,17 @@ const disconnectBaileySession = async (req, res) => {
                 success: false,
                 message: 'Bailey session not found'
             });
+        }
+
+        // Properly close Bailey's socket connection
+        if (session.socket) {
+            console.log('🔌 Closing Bailey socket for session:', sessionId);
+            try {
+                session.socket.end();
+                session.socket.ws?.close();
+            } catch (error) {
+                console.warn('⚠️ Error closing Bailey socket:', error.message);
+            }
         }
 
         // Cleanup session

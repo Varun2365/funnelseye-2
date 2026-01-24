@@ -1,3 +1,4 @@
+// SubscriptionPlans.jsx - Subscription plan management component
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -24,7 +25,8 @@ import {
   CheckCircle,
   Loader2,
   X,
-  AlertTriangle
+  AlertTriangle,
+  AlertCircle
 } from 'lucide-react';
 import adminApiService from '../services/adminApiService';
 

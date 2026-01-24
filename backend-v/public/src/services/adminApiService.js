@@ -952,6 +952,63 @@ class AdminApiService {
         const queryString = new URLSearchParams(params).toString();
         return this.apiCall(`/content/admin/courses${queryString ? `?${queryString}` : ''}`);
     }
+
+    // ========== FUNNEL METHODS ==========
+
+    // Get all funnels
+    async getFunnels(params = {}) {
+        console.log(`🚀 [AdminApiService] Getting funnels with params:`, params);
+        const queryString = new URLSearchParams(params).toString();
+        return this.apiCall(`/funnels/admin${queryString ? `?${queryString}` : ''}`);
+    }
+
+    // Get specific funnel
+    async getFunnel(funnelId) {
+        console.log(`🚀 [AdminApiService] Getting funnel:`, funnelId);
+        return this.apiCall(`/funnels/admin/${funnelId}`);
+    }
+
+    // Create new funnel
+    async createFunnel(funnelData) {
+        console.log(`🚀 [AdminApiService] Creating funnel:`, funnelData);
+        return this.apiCall('/funnels/admin', {
+            method: 'POST',
+            body: JSON.stringify(funnelData)
+        });
+    }
+
+    // Update existing funnel
+    async updateFunnel(funnelId, funnelData) {
+        console.log(`🚀 [AdminApiService] Updating funnel:`, funnelId, funnelData);
+        return this.apiCall(`/funnels/admin/${funnelId}`, {
+            method: 'PUT',
+            body: JSON.stringify(funnelData)
+        });
+    }
+
+    // Delete funnel
+    async deleteFunnel(funnelId) {
+        console.log(`🚀 [AdminApiService] Deleting funnel:`, funnelId);
+        return this.apiCall(`/funnels/admin/${funnelId}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // Duplicate funnel
+    async duplicateFunnel(funnelId) {
+        console.log(`🚀 [AdminApiService] Duplicating funnel:`, funnelId);
+        return this.apiCall(`/funnels/admin/${funnelId}/duplicate`, {
+            method: 'POST'
+        });
+    }
+
+    // Get funnel analytics
+    async getFunnelAnalytics(funnelId, params = {}) {
+        console.log(`🚀 [AdminApiService] Getting funnel analytics:`, funnelId, params);
+        const queryString = new URLSearchParams(params).toString();
+        return this.apiCall(`/funnels/admin/${funnelId}/analytics${queryString ? `?${queryString}` : ''}`);
+    }
+
 }
 
 // Create singleton instance

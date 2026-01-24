@@ -32,6 +32,10 @@ import CoursePreview from './components/CoursePreview';
 import CoursePreviewStandalone from './components/CoursePreviewStandalone';
 import HierarchyRequests from './components/HierarchyRequests';
 import AdminStaffComingSoon from './components/AdminStaffComingSoon';
+import FunnelCreator from './components/funnels/FunnelCreator';
+import FunnelsManagement from './components/funnels/FunnelsManagement';
+import FunnelManagement from './components/funnels/FunnelManagement';
+import FunnelEditor from './components/funnels/FunnelEditor';
 import { Toaster } from 'sonner';
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -126,7 +130,11 @@ function AppContent() {
             <Route path="debug-financial" element={<DebugFinancial />} />
             <Route path="messaging" element={<WhatsAppDashboard />} />
             <Route path="mail-setup" element={<MailSetup />} />
+            <Route path="funnels" element={<FunnelsManagement />} />
+            <Route path="funnels/manage/:funnelId" element={<FunnelManagement />} />
         </Route>
+        {/* Standalone Editor Route - No Sidebar/Topbar */}
+        <Route path="funnel_edit/:funnelId/:stageId" element={<ProtectedRoute><FunnelEditor /></ProtectedRoute>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />

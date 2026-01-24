@@ -88,6 +88,7 @@ const marketingV1Routes = require('./routes/marketingV1Routes');
 const coachFinancialRoutes = require('./routes/coachFinancialRoutes');
 const adminHierarchyRoutes = require('./routes/adminHierarchyRoutes');
 const adminV1Routes = require('./routes/adminV1Routes');
+const adminFunnelRoutes = require('./routes/adminFunnelRoutes');
 const centralWhatsAppRoutes = require('./routes/centralWhatsAppRoutes');
 // Email routes moved to centralWhatsAppRoutes
 // const emailConfigRoutes = require('./routes/emailConfigRoutes');
@@ -107,6 +108,7 @@ const publicPermissionsRoutes = require('./routes/publicPermissionsRoutes');
 const logsRoutes = require('./routes/logsRoutes');
 const centralMessagingRoutes = require('./routes/centralMessagingRoutes');
 const messagingChannelsRoutes = require('./routes/messagingChannels');
+const messagingV3Routes = require('./routes/messagingV3Routes');
 const contentRoutes = require('./routes/contentRoutes');
 const coursePurchaseRoutes = require('./routes/coursePurchaseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -493,6 +495,9 @@ app.use('/api/admin/hierarchy', adminHierarchyRoutes);
 // ===== ADMIN V1 MASTER API =====
 app.use('/api/admin/v1', adminV1Routes);
 
+// ===== ADMIN FUNNEL MANAGEMENT =====
+app.use('/api/admin/funnels', adminFunnelRoutes);
+
 
 // ===== UNIFIED WHATSAPP V1 SYSTEM =====
 // Single endpoint for all WhatsApp functionality - Admin and Coach
@@ -508,6 +513,11 @@ app.use('/whatsapp/scan', require('./routes/whatsappScanRoutes'));
 // Features: Credits, Templates, Analytics, Role-based access
 app.use('/api/central-messaging/v1', centralMessagingRoutes);
 app.use('/api/messaging-channels', messagingChannelsRoutes);
+
+// ===== MESSAGING V3 SYSTEM =====
+// Enhanced messaging system with multi-channel support and high-throughput worker
+// Features: Meta WhatsApp, Bailey's WhatsApp, Email, Credits, Templates, High-throughput
+app.use('/api/messaging/v3', messagingV3Routes);
 
 // ===== EMAIL CONFIGURATION SYSTEM =====
 // Email configuration management is now integrated into /api/whatsapp/v1

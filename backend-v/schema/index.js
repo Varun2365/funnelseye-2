@@ -17,6 +17,7 @@ const Ad = require('./Ad');
 const Subscription = require('./Subscription');
 const Cart = require('./Cart');
 const Funnel = require('./Funnel');
+const AdminFunnel = require('./AdminFunnel');
 const FunnelEvent = require('./FunnelEvent');
 const NurturingSequence = require('./NurturingSequence');
 const NurturingStep = require('./NurturingStep');
@@ -28,7 +29,8 @@ const Appointment = require('./Appointment');
 const CustomDomain = require('./CustomDomain');
 const File = require('./File');
 const FormSubmissionMessage = require('./FormSubmissionMessage');
-// const Message = require('./Message');
+const Message = require('./Message');
+const Contact = require('./Contact');
 const Otp = require('./Otp');
 const ScoreLog = require('./ScoreLog');
 const SequenceLog = require('./SequenceLog');
@@ -120,6 +122,7 @@ const models = {
     Subscription,
     Cart,
     Funnel,
+    AdminFunnel,
     FunnelEvent,
     NurturingSequence,
     NurturingStep,
@@ -131,6 +134,8 @@ const models = {
     CustomDomain,
     File,
     FormSubmissionMessage,
+    Message,
+    Contact,
 
     Otp,
     ScoreLog,

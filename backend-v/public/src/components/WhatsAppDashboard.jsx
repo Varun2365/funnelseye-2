@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import environmentConfig from '../config/environment.js';
 import { useToast } from '../contexts/ToastContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -150,6 +150,10 @@ const WhatsAppDashboard = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [conversationMessages, setConversationMessages] = useState([]);
   
+  // Channels loading refs to prevent infinite loops and unnecessary requests
+  const channelsLoadingRef = useRef(false);
+  const channelsLoadedRef = useRef(false);
+
   // Debug config dialog state changes
   useEffect(() => {
     console.log('🔄 [WHATSAPP] configDialogOpen changed to:', configDialogOpen);
@@ -479,7 +483,7 @@ const WhatsAppDashboard = () => {
           showToast(`Configuration test failed: ${err.message}`, 'error');
         }
       } else {
-        setError(`Configuration test failed: ${err.message}`);
+        showToast(`Configuration test failed: ${err.message}`, 'error');
       }
     } finally {
       setLoading(false);
@@ -621,7 +625,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [EMAIL] Email configuration setup successful');
     } catch (err) {
       console.error('❌ [EMAIL] Error setting up email configuration:', err.message);
-      setError(`Failed to ${emailConfig ? 'update' : 'configure'} email: ${err.message}`);
+      showToast(`Failed to ${emailConfig ? 'update' : 'configure'} email: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -641,14 +645,14 @@ const WhatsAppDashboard = () => {
       if (err.response?.status === 401) {
         const errorData = err.response.data;
         if (errorData?.errorCode === 'TOKEN_EXPIRED') {
-          setError('WhatsApp access token has expired. Please reconfigure your WhatsApp settings.');
+          showToast('WhatsApp access token has expired. Please reconfigure your WhatsApp settings.', 'error');
         } else if (errorData?.errorCode === 'OAUTH_ERROR') {
-          setError('WhatsApp authentication failed. Please check your credentials.');
+          showToast('WhatsApp authentication failed. Please check your credentials.', 'error');
         } else {
-          setError(`Failed to load analytics: ${err.message}`);
+          showToast(`Failed to load analytics: ${err.message}`, 'error');
         }
       } else {
-        setError(`Failed to load analytics: ${err.message}`);
+        showToast(`Failed to load analytics: ${err.message}`, 'error');
       }
     }
   };
@@ -676,7 +680,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Messages fetched successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error fetching messages:', err.message);
-      setError(`Failed to load messages: ${err.message}`);
+      showToast(`Failed to load messages: ${err.message}`, 'error');
     }
   }, [filters, apiCall]);
 
@@ -696,14 +700,14 @@ const WhatsAppDashboard = () => {
       if (err.response?.status === 401) {
         const errorData = err.response.data;
         if (errorData?.errorCode === 'TOKEN_EXPIRED') {
-          setError('WhatsApp access token has expired. Please reconfigure your WhatsApp settings.');
+          showToast('WhatsApp access token has expired. Please reconfigure your WhatsApp settings.', 'error');
         } else if (errorData?.errorCode === 'OAUTH_ERROR') {
-          setError('WhatsApp authentication failed. Please check your credentials.');
+          showToast('WhatsApp authentication failed. Please check your credentials.', 'error');
         } else {
-          setError(`Failed to load templates: ${err.message}`);
+          showToast(`Failed to load templates: ${err.message}`, 'error');
         }
       } else {
-        setError(`Failed to load templates: ${err.message}`);
+        showToast(`Failed to load templates: ${err.message}`, 'error');
       }
     }
   };
@@ -769,7 +773,7 @@ const WhatsAppDashboard = () => {
       
       // Validate that at least one type of content is provided
       if (!hasTemplate && !hasMedia && !hasTextMessage) {
-        setError('Please provide a message, select a template, or add media to send');
+        showToast('Please provide a message, select a template, or add media to send', 'error');
         setLoading(false);
         return;
       }
@@ -808,7 +812,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Message sent successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error sending message:', err.message);
-      setError(`Failed to send message: ${err.message}`);
+      showToast(`Failed to send message: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -936,7 +940,7 @@ const WhatsAppDashboard = () => {
       await fetchContacts(); // Refresh contacts
     } catch (err) {
       console.error('❌ [WHATSAPP] Error updating contact:', err.message);
-      setError(`Failed to update contact: ${err.message}`);
+      showToast(`Failed to update contact: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -961,28 +965,28 @@ const WhatsAppDashboard = () => {
   // Send bulk messages
   const sendBulkMessages = async () => {
     if (selectedContacts.length === 0) {
-      setError('Please select at least one contact');
+      showToast('Please select at least one contact', 'error');
       return;
     }
 
     // Validate based on message type
     if (sendForm.templateName && sendForm.templateName !== '') {
       if (!selectedTemplate) {
-        setError('Please select a template');
+        showToast('Please select a template', 'error');
         return;
       }
       if (sendForm.templateParameters.some(p => !p.value)) {
-        setError('Please fill all template parameters');
+        showToast('Please fill all template parameters', 'error');
         return;
       }
     } else if (sendForm.mediaUrl && sendForm.mediaUrl !== '') {
       if (sendForm.mediaUrl === 'MEDIA') {
-        setError('Please enter a media URL');
+        showToast('Please enter a media URL', 'error');
         return;
       }
     } else {
       if (!bulkMessage.trim()) {
-        setError('Please enter a message');
+        showToast('Please enter a message', 'error');
         return;
       }
     }
@@ -1024,7 +1028,7 @@ const WhatsAppDashboard = () => {
       await fetchContacts();
     } catch (err) {
       console.error('❌ [WHATSAPP] Error sending bulk messages:', err.message);
-      setError(`Failed to send bulk messages: ${err.message}`);
+      showToast(`Failed to send bulk messages: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -1057,7 +1061,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Test message sent successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error sending test message:', err.message);
-      setError(`Failed to send test message: ${err.message}`);
+      showToast(`Failed to send test message: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -1083,42 +1087,72 @@ const WhatsAppDashboard = () => {
   };
 
   // Messaging channels functions
-  const loadChannels = async () => {
+  const loadChannels = useCallback(async () => {
+    // Prevent infinite loops by checking if already loading
+    if (channelsLoadingRef.current) {
+      console.log('🔄 loadChannels already in progress, skipping to prevent infinite loop...');
+      return;
+    }
+
     try {
+      console.log('📡 Loading messaging channels...');
+      channelsLoadingRef.current = true;
       setChannelsLoading(true);
 
-      const response = await fetch('/api/messaging-channels', {
+      // Use messaging/v3 API for getting channels
+      const response = await fetch('/api/messaging/v3/channels', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
 
       const result = await response.json();
+      console.log('📡 Channels API response:', result);
 
       if (result.success) {
-        setChannels(result.data || []);
+        // Flatten the grouped channels into a single array
+        const allChannels = [];
+        if (result.data?.meta_whatsapp) allChannels.push(...result.data.meta_whatsapp);
+        if (result.data?.baileys_whatsapp) allChannels.push(...result.data.baileys_whatsapp);
+        if (result.data?.email) allChannels.push(...result.data.email);
+
+        setChannels(allChannels);
+        channelsLoadedRef.current = true; // Mark as loaded even if 0 channels
+        console.log('✅ Loaded', allChannels.length, 'channels');
       } else {
+        console.error('❌ API returned error:', result.message);
         showToast(result.message || 'Failed to load channels', 'error');
       }
     } catch (error) {
-      console.error('Error loading channels:', error);
+      console.error('❌ Error loading channels:', error);
       showToast('Failed to load messaging channels', 'error');
     } finally {
       setChannelsLoading(false);
+      channelsLoadingRef.current = false;
     }
-  };
+  }, []);
 
   const handleCreateChannel = async () => {
     try {
       setChannelsLoading(true);
 
-      const response = await fetch('/api/messaging-channels', {
+      // Use messaging/v3 API for channel creation
+      const response = await fetch('/api/messaging/v3/channels', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         },
-        body: JSON.stringify(channelForm)
+        body: JSON.stringify({
+          name: channelForm.name,
+          type: channelForm.type === 'whatsapp_api' ? 'whatsapp_api' :
+                channelForm.type === 'whatsapp_bailey' ? 'whatsapp_bailey' : 'email_smtp',
+          config: {
+            whatsappApi: channelForm.whatsappApi,
+            whatsappBailey: channelForm.whatsappBailey,
+            emailSmtp: channelForm.emailSmtp
+          }
+        })
       });
 
       const result = await response.json();
@@ -1230,19 +1264,29 @@ const WhatsAppDashboard = () => {
 
             const qrResult = await qrResponse.json();
             if (qrResult.success && qrResult.data.qrCode) {
-              // Generate QR code image from the raw Bailey's data
-              const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrResult.data.qrCode)}&format=png`;
+              // Validate QR data format (Bailey's QR should start with "2@")
+              if (!qrResult.data.qrCode.startsWith('2@')) {
+                console.error('❌ Invalid QR data format:', qrResult.data.qrCode);
+                showToast('Invalid QR code format received', 'error');
+                return;
+              }
+
+              // Use a more reliable QR code generation service
+              const qrData = encodeURIComponent(qrResult.data.qrCode);
+              const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${qrData}&format=png&ecc=M&qzone=2`;
+
+              // Set QR code directly - error handling will be done in the UI component
               setBaileyQR(qrImageUrl);
               clearInterval(pollInterval);
 
-              // Log QR code data to console
-              console.log('🎯 Bailey\'s Raw QR Data:', qrResult.data.qrCode);
-              console.log('🖼️ Generated QR Image URL:', qrImageUrl);
-              if (qrResult.data.qrData) {
-                console.log('📄 QR Data (duplicate):', qrResult.data.qrData);
-              }
-
+              console.log('🎯 Bailey\'s QR Code generated successfully');
+              console.log('📄 Raw QR Data:', qrResult.data.qrCode);
+              console.log('🖼️ QR Image URL:', qrImageUrl);
               showToast('QR code ready! Scan with WhatsApp on your phone.', 'success');
+
+              // Log QR code data
+              console.log('🎯 Bailey\'s Raw QR Data:', qrResult.data.qrCode);
+              console.log('🖼️ QR Image URL:', qrImageUrl);
             }
           } else if (status === 'connected') {
             clearInterval(pollInterval);
@@ -1298,7 +1342,7 @@ const WhatsAppDashboard = () => {
   // Redirect to Meta Business Manager to create template
   const createTemplate = () => {
     if (!config) {
-      setError('Please configure WhatsApp first before creating templates.');
+      showToast('Please configure WhatsApp first before creating templates.', 'error');
       return;
     }
 
@@ -1325,7 +1369,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Credit settings fetched successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error fetching credit settings:', err.message);
-      setError(`Failed to load credit settings: ${err.message}`);
+      showToast(`Failed to load credit settings: ${err.message}`, 'error');
     }
   };
 
@@ -1343,7 +1387,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Credit settings updated successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error updating credit settings:', err.message);
-      setError(`Failed to update credit settings: ${err.message}`);
+      showToast(`Failed to update credit settings: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -1387,7 +1431,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Conversations fetched successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error fetching conversations:', err.message);
-      setError(`Failed to load conversations: ${err.message}`);
+      showToast(`Failed to load conversations: ${err.message}`, 'error');
     }
   };
 
@@ -1400,7 +1444,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Conversation messages fetched successfully');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error fetching conversation messages:', err.message);
-      setError(`Failed to load conversation: ${err.message}`);
+      showToast(`Failed to load conversation: ${err.message}`, 'error');
     }
   };
 
@@ -1415,7 +1459,7 @@ const WhatsAppDashboard = () => {
       console.log('✅ [WHATSAPP] Health check successful');
     } catch (err) {
       console.error('❌ [WHATSAPP] Error in health check:', err.message);
-      setError(`Health check failed: ${err.message}`);
+      showToast(`Health check failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -1881,15 +1925,9 @@ const WhatsAppDashboard = () => {
       {/* Messaging Channels Overview */}
       <Card className="border-0 shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center space-x-2">
-              <Network className="h-5 w-5 text-purple-600" />
-              <span>Messaging Channels</span>
-            </span>
-            <Button variant="outline" size="sm" onClick={() => setActiveTab('channels')}>
-              <Settings className="h-4 w-4 mr-2" />
-              Manage Channels
-            </Button>
+          <CardTitle className="flex items-center space-x-2">
+            <Network className="h-5 w-5 text-purple-600" />
+            <span>Messaging Channels</span>
           </CardTitle>
           <CardDescription>
             Overview of all configured messaging channels
@@ -1942,7 +1980,7 @@ const WhatsAppDashboard = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setActiveTab('channels')}
+                onClick={() => setActiveTab('overview')}
                 className="flex items-center space-x-2"
               >
                 <Eye className="h-4 w-4" />
@@ -2834,6 +2872,171 @@ const WhatsAppDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Credit Settings Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Credit Price</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ${creditSettings?.creditPrice || '0.01'}
+            </div>
+            <p className="text-xs text-muted-foreground">Per message</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">System Credits</CardTitle>
+            <Database className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {settingsOverview?.systemStats?.totalCreditsInSystem || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Total in system</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Coaches</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {settingsOverview?.systemStats?.totalActiveCoaches || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">Using WhatsApp</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Status</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {creditSettings?.isEnabled ? (
+              <Badge className="bg-green-500">Enabled</Badge>
+            ) : (
+              <Badge variant="destructive">Disabled</Badge>
+            )}
+            <p className="text-xs text-muted-foreground mt-2">Credit system</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Credit Settings Form */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center space-x-2">
+            <Settings className="h-5 w-5 text-blue-600" />
+            <span>Credit System Configuration</span>
+          </CardTitle>
+          <CardDescription>Manage credit pricing and auto-recharge settings</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {creditSettings ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="creditPrice">Credit Price (per message)</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                    <Input
+                      id="creditPrice"
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      value={creditSettings.creditPrice}
+                      onChange={(e) => setCreditSettings({...creditSettings, creditPrice: parseFloat(e.target.value)})}
+                      className="pl-7"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Price coaches pay per WhatsApp message
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>System Status</Label>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                    <Label htmlFor="isEnabled" className="flex-1 cursor-pointer">
+                      Enable Credit System
+                    </Label>
+                    <Badge className={creditSettings.isEnabled ? 'bg-green-500' : 'bg-gray-500'}>
+                      {creditSettings.isEnabled ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rechargeThreshold">Recharge Threshold</Label>
+                  <Input
+                    id="rechargeThreshold"
+                    type="number"
+                    min="1"
+                    value={creditSettings.rechargeThreshold}
+                    onChange={(e) => setCreditSettings({...creditSettings, rechargeThreshold: parseInt(e.target.value)})}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Trigger recharge when balance falls below this
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="rechargeAmount">Recharge Amount</Label>
+                  <Input
+                    id="rechargeAmount"
+                    type="number"
+                    min="1"
+                    value={creditSettings.rechargeAmount}
+                    onChange={(e) => setCreditSettings({...creditSettings, rechargeAmount: parseInt(e.target.value)})}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Credits to add during auto-recharge
+                  </p>
+                </div>
+              </div>
+
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Note:</strong> Changes to credit pricing will affect all future transactions. Existing balances remain unchanged.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex justify-end">
+                <Button
+                  onClick={() => updateCreditSettings(creditSettings)}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Update Credit Settings
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium mb-2">Loading credit settings...</h3>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -2852,10 +3055,15 @@ const WhatsAppDashboard = () => {
     const [selectedChannelType, setSelectedChannelType] = useState('');
 
     useEffect(() => {
-      if (activeTab === 'channels') {
+      if (activeTab === 'overview' && !channelsLoadedRef.current && !channelsLoadingRef.current) {
+        console.log('🔄 [OVERVIEW] Tab activated, loading channels for first time...');
         loadChannels();
+      } else if (activeTab === 'overview' && channelsLoadedRef.current) {
+        console.log('🔄 [OVERVIEW] Tab activated, channels already loaded, skipping...');
+      } else if (activeTab === 'overview' && channelsLoadingRef.current) {
+        console.log('🔄 [OVERVIEW] Tab activated, channels loading in progress, skipping...');
       }
-    }, [activeTab]);
+    }, [activeTab, loadChannels]);
 
     // Toggle channel status
     const handleToggleChannel = async (channelId) => {
@@ -3113,9 +3321,9 @@ const WhatsAppDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-9 w-full">
+        <TabsList className="grid grid-cols-5 w-fit max-w-4xl">
           <TabsTrigger value="overview" className="flex items-center space-x-2 px-3">
-            <BarChart3 className="h-4 w-4" />
+            <Network className="h-4 w-4" />
             <span>Overview</span>
           </TabsTrigger>
           <TabsTrigger value="inbox" className="flex items-center space-x-2 px-3">
@@ -3126,25 +3334,9 @@ const WhatsAppDashboard = () => {
             <FileText className="h-4 w-4" />
             <span>Templates</span>
           </TabsTrigger>
-          <TabsTrigger value="messages" className="flex items-center space-x-2 px-3">
-            <MessageSquare className="h-4 w-4" />
-            <span>Messages</span>
-          </TabsTrigger>
-          <TabsTrigger value="contacts" className="flex items-center space-x-2 px-3">
-            <Users className="h-4 w-4" />
-            <span>Contacts</span>
-          </TabsTrigger>
-          <TabsTrigger value="credits" className="flex items-center space-x-2 px-3">
-            <DollarSign className="h-4 w-4" />
-            <span>Credits</span>
-          </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center space-x-2 px-3">
             <Activity className="h-4 w-4" />
             <span>Analytics</span>
-          </TabsTrigger>
-          <TabsTrigger value="channels" className="flex items-center space-x-2 px-3">
-            <Network className="h-4 w-4" />
-            <span>Channels</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center space-x-2 px-3">
             <Settings className="h-4 w-4" />
@@ -3153,7 +3345,17 @@ const WhatsAppDashboard = () => {
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewContent setCreateChannelDialogOpen={setCreateChannelDialogOpen} />
+          <ChannelsContent
+            createChannelDialogOpen={createChannelDialogOpen}
+            setCreateChannelDialogOpen={setCreateChannelDialogOpen}
+            channels={channels}
+            setChannels={setChannels}
+            channelsLoading={channelsLoading}
+            channelForm={channelForm}
+            setChannelForm={setChannelForm}
+            handleCreateChannel={handleCreateChannel}
+            loadChannels={loadChannels}
+          />
         </TabsContent>
 
         <TabsContent value="inbox">
@@ -3172,26 +3374,8 @@ const WhatsAppDashboard = () => {
           <ContactsContent />
         </TabsContent>
 
-        <TabsContent value="credits">
-          <CreditsContent />
-        </TabsContent>
-
         <TabsContent value="analytics">
           <AnalyticsContent />
-        </TabsContent>
-
-        <TabsContent value="channels">
-          <ChannelsContent
-            createChannelDialogOpen={createChannelDialogOpen}
-            setCreateChannelDialogOpen={setCreateChannelDialogOpen}
-            channels={channels}
-            setChannels={setChannels}
-            channelsLoading={channelsLoading}
-            channelForm={channelForm}
-            setChannelForm={setChannelForm}
-            handleCreateChannel={handleCreateChannel}
-            loadChannels={loadChannels}
-          />
         </TabsContent>
 
         <TabsContent value="settings">
