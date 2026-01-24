@@ -10,6 +10,7 @@ import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
 import { toast } from 'sonner';
 import { templates } from '../funnel-builder/funnel-templates';
@@ -33,7 +34,13 @@ import {
   GripVertical,
   Trash2,
   Menu,
-  Play
+  Play,
+  Upload,
+  Image as ImageIcon,
+  Globe,
+  Search,
+  Share2,
+  Code
 } from 'lucide-react';
 
 // Add minimal CSS for drag and drop
@@ -817,6 +824,22 @@ const FunnelManagement = () => {
     keywords: ''
   });
 
+  const [stageSettings, setStageSettings] = useState({
+    name: '',
+    slug: '',
+    title: '',
+    description: '',
+    keywords: '',
+    favicon: '',
+    socialImage: '',
+    socialTitle: '',
+    socialDescription: '',
+    customHtmlHead: '',
+    customHtmlBody: ''
+  });
+
+  const [isSaving, setIsSaving] = useState(false);
+
   // Track if we're dragging to prevent click events
   const isDraggingRef = useRef(false);
 
@@ -866,7 +889,7 @@ const FunnelManagement = () => {
           // Set funnel URL
           if (result.data.stages && result.data.stages.length > 0) {
             const pageId = result.data.stages[0].pageId;
-            const fullUrl = pageId ? `/funnels/${result.data.funnelUrl}/${pageId}` : null;
+            const fullUrl = buildPreviewUrl(result.data.funnelUrl, pageId);
             setFunnelUrl(fullUrl || '');
           }
 
@@ -904,10 +927,26 @@ const FunnelManagement = () => {
     });
   };
 
+  // Get base URL for funnel previews
+  const getFunnelBaseUrl = () => {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8080';
+    }
+    return 'https://api.funnelseye.com';
+  };
+
+  // Helper function to build preview funnel URL
+  const buildPreviewUrl = (funnelUrl, pageId) => {
+    if (!funnelUrl || !pageId) return null;
+    const baseUrl = getFunnelBaseUrl();
+    return `${baseUrl}/preview/funnels/${funnelUrl}/${pageId}`;
+  };
+
   const getFunnelUrl = () => {
     if (!funnel?.funnelUrl || !funnel?.stages?.length) return null;
     const pageId = funnel.indexPageId || funnel.stages[0]?.pageId || funnel.stages[0]?._id;
-    return pageId ? `/funnels/${funnel.funnelUrl}/${pageId}` : null;
+    return buildPreviewUrl(funnel.funnelUrl, pageId);
   };
 
   // Toggle funnel status
@@ -946,13 +985,141 @@ const FunnelManagement = () => {
   };
 
 
-  // Update basic info
-  const updateBasicInfo = (stageId, key, value) => {
-    // TODO: Implement API call to update basic info
-    setBasicInfo(prev => ({
+  // Update stage settings when active stage changes
+  useEffect(() => {
+    if (funnel && activeStageId) {
+      const currentStage = funnel.stages?.find(s => (s._id === activeStageId) || (s.pageId === activeStageId));
+      if (currentStage) {
+        const basicInfo = currentStage.basicInfo || {};
+        setStageSettings({
+          name: currentStage.name || '',
+          slug: basicInfo.slug || '',
+          title: basicInfo.title || '',
+          description: basicInfo.description || '',
+          keywords: basicInfo.keywords || '',
+          favicon: basicInfo.favicon || '',
+          socialImage: basicInfo.socialImage || '',
+          socialTitle: basicInfo.socialTitle || '',
+          socialDescription: basicInfo.socialDescription || '',
+          customHtmlHead: basicInfo.customHtmlHead || '',
+          customHtmlBody: basicInfo.customHtmlBody || ''
+        });
+      }
+    }
+  }, [funnel, activeStageId]);
+
+  // Update stage settings
+  const updateStageSettings = (key, value) => {
+    setStageSettings(prev => ({
       ...prev,
       [key]: value
     }));
+  };
+
+  // Save stage settings to backend
+  const saveStageSettings = async () => {
+    if (!activeStage || !funnel || !funnelId) {
+      toast.error('No stage selected');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const stageId = activeStage._id || activeStage.pageId;
+      const updatedStages = funnel.stages.map(stage => {
+        if ((stage._id === stageId) || (stage.pageId === stageId)) {
+          return {
+            ...stage,
+            name: stageSettings.name,
+            basicInfo: {
+              ...(stage.basicInfo || {}),
+              slug: stageSettings.slug,
+              title: stageSettings.title,
+              description: stageSettings.description,
+              keywords: stageSettings.keywords,
+              favicon: stageSettings.favicon,
+              socialImage: stageSettings.socialImage,
+              socialTitle: stageSettings.socialTitle,
+              socialDescription: stageSettings.socialDescription,
+              customHtmlHead: stageSettings.customHtmlHead,
+              customHtmlBody: stageSettings.customHtmlBody
+            }
+          };
+        }
+        return stage;
+      });
+
+      const response = await fetch(`/api/admin/funnels/${funnelId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...funnel,
+          stages: updatedStages
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save settings: ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setFunnel(result.data);
+        toast.success('Settings saved successfully');
+      } else {
+        throw new Error(result.message || 'Failed to save settings');
+      }
+    } catch (err) {
+      console.error('Error saving settings:', err);
+      toast.error(`Failed to save settings: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle file upload for images
+  const handleImageUpload = async (file, type) => {
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/content/admin/upload-file', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const result = await response.json();
+      if (result.success && result.data) {
+        // Construct the file URL from the filename
+        // The file is typically stored in uploads directory
+        const fileUrl = `/uploads/${result.data.filename}`;
+        updateStageSettings(type, fileUrl);
+        toast.success('Image uploaded successfully');
+      } else {
+        throw new Error(result.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      toast.error(`Failed to upload image: ${err.message}`);
+    }
   };
 
   // Handle preview funnel
@@ -974,8 +1141,12 @@ const FunnelManagement = () => {
         return;
       }
 
-      const previewUrl = `/funnels/${funnel.funnelUrl}/${pageId}`;
-      window.open(previewUrl, '_blank');
+      const previewUrl = buildPreviewUrl(funnel.funnelUrl, pageId);
+      if (previewUrl) {
+        window.open(previewUrl, '_blank');
+      } else {
+        toast.error('Unable to generate preview URL');
+      }
     } catch (err) {
       console.error('Error previewing funnel:', err);
       toast.error('Failed to open preview. Please try again.');
@@ -1002,8 +1173,7 @@ const FunnelManagement = () => {
         return null;
       }
 
-      const previewUrl = `/funnels/${funnel.funnelUrl}/${pageId}`;
-      return previewUrl;
+      return buildPreviewUrl(funnel.funnelUrl, pageId);
     } catch (err) {
       console.error('Error getting page URL:', err);
       return null;
@@ -1563,13 +1733,7 @@ const FunnelManagement = () => {
       return;
     }
 
-    // Check if stage has HTML content (template selected or content exists)
-    if (!stage.html || stage.html.trim() === '') {
-      toast.error('Please select a template first or add content to the page.');
-      return;
-    }
-
-    // Open editor in new tab
+    // Open editor in new tab (editor will handle empty content)
     const editorUrl = `/funnel_edit/${funnelId}/${stageId}`;
     window.open(editorUrl, '_blank');
   };
@@ -1598,7 +1762,8 @@ const FunnelManagement = () => {
       if (funnel?.funnelUrl) {
         const pageId = funnel.indexPageId || (funnel.stages && funnel.stages.length > 0 ? funnel.stages[0].pageId : null);
         if (pageId) {
-          setFunnelUrl(`/funnels/${funnel.funnelUrl}/${pageId}`);
+          const url = buildPreviewUrl(funnel.funnelUrl, pageId);
+          setFunnelUrl(url || '');
         }
       }
     };
@@ -1792,7 +1957,7 @@ const FunnelManagement = () => {
       {/* Main Layout */}
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar */}
-        <aside className={`w-[280px] bg-background border-r transition-transform flex flex-col ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'} ${isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'}`}>
+        <aside className={`w-[280px] bg-background border-r transition-transform flex flex-col overflow-hidden ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'} ${isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'}`}>
           <div className="p-5 border-b shrink-0">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Funnel Stages</h3>
@@ -1809,8 +1974,8 @@ const FunnelManagement = () => {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0">
-            <div className="p-2 space-y-1">
+          <ScrollArea className="flex-1 min-h-0 overflow-hidden max-w-full">
+            <div className="p-2 space-y-1 overflow-x-hidden">
               {funnel?.stages?.map((stage, index) => {
                 const isIndexPage = index === 0;
                 const stageId = stage._id || stage.pageId;
@@ -1839,19 +2004,19 @@ const FunnelManagement = () => {
                       }
                     }}
                     className={`
-                      group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors
+                      group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors w-full min-w-0 overflow-hidden
                       ${isActive ? 'bg-accent' : 'hover:bg-accent/50'}
                       ${isDragging ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}
                       ${isDragOver ? 'border-t-2 border-t-primary -translate-y-0.5' : ''}
                     `}
                   >
                     <div
-                      className="flex items-center gap-2 flex-1 min-w-0"
+                      className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden"
                       onMouseDown={(e) => e.stopPropagation()}
                     >
                       <GripVertical className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 overflow-hidden">
+                        <div className="flex items-center gap-2 min-w-0">
                           <span className={`text-sm truncate ${isIndexPage ? 'font-semibold' : ''}`}>
                             {stage.name}
                           </span>
@@ -1865,11 +2030,11 @@ const FunnelManagement = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600"
+                        className="h-7 w-7 shrink-0 hover:bg-blue-50 hover:text-blue-600"
                         onClick={(e) => {
                           e.stopPropagation();
                           handlePreviewStage(stageId);
@@ -1881,7 +2046,7 @@ const FunnelManagement = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 hover:bg-green-50 hover:text-green-600"
+                        className="h-7 w-7 shrink-0 hover:bg-green-50 hover:text-green-600"
                         onClick={async (e) => {
                           e.stopPropagation();
                           const stageUrl = await getPageUrl(stageId);
@@ -1898,7 +2063,19 @@ const FunnelManagement = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 hover:bg-purple-50 hover:text-purple-600"
+                        className="h-7 w-7 shrink-0 hover:bg-blue-50 hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuildPage(stageId);
+                        }}
+                        title="Edit in GrapesJS Editor"
+                      >
+                        <Code className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0 hover:bg-purple-50 hover:text-purple-600"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDuplicateStage(stageId);
@@ -1910,7 +2087,7 @@ const FunnelManagement = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveStage(stageId);
@@ -1919,23 +2096,24 @@ const FunnelManagement = () => {
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground ml-1" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground ml-1 shrink-0" />
                     </div>
                   </div>
                 );
               })}
+              
+              {/* Add New Stage button - directly below last stage */}
+              <div className="pt-1 w-full min-w-0">
+                <Button
+                  className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => setShowStageModal(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add New Stage
+                </Button>
+              </div>
             </div>
           </ScrollArea>
-
-          <div className="p-4 border-t">
-            <Button
-              className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => setShowStageModal(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add New Stage
-            </Button>
-          </div>
         </aside>
 
         {/* Main Content Area */}
@@ -2003,33 +2181,293 @@ const FunnelManagement = () => {
                 </CardContent>
               </Card>
 
-              {/* Basic Settings */}
+              {/* Stage Settings */}
               <Card className="border-0 shadow-sm">
-                <CardHeader>
-                  <CardTitle>Basic Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="page-name">Page Name</Label>
-                      <Input
-                        id="page-name"
-                        type="text"
-                        value={basicInfo.name}
-                        onChange={(e) => updateBasicInfo(activeStage._id || activeStage.pageId, 'name', e.target.value)}
-                        placeholder="Enter page name"
-                      />
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-xl font-semibold">Stage Settings</CardTitle>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Configure page details, SEO, and social media settings
+                      </p>
                     </div>
+                    <Button
+                      onClick={saveStageSettings}
+                      disabled={isSaving}
+                      className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Save className="h-4 w-4" />
+                      {isSaving ? 'Saving...' : 'Save Changes'}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  {/* Basic Information */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <h3 className="text-base font-semibold">Basic Information</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="page-name" className="text-sm font-medium">
+                          Page Name
+                        </Label>
+                        <Input
+                          id="page-name"
+                          type="text"
+                          value={stageSettings.name}
+                          onChange={(e) => updateStageSettings('name', e.target.value)}
+                          placeholder="Welcome Page"
+                          className="h-10"
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="url-slug">URL Slug</Label>
-                      <Input
-                        id="url-slug"
-                        type="text"
-                        value={basicInfo.slug}
-                        onChange={(e) => updateBasicInfo(activeStage._id || activeStage.pageId, 'slug', e.target.value)}
-                        placeholder="url-friendly-name"
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="url-slug" className="text-sm font-medium">
+                          URL Slug
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="url-slug"
+                            type="text"
+                            value={stageSettings.slug}
+                            onChange={(e) => updateStageSettings('slug', e.target.value)}
+                            placeholder="welcome-page-1768479851955"
+                            className="h-10"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          URL-friendly version (e.g., my-awesome-page)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* SEO Settings */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Search className="h-5 w-5 text-green-600" />
+                      <h3 className="text-base font-semibold">SEO Settings</h3>
+                    </div>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="page-title" className="text-sm font-medium">
+                          Page Title
+                        </Label>
+                        <Input
+                          id="page-title"
+                          type="text"
+                          value={stageSettings.title}
+                          onChange={(e) => updateStageSettings('title', e.target.value)}
+                          placeholder="Fitness Webinar Registration"
+                          className="h-10"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="keywords" className="text-sm font-medium">
+                          Keywords
+                        </Label>
+                        <Input
+                          id="keywords"
+                          type="text"
+                          value={stageSettings.keywords}
+                          onChange={(e) => updateStageSettings('keywords', e.target.value)}
+                          placeholder="Comma-separated keywords"
+                          className="h-10"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Comma-separated keywords
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="meta-description" className="text-sm font-medium">
+                          Meta Description
+                        </Label>
+                        <Textarea
+                          id="meta-description"
+                          value={stageSettings.description}
+                          onChange={(e) => updateStageSettings('description', e.target.value)}
+                          placeholder="Join our exclusive 3-day fitness transformation webinar for busy professionals. Learn the proven system to transform your health."
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Assets & Media */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <ImageIcon className="h-5 w-5 text-purple-600" />
+                      <h3 className="text-base font-semibold">Assets & Media</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Favicon</Label>
+                        <div className="flex items-center gap-4">
+                          {stageSettings.favicon ? (
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={stageSettings.favicon}
+                                alt="Favicon"
+                                className="w-10 h-10 rounded border"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateStageSettings('favicon', '')}
+                                className="h-8"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Remove
+                              </Button>
+                            </div>
+                          ) : (
+                            <label className="flex items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleImageUpload(file, 'favicon');
+                                }}
+                              />
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <Upload className="h-5 w-5" />
+                                <span className="text-sm">Select Image</span>
+                              </div>
+                            </label>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label className="text-sm font-medium">Social Share Image</Label>
+                        <div className="flex items-center gap-4">
+                          {stageSettings.socialImage ? (
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={stageSettings.socialImage}
+                                alt="Social Share"
+                                className="w-20 h-20 rounded border object-cover"
+                              />
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => updateStageSettings('socialImage', '')}
+                                className="h-8"
+                              >
+                                <X className="h-3 w-3 mr-1" />
+                                Remove
+                              </Button>
+                            </div>
+                          ) : (
+                            <label className="flex items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors">
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleImageUpload(file, 'socialImage');
+                                }}
+                              />
+                              <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <Upload className="h-5 w-5" />
+                                <span className="text-sm">Select Image</span>
+                              </div>
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Social Media Settings */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Share2 className="h-5 w-5 text-pink-600" />
+                      <h3 className="text-base font-semibold">Social Media Settings</h3>
+                    </div>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="social-title" className="text-sm font-medium">
+                          Social Title
+                        </Label>
+                        <Input
+                          id="social-title"
+                          type="text"
+                          value={stageSettings.socialTitle}
+                          onChange={(e) => updateStageSettings('socialTitle', e.target.value)}
+                          placeholder="Title for social sharing"
+                          className="h-10"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="social-description" className="text-sm font-medium">
+                          Social Description
+                        </Label>
+                        <Textarea
+                          id="social-description"
+                          value={stageSettings.socialDescription}
+                          onChange={(e) => updateStageSettings('socialDescription', e.target.value)}
+                          placeholder="Description for social sharing"
+                          className="min-h-[100px] resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Custom HTML */}
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 pb-2 border-b">
+                      <Code className="h-5 w-5 text-amber-600" />
+                      <h3 className="text-base font-semibold">Custom HTML</h3>
+                    </div>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="custom-html-head" className="text-sm font-medium">
+                          Custom HTML Head
+                        </Label>
+                        <Textarea
+                          id="custom-html-head"
+                          value={stageSettings.customHtmlHead}
+                          onChange={(e) => updateStageSettings('customHtmlHead', e.target.value)}
+                          placeholder="<meta>, <link>, <style>, <script> tags"
+                          className="min-h-[120px] resize-none font-mono text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Add custom HTML to be included in the &lt;head&gt; section.
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="custom-html-body" className="text-sm font-medium">
+                          Custom HTML Body
+                        </Label>
+                        <Textarea
+                          id="custom-html-body"
+                          value={stageSettings.customHtmlBody}
+                          onChange={(e) => updateStageSettings('customHtmlBody', e.target.value)}
+                          placeholder="Tracking codes, scripts"
+                          className="min-h-[120px] resize-none font-mono text-sm"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Add custom HTML to be included just before the closing &lt;/body&gt; tag.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

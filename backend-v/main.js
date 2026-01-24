@@ -57,6 +57,7 @@ const staffCalendarRoutes = require('./routes/staffCalendarRoutes.js');
 const staffAppointmentRoutes = require('./routes/staffAppointmentRoutes.js');
 const adsRoutes = require('./routes/adsRoutes');
 const aiAdsRoutes = require('./routes/aiAdsRoutes');
+const adTemplateRoutes = require('./routes/adTemplateRoutes');
 const workflowRoutes = require('./routes/workflowRoutes');
 const coachDashboardRoutes = require('./routes/coachDashboardRoutes');
 const permissionsRoutes = require('./routes/permissionsRoutes');
@@ -481,6 +482,7 @@ app.use('/api/coach-transactions', coachTransactionRoutes);
 // ===== MARKETING & ADVERTISING =====
 app.use('/api/ads', adsRoutes);
 app.use('/api/ai-ads', aiAdsRoutes);
+app.use('/api/ad-templates', adTemplateRoutes);
 app.use('/api/coach-marketing-credentials', coachMarketingCredentialsRoutes);
 
 // ===== NEW MARKETING V1 API =====
@@ -554,7 +556,8 @@ app.use('/api/coach-hierarchy', coachHierarchyRoutes);
 // // ===== UTILITIES & ADMIN =====
 app.use('/api/files', uploadRoutes);
 app.use('/api/ai', aiRoutes);
-app.use('/funnels', webpageRenderRoutes);
+// Funnel rendering routes - must be registered before other routes to catch /preview/funnels
+app.use('/', webpageRenderRoutes);
 
 // ===== CONTENT MANAGEMENT =====
 app.use('/api/content', contentRoutes);

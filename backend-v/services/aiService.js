@@ -1,4 +1,5 @@
 const axios = require('axios');
+const crypto = require('crypto');
 
 class AIService {
     constructor() {
@@ -27,42 +28,141 @@ class AIService {
         };
         
         this.defaultModel = 'gpt-3.5-turbo';
-        this.maxRetries = 3;
+        this.maxRetries = 0; // Disable automatic retries to prevent duplicate charges
         this.retryDelay = 1000;
+        
+        // Request deduplication: track in-flight requests to prevent duplicates
+        this.inFlightRequests = new Map();
     }
 
     // Get the best available API configuration
-    getApiConfig() {
-        if (this.openaiApiKey) {
-            return {
-                provider: 'openai',
-                apiKey: this.openaiApiKey,
-                baseURL: this.openaiBaseUrl,
-                models: this.models.openai
-            };
-        } else if (this.openrouterApiKey) {
+    async getApiConfig() {
+        // Try to get settings from database FIRST
+        let defaultModel = this.defaultModel;
+        let useOpenRouter = false;
+        let openrouterApiKey = null;
+        
+        try {
+            const AdminSystemSettings = require('../schema/AdminSystemSettings');
+            const settings = await AdminSystemSettings.findOne({ settingId: 'global' });
+            if (settings?.aiServices?.openrouter) {
+                // Check if OpenRouter is enabled
+                if (settings.aiServices.openrouter.enabled) {
+                    useOpenRouter = true;
+                    // Get API key from settings (it's stored in database)
+                    openrouterApiKey = settings.aiServices.openrouter.apiKey;
+                    // Only use if it's a valid non-empty string
+                    if (!openrouterApiKey || typeof openrouterApiKey !== 'string' || openrouterApiKey.trim() === '') {
+                        openrouterApiKey = null; // Reset if invalid
+                    }
+                }
+                // Get default model from settings
+                if (settings.aiServices.openrouter.defaultModel) {
+                    defaultModel = settings.aiServices.openrouter.defaultModel;
+                }
+            }
+        } catch (error) {
+            console.warn('Could not load settings from database:', error.message);
+        }
+
+        // ALWAYS prioritize OpenRouter if enabled in settings (even if no API key in env)
+        if (useOpenRouter) {
+            // Validate API key - must be a non-empty string
+            if (!openrouterApiKey || typeof openrouterApiKey !== 'string' || openrouterApiKey.trim() === '') {
+                throw new Error('OpenRouter is enabled but no valid API key is configured. Please set the API key in settings.');
+            }
+            
+            const trimmedKey = openrouterApiKey.trim();
+            // Update instance variable for future use
+            this.openrouterApiKey = trimmedKey;
+            process.env.OPENROUTER_API_KEY = trimmedKey;
+            
+            // Validate default model exists
+            if (!defaultModel || defaultModel.trim() === '') {
+                console.warn('[AIService] No default model set in database, using fallback');
+                defaultModel = this.defaultModel;
+            }
+            
+            console.log(`[AIService] ✅ OpenRouter ENABLED - Using model from database: ${defaultModel}, API key length: ${trimmedKey.length}`);
+            console.log(`[AIService] ⚠️  OpenRouter is enabled - OpenAI will NOT be used even if available`);
+            
             return {
                 provider: 'openrouter',
-                apiKey: this.openrouterApiKey,
+                apiKey: trimmedKey,
                 baseURL: this.openrouterBaseUrl,
-                models: this.models.openrouter
+                models: this.models.openrouter,
+                defaultModel: defaultModel.trim()
             };
         }
+        
+        // If OpenRouter is not enabled in settings, check environment variables
+        // Prioritize OpenRouter API key from env if available
+        if (this.openrouterApiKey && typeof this.openrouterApiKey === 'string' && this.openrouterApiKey.trim() !== '') {
+            return {
+                provider: 'openrouter',
+                apiKey: this.openrouterApiKey.trim(),
+                baseURL: this.openrouterBaseUrl,
+                models: this.models.openrouter,
+                defaultModel: defaultModel
+            };
+        } else if (this.openaiApiKey && typeof this.openaiApiKey === 'string' && this.openaiApiKey.trim() !== '') {
+            return {
+                provider: 'openai',
+                apiKey: this.openaiApiKey.trim(),
+                baseURL: this.openaiBaseUrl,
+                models: this.models.openai,
+                defaultModel: defaultModel
+            };
+        }
+        
         throw new Error('No AI API key configured. Please set OPENAI_API_KEY or OPENROUTER_API_KEY');
     }
 
     // Generic chat completion method
     async chatCompletion(messages, options = {}) {
-        const config = this.getApiConfig();
+        const config = await this.getApiConfig();
+        
+        // Validate API key
+        if (!config.apiKey || config.apiKey.trim() === '') {
+            throw new Error(`AI API Error: No API key configured for ${config.provider}. Please configure the API key in settings.`);
+        }
+        
         const {
-            model = this.defaultModel,
             temperature = 0.7,
             maxTokens = 1000,
-            retries = this.maxRetries
+            retries = options.retries !== undefined ? options.retries : this.maxRetries // Allow override but default to 0
         } = options;
 
+        // ALWAYS use the default model from database config when OpenRouter is enabled
+        // Only use model from options if explicitly provided AND it's not undefined/null/empty
+        let modelToUse;
+        if (config.provider === 'openrouter') {
+            // For OpenRouter: Always use default model from database unless explicitly overridden
+            if (options.model && options.model.trim() !== '') {
+                modelToUse = options.model.trim();
+                console.log(`[AIService] Using explicitly provided model: ${modelToUse}`);
+            } else {
+                // Use the default model from database
+                modelToUse = config.defaultModel || this.defaultModel;
+                console.log(`[AIService] Using default model from database: ${modelToUse}`);
+            }
+        } else {
+            // For OpenAI: Use provided model or default
+            modelToUse = options.model || config.defaultModel || this.defaultModel;
+        }
+
+        // For OpenRouter, use the model ID directly; for OpenAI, try to map it
+        let modelForRequest = modelToUse;
+        if (config.provider === 'openrouter') {
+            // OpenRouter uses model IDs directly (e.g., 'openai/gpt-3.5-turbo')
+            modelForRequest = modelToUse;
+        } else {
+            // OpenAI uses mapped model names
+            modelForRequest = config.models[modelToUse] || modelToUse;
+        }
+
         const payload = {
-            model: config.models[model] || model,
+            model: modelForRequest,
             messages,
             temperature,
             max_tokens: maxTokens,
@@ -70,8 +170,13 @@ class AIService {
         };
 
         // Add OpenRouter specific headers
+        const apiKey = config.apiKey.trim();
+        if (!apiKey || apiKey === '') {
+            throw new Error(`AI API Error: API key is empty for ${config.provider}. Please configure a valid API key in settings.`);
+        }
+        
         const headers = {
-            'Authorization': `Bearer ${config.apiKey}`,
+            'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
         };
 
@@ -79,6 +184,12 @@ class AIService {
             headers['HTTP-Referer'] = process.env.APP_URL || 'https://funnelseye.com';
             headers['X-Title'] = 'FunnelsEye AI Service';
         }
+        
+        console.log(`[AIService] Making ${config.provider} request to ${config.baseURL}/chat/completions with model: ${modelForRequest}`);
+
+        const startTime = Date.now();
+        const requestId = crypto.randomUUID();
+        let logData = null;
 
         try {
             const response = await axios.post(
@@ -87,20 +198,199 @@ class AIService {
                 { headers, timeout: 30000 }
             );
 
+            const duration = Date.now() - startTime;
+            const usage = response.data.usage || {};
+            const content = response.data.choices[0].message.content;
+            
+            // Calculate pricing - try to get from response first, then use defaults
+            let promptPrice = 0;
+            let completionPrice = 0;
+            
+            // OpenRouter includes pricing in the response
+            if (response.data.usage?.prompt_tokens && response.data.usage?.completion_tokens) {
+                // Try to get pricing from response if available
+                if (response.data.usage.prompt_cost !== undefined) {
+                    promptPrice = response.data.usage.prompt_cost;
+                } else {
+                    promptPrice = this.calculatePromptPrice(modelToUse, usage.prompt_tokens || 0);
+                }
+                
+                if (response.data.usage.completion_cost !== undefined) {
+                    completionPrice = response.data.usage.completion_cost;
+                } else {
+                    completionPrice = this.calculateCompletionPrice(modelToUse, usage.completion_tokens || 0);
+                }
+            } else {
+                // Fallback to calculated pricing
+                promptPrice = this.calculatePromptPrice(modelToUse, usage.prompt_tokens || 0);
+                completionPrice = this.calculateCompletionPrice(modelToUse, usage.completion_tokens || 0);
+            }
+            
+            const totalCost = promptPrice + completionPrice;
+
+            // Prepare log data
+            logData = {
+                requestId,
+                userId: options.userId || null,
+                userEmail: options.userEmail || null,
+                userRole: options.userRole || null,
+                provider: config.provider,
+                model: response.data.model,
+                modelId: modelToUse,
+                requestType: 'chat',
+                endpoint: `${config.baseURL}/chat/completions`,
+                promptTokens: usage.prompt_tokens || 0,
+                completionTokens: usage.completion_tokens || 0,
+                totalTokens: usage.total_tokens || 0,
+                promptPrice,
+                completionPrice,
+                totalCost,
+                currency: 'USD',
+                prompt: messages.map(m => m.content).join('\n'),
+                promptLength: JSON.stringify(messages).length,
+                response: content,
+                responseLength: content ? content.length : 0,
+                status: 'success',
+                statusCode: response.status,
+                duration,
+                metadata: {
+                    temperature,
+                    maxTokens,
+                    modelUsed: modelToUse
+                },
+                requestedAt: new Date(startTime),
+                completedAt: new Date()
+            };
+
+            // Log the request asynchronously (don't block the response)
+            this.logRequest(logData).catch(err => {
+                console.error('Failed to log AI request:', err);
+            });
+
             return {
                 success: true,
-                content: response.data.choices[0].message.content,
+                content,
                 usage: response.data.usage,
                 model: response.data.model,
-                provider: config.provider
+                provider: config.provider,
+                requestId
             };
         } catch (error) {
+            const duration = Date.now() - startTime;
+            
+            // Detailed error logging for debugging
+            console.error('========== AI REQUEST ERROR ==========');
+            console.error('[AIService] Error Type:', error.constructor.name);
+            console.error('[AIService] Error Message:', error.message);
+            console.error('[AIService] Error Code:', error.code);
+            console.error('[AIService] Response Status:', error.response?.status);
+            console.error('[AIService] Response Status Text:', error.response?.statusText);
+            console.error('[AIService] Response Headers:', JSON.stringify(error.response?.headers || {}, null, 2));
+            console.error('[AIService] Response Data:', JSON.stringify(error.response?.data || {}, null, 2));
+            console.error('[AIService] Request URL:', `${config.baseURL}/chat/completions`);
+            console.error('[AIService] Request Model:', modelForRequest);
+            console.error('[AIService] Request Payload:', JSON.stringify(payload, null, 2));
+            console.error('[AIService] Provider:', config.provider);
+            console.error('======================================');
+            
+            // Log error
+            logData = {
+                requestId,
+                userId: options.userId || null,
+                userEmail: options.userEmail || null,
+                userRole: options.userRole || null,
+                provider: config.provider,
+                model: modelToUse,
+                modelId: modelToUse,
+                requestType: 'chat',
+                endpoint: `${config.baseURL}/chat/completions`,
+                promptTokens: 0,
+                completionTokens: 0,
+                totalTokens: 0,
+                promptPrice: 0,
+                completionPrice: 0,
+                totalCost: 0,
+                currency: 'USD',
+                prompt: messages.map(m => m.content).join('\n'),
+                promptLength: JSON.stringify(messages).length,
+                status: error.response?.status === 429 ? 'rate_limited' : 
+                       error.code === 'ECONNABORTED' ? 'timeout' : 'error',
+                statusCode: error.response?.status || null,
+                errorMessage: error.response?.data?.error?.message || error.message,
+                duration,
+                metadata: {
+                    temperature,
+                    maxTokens,
+                    errorCode: error.code,
+                    fullError: JSON.stringify(error.response?.data || {})
+                },
+                requestedAt: new Date(startTime),
+                completedAt: new Date()
+            };
+
+            this.logRequest(logData).catch(err => {
+                console.error('Failed to log AI request error:', err);
+            });
+
+            // Only retry if explicitly allowed and error is retryable
+            // This prevents duplicate charges on permanent failures
             if (retries > 0 && this.isRetryableError(error)) {
+                console.log(`[AIService] Retrying request (${retries} retries remaining) due to retryable error`);
                 await this.delay(this.retryDelay);
                 return this.chatCompletion(messages, { ...options, retries: retries - 1 });
             }
             
-            throw new Error(`AI API Error: ${error.response?.data?.error?.message || error.message}`);
+            // Extract detailed error message
+            let errorMsg = 'Unknown error';
+            const responseData = error.response?.data;
+            
+            // Try to extract the actual error from nested structures
+            if (responseData?.error?.metadata?.raw) {
+                // OpenRouter sometimes nests the real error in metadata.raw
+                try {
+                    const rawError = JSON.parse(responseData.error.metadata.raw);
+                    if (rawError.error) {
+                        errorMsg = rawError.error;
+                    } else if (rawError.message) {
+                        errorMsg = rawError.message;
+                    }
+                } catch (e) {
+                    // If parsing fails, use the raw string
+                    errorMsg = responseData.error.metadata.raw;
+                }
+            } else if (responseData?.error?.message) {
+                errorMsg = responseData.error.message;
+            } else if (responseData?.message) {
+                errorMsg = responseData.message;
+            } else if (responseData) {
+                errorMsg = JSON.stringify(responseData);
+            } else if (error.message) {
+                errorMsg = error.message;
+            }
+            
+            const statusCode = error.response?.status;
+            
+            // Provide user-friendly error messages for common status codes
+            if (statusCode === 402) {
+                errorMsg = `Payment Required: ${errorMsg}. Please check your OpenRouter account balance and API key spending limits.`;
+            } else if (statusCode === 401) {
+                errorMsg = `Unauthorized: ${errorMsg}. Please check your API key.`;
+            } else if (statusCode === 403) {
+                errorMsg = `Forbidden: ${errorMsg}. You may not have permission to use this model or API key.`;
+            } else if (statusCode === 404) {
+                // Check if it's a data policy issue with free models
+                if (errorMsg.toLowerCase().includes('data policy') || errorMsg.toLowerCase().includes('free model publication')) {
+                    errorMsg = `Data Policy Error: ${errorMsg}\n\nFree models require allowing data publication. Please:\n1. Go to https://openrouter.ai/settings/privacy\n2. Enable "Allow free model publication"\n3. Or switch to a paid model in your settings.`;
+                } else {
+                    errorMsg = `Not Found: ${errorMsg}. The model or endpoint may not exist.`;
+                }
+            } else if (statusCode === 429) {
+                errorMsg = `Rate Limited: ${errorMsg}. Please try again later.`;
+            }
+            
+            console.error(`[AIService] Request failed (non-retryable): Status=${statusCode}, Error=${errorMsg}`);
+            
+            throw new Error(`AI API Error: ${errorMsg}`);
         }
     }
 
@@ -119,10 +409,11 @@ class AIService {
             }
         ];
 
+        // Don't pass model - let chatCompletion use default from database
         return this.chatCompletion(messages, {
             temperature: options.temperature || 0.8,
             maxTokens: options.maxTokens || 500,
-            model: options.model || 'gpt-3.5-turbo'
+            ...(options.model && { model: options.model }) // Only pass model if explicitly provided
         });
     }
 
@@ -161,10 +452,10 @@ class AIService {
         ];
 
         try {
+            // Don't pass model - let chatCompletion use default from database
             const response = await this.chatCompletion(messages, {
                 temperature: 0.3,
-                maxTokens: 200,
-                model: 'gpt-3.5-turbo'
+                maxTokens: 200
             });
 
             // Try to parse JSON response
@@ -251,10 +542,10 @@ class AIService {
             }
         ];
 
+        // Don't pass model - let chatCompletion use default from database
         return this.chatCompletion(messages, {
             temperature: 0.7,
-            maxTokens: 150,
-            model: 'gpt-3.5-turbo'
+            maxTokens: 150
         });
     }
 
@@ -276,10 +567,10 @@ class AIService {
             }
         ];
 
+        // Don't pass model - let chatCompletion use default from database
         return this.chatCompletion(messages, {
             temperature: 0.5,
-            maxTokens: 800,
-            model: 'gpt-3.5-turbo'
+            maxTokens: 800
         });
     }
 
@@ -307,10 +598,10 @@ class AIService {
             }
         ];
 
+        // Don't pass model - let chatCompletion use default from database
         return this.chatCompletion(messages, {
             temperature: 0.6,
-            maxTokens: 600,
-            model: 'gpt-3.5-turbo'
+            maxTokens: 600
         });
     }
 
@@ -339,23 +630,38 @@ class AIService {
             }
         ];
 
+        // Don't pass model - let chatCompletion use default from database
         return this.chatCompletion(messages, {
             temperature: 0.7,
-            maxTokens: 500,
-            model: 'gpt-3.5-turbo'
+            maxTokens: 500
         });
     }
 
     // Check if error is retryable
     isRetryableError(error) {
+        // Only retry on network errors, timeouts, or specific server errors
+        // NEVER retry on client errors (4xx) as they indicate invalid requests
+        const status = error.response?.status;
+        
+        // Don't retry on client errors (4xx) - these are permanent failures
+        if (status && status >= 400 && status < 500) {
+            return false;
+        }
+        
+        // Only retry on specific server errors or network issues
         const retryableStatuses = [429, 500, 502, 503, 504];
-        const retryableMessages = ['rate limit', 'timeout', 'server error', 'internal error'];
+        const retryableMessages = ['rate limit', 'timeout', 'network', 'econnrefused', 'etimedout'];
+        
+        // Check for network errors (no response)
+        if (!error.response && (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED')) {
+            return true;
+        }
         
         return (
-            retryableStatuses.includes(error.response?.status) ||
+            retryableStatuses.includes(status) ||
             retryableMessages.some(msg => 
                 error.message.toLowerCase().includes(msg) ||
-                error.response?.data?.error?.message?.toLowerCase().includes(msg)
+                (error.response?.data?.error?.message?.toLowerCase() || '').includes(msg)
             )
         );
     }
@@ -366,19 +672,19 @@ class AIService {
     }
 
     // Get available models
-    getAvailableModels() {
-        const config = this.getApiConfig();
+    async getAvailableModels() {
+        const config = await this.getApiConfig();
         return {
             provider: config.provider,
             models: config.models,
-            defaultModel: this.defaultModel
+            defaultModel: config.defaultModel || this.defaultModel
         };
     }
 
     // Test API connection
     async testConnection() {
         try {
-            const config = this.getApiConfig();
+            const config = await this.getApiConfig();
             const response = await this.chatCompletion([
                 { role: 'user', content: 'Hello, this is a test message.' }
             ], { maxTokens: 10 });
@@ -395,6 +701,55 @@ class AIService {
                 error: error.message,
                 message: 'API connection failed'
             };
+        }
+    }
+
+    // Calculate prompt price based on model and tokens
+    calculatePromptPrice(model, tokens) {
+        // Default pricing per 1M tokens (approximate)
+        const pricing = {
+            'gpt-4': 30.0,
+            'gpt-4-turbo': 10.0,
+            'gpt-3.5-turbo': 0.5,
+            'openai/gpt-4': 30.0,
+            'openai/gpt-4-turbo': 10.0,
+            'openai/gpt-3.5-turbo': 0.5,
+            'anthropic/claude-3-sonnet': 3.0,
+            'anthropic/claude-3-opus': 15.0,
+            'google/gemini-pro': 0.5
+        };
+        
+        const pricePerMillion = pricing[model] || 1.0;
+        return (pricePerMillion / 1000000) * tokens;
+    }
+
+    // Calculate completion price based on model and tokens
+    calculateCompletionPrice(model, tokens) {
+        // Default pricing per 1M tokens (approximate)
+        const pricing = {
+            'gpt-4': 60.0,
+            'gpt-4-turbo': 30.0,
+            'gpt-3.5-turbo': 1.5,
+            'openai/gpt-4': 60.0,
+            'openai/gpt-4-turbo': 30.0,
+            'openai/gpt-3.5-turbo': 1.5,
+            'anthropic/claude-3-sonnet': 15.0,
+            'anthropic/claude-3-opus': 75.0,
+            'google/gemini-pro': 1.5
+        };
+        
+        const pricePerMillion = pricing[model] || 2.0;
+        return (pricePerMillion / 1000000) * tokens;
+    }
+
+    // Log AI request to database
+    async logRequest(logData) {
+        try {
+            const AIRequestLog = require('../schema/AIRequestLog');
+            await AIRequestLog.create(logData);
+        } catch (error) {
+            console.error('Error logging AI request:', error);
+            // Don't throw - logging failures shouldn't break the main flow
         }
     }
 }

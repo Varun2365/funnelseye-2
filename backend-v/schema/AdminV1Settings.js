@@ -107,12 +107,6 @@ const adminV1SettingsSchema = new mongoose.Schema({
                 min: 1048576, // 1MB
                 max: 104857600 // 100MB
             },
-            maxApiRequestsPerMinute: {
-                type: Number,
-                default: 100,
-                min: 10,
-                max: 10000
-            }
         },
         
         // Maintenance mode

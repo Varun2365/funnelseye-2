@@ -296,10 +296,6 @@ const AdminDashboard = () => {
                                         <Badge variant="outline">{analytics?.performance?.responseTime || 'N/A'}ms</Badge>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span>Requests/min</span>
-                                        <Badge variant="outline">{analytics?.performance?.requestsPerMinute || 'N/A'}</Badge>
-                                    </div>
-                                    <div className="flex justify-between">
                                         <span>Error Rate</span>
                                         <Badge variant={analytics?.performance?.errorRate > 5 ? 'destructive' : 'outline'}>
                                             {analytics?.performance?.errorRate || 'N/A'}%
