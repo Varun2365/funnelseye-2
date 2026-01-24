@@ -274,7 +274,7 @@ const AdminLayout = () => {
                               }}
                             >
                               <Users className="mr-2 h-3 w-3" />
-                              Coach Courses
+                              Learning Content
                             </Button>
                           </CollapsibleContent>
                         </Collapsible>

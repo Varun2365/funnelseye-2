@@ -12,6 +12,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from 'sonner';
 import { templates } from '../funnel-builder/funnel-templates';
 import {
@@ -370,8 +371,8 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
 
   // Template categories
   const templateCategories = {
-    customer: { name: 'Customer Templates', description: 'Templates designed for customer-facing pages and landing pages.' },
-    coach: { name: 'Coach Templates', description: 'Templates designed for coach business pages and professional coaching funnels.' }
+    customer: { name: 'Customer Templates', description: 'Customer-facing pages' },
+    coach: { name: 'Coach Templates', description: 'Business & coaching pages' }
   };
 
   // Organize templates into customer/coach categories
@@ -432,6 +433,76 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
     onClose();
   };
 
+  const handlePreviewTemplate = (template) => {
+    // Create a preview HTML page with the template content
+    const fullHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Preview - ${template.name}</title>
+    <style>
+        ${template.css || ''}
+    </style>
+</head>
+<body>
+    ${template.html || ''}
+    <script>
+        ${template.js || ''}
+    </script>
+</body>
+</html>`;
+    
+    // Create a blob URL and open in new tab
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    
+    // Clean up the URL after a delay
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  // Fix spelling in template names
+  const fixTemplateName = (name) => {
+    if (!name) return name;
+    return name
+      .replace(/recieve/gi, 'Receive')
+      .replace(/recieved/gi, 'Received')
+      .replace(/seperate/gi, 'Separate')
+      .replace(/seperated/gi, 'Separated')
+      .replace(/occured/gi, 'Occurred')
+      .replace(/occurance/gi, 'Occurrence')
+      .replace(/existance/gi, 'Existence')
+      .replace(/existant/gi, 'Existent')
+      .replace(/accomodate/gi, 'Accommodate')
+      .replace(/accomodation/gi, 'Accommodation')
+      .replace(/begining/gi, 'Beginning')
+      .replace(/beleive/gi, 'Believe')
+      .replace(/beleived/gi, 'Believed')
+      .replace(/calender/gi, 'Calendar')
+      .replace(/definately/gi, 'Definitely')
+      .replace(/enviroment/gi, 'Environment')
+      .replace(/goverment/gi, 'Government')
+      .replace(/independant/gi, 'Independent')
+      .replace(/maintainance/gi, 'Maintenance')
+      .replace(/neccessary/gi, 'Necessary')
+      .replace(/occassion/gi, 'Occasion')
+      .replace(/occassional/gi, 'Occasional')
+      .replace(/preffered/gi, 'Preferred')
+      .replace(/recomend/gi, 'Recommend')
+      .replace(/recomended/gi, 'Recommended')
+      .replace(/seige/gi, 'Siege')
+      .replace(/suprise/gi, 'Surprise')
+      .replace(/suprised/gi, 'Surprised')
+      .replace(/thier/gi, 'Their')
+      .replace(/tommorrow/gi, 'Tomorrow')
+      .replace(/tommorow/gi, 'Tomorrow')
+      .replace(/untill/gi, 'Until')
+      .replace(/writting/gi, 'Writing')
+      .replace(/writen/gi, 'Written');
+  };
+
   const handleStartFromScratch = () => {
     onStartFromScratch();
     onClose();
@@ -461,21 +532,19 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader className="pb-4">
           <DialogTitle className="text-xl font-semibold text-gray-900">
             {viewMode === 'options' ? 'Select Template' :
              viewMode === 'customer-coach-selection' ? 'Choose Category' :
              'Choose a Template'}
           </DialogTitle>
-          {(viewMode === 'templates' || viewMode === 'customer-coach-selection') && (
+          {viewMode === 'templates' && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
-                if (viewMode === 'customer-coach-selection') {
-                  setViewMode('options');
-                } else if (templateCategory) {
+                if (templateCategory) {
                   setTemplateCategory(null);
                   setViewMode('customer-coach-selection');
                 } else {
@@ -490,7 +559,7 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
           )}
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
           {viewMode === 'customer-coach-selection' ? (
             <div className="space-y-6">
               <div className="text-center mb-8">
@@ -502,7 +571,7 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {Object.entries(templateCategories).map(([key, category]) => (
                   <button
                     key={key}
@@ -546,7 +615,7 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
                 <p className="text-sm text-gray-600">Select a template or start with a blank canvas.</p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {/* Start from Scratch */}
                 <button
                   onClick={handleStartFromScratch}
@@ -558,7 +627,7 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-base text-gray-900 mb-1.5">Start from Scratch</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">Begin with a blank canvas and build your page from the ground up with complete creative freedom.</p>
+                      <p className="text-sm text-gray-600 leading-relaxed">Get A Blank Canvas</p>
                     </div>
                     <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 mt-1" />
                   </div>
@@ -606,7 +675,7 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
                       </div>
                       <div className="flex-1">
                         <h3 className="font-semibold text-base text-gray-900 mb-1.5">Choose Template</h3>
-                        <p className="text-sm text-gray-600 leading-relaxed">Browse and select from our collection of professionally designed templates.</p>
+                        <p className="text-sm text-gray-600 leading-relaxed">Proceed with Prebuilt Templates</p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-blue-600 transition-colors flex-shrink-0 mt-1" />
                     </div>
@@ -619,143 +688,56 @@ const TemplateSelectionModal = ({ stageType, selectedKey, onClose, onSelect, onS
               <p className="text-sm text-gray-600 mb-6">
                 Select a template to use as the starting point for your page design.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {Object.keys(templateSet).map((templateKey) => {
-                  const template = templateSet[templateKey];
-                  const isSelected = selectedKey === templateKey;
-                  const isHovered = hoveredTemplate === templateKey;
-                  return (
-                    <div
-                      key={templateKey}
-                      onClick={() => handleTemplateSelect(templateKey)}
-                      onMouseEnter={(e) => {
-                        setHoveredTemplate(templateKey);
-                        if (!isSelected) {
-                          e.currentTarget.style.borderColor = '#3b82f6';
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.15)';
-                          e.currentTarget.style.transform = 'translateY(-2px)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        setHoveredTemplate(null);
-                        if (!isSelected) {
-                          e.currentTarget.style.borderColor = '#e2e8f0';
-                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                        }
-                      }}
-                      style={{
-                        position: 'relative',
-                        cursor: 'pointer',
-                        borderRadius: '8px',
-                        overflow: 'hidden',
-                        border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0',
-                        backgroundColor: 'white',
-                        transition: 'all 0.2s',
-                        boxShadow: isSelected ? '0 4px 12px rgba(59, 130, 246, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.1)'
-                      }}
-                    >
-                      <div style={{
-                        position: 'relative',
-                        overflow: 'hidden',
-                        aspectRatio: '1',
-                        backgroundColor: '#f3f4f6'
-                      }}>
-                        {isHovered ? (
-                          <TemplatePreview template={template} isHovered={isHovered} />
-                        ) : (
-                          <>
-                            <img
-                              src={template.thumbnail}
-                              alt={template.name}
-                              style={{
-                                width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
-                                display: 'block'
-                              }}
-                              onError={(e) => {
-                                e.target.onerror = null;
-                                e.target.src = 'https://placehold.co/200x200/ccc/ffffff?text=Template';
-                              }}
-                            />
-                            {isSelected && (
-                              <div style={{
-                                position: 'absolute',
-                                top: '8px',
-                                right: '8px',
-                                background: '#3b82f6',
-                                color: 'white',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                fontSize: '10px',
-                                fontWeight: '600',
-                                zIndex: 10
-                              }}>
-                                Selected
-                              </div>
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewTemplate(template);
-                              }}
-                              style={{
-                                position: 'absolute',
-                                top: '8px',
-                                left: '8px',
-                                background: 'rgba(255, 255, 255, 0.9)',
-                                border: 'none',
-                                borderRadius: '6px',
-                                padding: '6px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#3b82f6',
-                                zIndex: 15,
-                                transition: 'all 0.2s',
-                                width: '28px',
-                                height: '28px',
-                                opacity: isHovered ? 1 : 0.8
-                              }}
-                              onMouseEnter={(e) => {
-                                e.target.style.transform = 'scale(1.1)';
-                                e.target.style.opacity = '1';
-                                e.target.style.background = 'white';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.target.style.transform = 'scale(1)';
-                                e.target.style.opacity = '0.8';
-                                e.target.style.background = 'rgba(255, 255, 255, 0.9)';
-                              }}
-                              title="View Template Preview"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                      <div style={{
-                        padding: '12px',
-                        backgroundColor: 'white'
-                      }}>
-                        <h4 style={{
-                          margin: '0 0 4px 0',
-                          fontSize: '14px',
-                          fontWeight: '600',
-                          color: '#1a202c'
-                        }}>{template.name}</h4>
-                        <p style={{
-                          margin: 0,
-                          fontSize: '12px',
-                          color: '#6b7280',
-                          lineHeight: '1.4'
-                        }}>{template.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]">#</TableHead>
+                      <TableHead>Template Name</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.keys(templateSet).map((templateKey, index) => {
+                      const template = templateSet[templateKey];
+                      const isSelected = selectedKey === templateKey;
+                      const fixedName = fixTemplateName(template.name);
+                      return (
+                        <TableRow
+                          key={templateKey}
+                          onClick={() => handleTemplateSelect(templateKey)}
+                          className={`cursor-pointer ${isSelected ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-gray-50'}`}
+                        >
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{fixedName}</span>
+                              {isSelected && (
+                                <Badge variant="default" className="text-xs">Selected</Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handlePreviewTemplate(template);
+                                }}
+                                className="h-8"
+                              >
+                                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                                Preview
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -1775,7 +1757,7 @@ const FunnelManagement = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto py-8">
           {/* Header Skeleton */}
           <div className="mb-8">
             <div className="flex items-center justify-between">
@@ -1876,7 +1858,7 @@ const FunnelManagement = () => {
 
       {/* Header */}
       <header className="border-b bg-background sticky top-0 z-50">
-        <div className="flex h-16 items-center px-6 gap-4">
+        <div className="flex h-16 items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
@@ -1957,7 +1939,7 @@ const FunnelManagement = () => {
       {/* Main Layout */}
       <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar */}
-        <aside className={`w-[280px] bg-background border-r transition-transform flex flex-col overflow-hidden ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'} ${isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'}`}>
+        <aside className={`w-auto min-w-[320px] bg-background border-r transition-transform flex flex-col overflow-hidden ${isMobile ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'} ${isMobile ? 'fixed inset-y-0 left-0 z-50' : 'relative'}`}>
           <div className="p-5 border-b shrink-0">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Funnel Stages</h3>
@@ -1974,8 +1956,8 @@ const FunnelManagement = () => {
             </div>
           </div>
 
-          <ScrollArea className="flex-1 min-h-0 overflow-hidden max-w-full">
-            <div className="p-2 space-y-1 overflow-x-hidden">
+          <ScrollArea className="flex-1 min-h-0 overflow-hidden">
+            <div className="p-2 space-y-1">
               {funnel?.stages?.map((stage, index) => {
                 const isIndexPage = index === 0;
                 const stageId = stage._id || stage.pageId;
@@ -2004,18 +1986,18 @@ const FunnelManagement = () => {
                       }
                     }}
                     className={`
-                      group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors w-full min-w-0 overflow-hidden
+                      group flex items-center gap-2 p-3 rounded-lg cursor-pointer transition-colors w-full
                       ${isActive ? 'bg-accent' : 'hover:bg-accent/50'}
                       ${isDragging ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}
                       ${isDragOver ? 'border-t-2 border-t-primary -translate-y-0.5' : ''}
                     `}
                   >
                     <div
-                      className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden"
+                      className="flex items-center gap-2 flex-1"
                       onMouseDown={(e) => e.stopPropagation()}
                     >
                       <GripVertical className="h-4 w-4 text-muted-foreground group-hover:text-foreground shrink-0" />
-                      <div className="flex-1 min-w-0 overflow-hidden">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className={`text-sm truncate ${isIndexPage ? 'font-semibold' : ''}`}>
                             {stage.name}
@@ -2030,7 +2012,7 @@ const FunnelManagement = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <div className={`flex items-center gap-1 transition-opacity shrink-0 ${isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                       <Button
                         variant="ghost"
                         size="icon"

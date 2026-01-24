@@ -38,6 +38,7 @@ import FunnelManagement from './components/funnels/FunnelManagement';
 import FunnelEditor from './components/funnels/FunnelEditor';
 import AISettingsPanel from './components/ai/AISettingsPanel';
 import AdTemplatesManagement from './components/ads/AdTemplatesManagement';
+import AdminAutomationRules from './components/automation/AdminAutomationRules';
 import { Toaster } from 'sonner';
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -136,6 +137,7 @@ function AppContent() {
           <Route path="funnels/manage/:funnelId" element={<FunnelManagement />} />
           <Route path="ai-features" element={<AISettingsPanel />} />
           <Route path="ads-campaigns" element={<AdTemplatesManagement />} />
+          <Route path="automation-rules" element={<AdminAutomationRules />} />
         </Route>
         {/* Standalone Editor Route - No Sidebar/Topbar */}
         <Route path="funnel_edit/:funnelId/:stageId" element={<ProtectedRoute><FunnelEditor /></ProtectedRoute>} />
