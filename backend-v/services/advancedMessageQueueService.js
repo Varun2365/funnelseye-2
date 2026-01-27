@@ -71,7 +71,6 @@ class AdvancedMessageQueueService {
             await this.startProcessingWorkers();
 
             this.isConnected = true;
-            logger.info('[ADVANCED_MQ] Successfully initialized with high-throughput configuration');
 
             return true;
         } catch (error) {
@@ -139,7 +138,6 @@ class AdvancedMessageQueueService {
                 // If it fails with 406 (wrong arguments), we'll delete and recreate
                 try {
                     await this.channel.assertQueue(queueName, options);
-                    logger.info(`[ADVANCED_MQ] Declared queue: ${queueName}`);
                 } catch (assertError) {
                     // If we get 406, queue exists with wrong arguments - delete and recreate
                     if (assertError.code === 406) {
@@ -185,8 +183,6 @@ class AdvancedMessageQueueService {
 
         // Automation actions listener
         await this.setupAutomationActionsListener();
-
-        logger.info('[ADVANCED_MQ] Reply listeners initialized');
     }
 
     // WhatsApp reply listener
@@ -205,15 +201,12 @@ class AdvancedMessageQueueService {
                 }
             }
         }, { noAck: false });
-
-        logger.info('[ADVANCED_MQ] WhatsApp reply listener active');
     }
 
     // Email reply listener
     async setupEmailReplyListener() {
         // Email replies are typically handled by webhooks, but we can poll or listen
         // This is a placeholder for email reply processing
-        logger.info('[ADVANCED_MQ] Email reply listener setup');
     }
 
     // Automation trigger listener
@@ -231,8 +224,6 @@ class AdvancedMessageQueueService {
                 }
             }
         }, { noAck: false });
-
-        logger.info('[ADVANCED_MQ] Automation trigger listener active');
     }
 
     // Automation actions listener
@@ -250,8 +241,6 @@ class AdvancedMessageQueueService {
                 }
             }
         }, { noAck: false });
-
-        logger.info('[ADVANCED_MQ] Automation actions listener active');
     }
 
     // Start processing workers for different message types
@@ -270,8 +259,6 @@ class AdvancedMessageQueueService {
 
         // Priority message worker
         this.startWorker('priority', this.processPriorityMessage.bind(this));
-
-        logger.info('[ADVANCED_MQ] Processing workers started');
     }
 
     // Generic worker starter
@@ -297,8 +284,6 @@ class AdvancedMessageQueueService {
                 }
             }
         }, { noAck: false });
-
-        logger.info(`[ADVANCED_MQ] ${queueName} worker started with concurrency: ${concurrency}`);
     }
 
     // Message processors

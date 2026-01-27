@@ -111,6 +111,8 @@ const logsRoutes = require('./routes/logsRoutes');
 const centralMessagingRoutes = require('./routes/centralMessagingRoutes');
 const messagingChannelsRoutes = require('./routes/messagingChannels');
 const messagingV3Routes = require('./routes/messagingV3Routes');
+const baileysRoutes = require('./routes/baileysRoutes');
+const wahaRoutes = require('./routes/wahaRoutes');
 const contentRoutes = require('./routes/contentRoutes');
 const coursePurchaseRoutes = require('./routes/coursePurchaseRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
@@ -118,6 +120,8 @@ const notificationRoutes = require('./routes/notificationRoutes');
 // --- Import the worker initialization functions ---
 const initRulesEngineWorker = require('./workers/worker_rules_engine');
 const initActionExecutorWorker = require('./workers/worker_action_executor');
+const initAutomationGraphWorker = require('./workers/worker_automation_graph');
+const automationGraphTrigger = require('./services/automationGraphTrigger');
 const initScheduledExecutorWorker = require('./workers/worker_scheduled_action_executor');
 const initPaymentProcessorWorker = require('./workers/worker_payment_processor');
 const initNurturingWorker = require('./workers/worker_nurturing_sequence');
@@ -149,66 +153,34 @@ const io = new Server(server, {
     path: '/socket.io' // Explicit Socket.IO path
 });
 
-console.log('🔌 [Socket.IO] Main Socket.IO server initialized');
-
-// Log all connection attempts to main namespace (for debugging)
+// Main namespace connection handler
 io.on('connection', (socket) => {
-    console.log(`🔌 [Socket.IO] ⚠️ Connection to MAIN namespace (not /notification): ${socket.id}`);
-    console.log(`🔌 [Socket.IO] Main namespace connection from: ${socket.handshake.address}`);
-    console.log(`🔌 [Socket.IO] Main namespace handshake query:`, socket.handshake.query);
-    console.log(`🔌 [Socket.IO] Main namespace handshake auth:`, socket.handshake.auth);
     socket.on('disconnect', () => {
-        console.log(`🔌 [Socket.IO] Main namespace client disconnected: ${socket.id}`);
+        // Connection closed
     });
 });
 
 // Create notification namespace at /notification
 const notificationNamespace = io.of('/notification');
 
-console.log('🔌 [Socket.IO] ✅ Notification namespace created at /notification');
-
 // Add error handler for namespace (if supported)
 try {
     notificationNamespace.on('connect_error', (error) => {
-        console.error('🔌 [Socket.IO] ❌ Connection error in /notification namespace:', error);
+        // Connection error handled silently
     });
 } catch (err) {
-    console.warn('🔌 [Socket.IO] Note: connect_error event not available on namespace');
+    // Error handler not available
 }
 
 // Add error handler for engine connection attempts (only if engine exists)
 if (notificationNamespace.engine) {
     notificationNamespace.engine.on('connection_error', (error) => {
-        console.error('🔌 [Socket.IO] ❌ Engine connection error in /notification namespace:', error);
-        console.error('🔌 [Socket.IO] Error details:', {
-            message: error.message,
-            type: error.type,
-            description: error.description,
-            context: error.context
-        });
+        // Engine connection error handled silently
     });
-} else {
-    console.log('🔌 [Socket.IO] Note: Engine not available yet, will attach error handler after connection');
 }
 
-// Log namespace connection attempts BEFORE the connection handler
+// Namespace connection middleware
 notificationNamespace.use((socket, next) => {
-    console.log(`🔌 [Socket.IO] 📥 Incoming connection attempt to /notification namespace`);
-    console.log(`🔌 [Socket.IO] Connection attempt details:`, {
-        address: socket.handshake.address,
-        headers: {
-            origin: socket.handshake.headers.origin,
-            referer: socket.handshake.headers.referer,
-            'user-agent': socket.handshake.headers['user-agent']?.substring(0, 50)
-        },
-        query: socket.handshake.query,
-        auth: socket.handshake.auth ? { 
-            hasToken: !!socket.handshake.auth.token,
-            tokenLength: socket.handshake.auth.token ? socket.handshake.auth.token.length : 0
-        } : null,
-        url: socket.handshake.url,
-        method: socket.handshake.method
-    });
     next(); // Allow the connection
 });
 
@@ -216,28 +188,8 @@ notificationNamespace.use((socket, next) => {
 const { setIoInstance } = require('./utils/socketUtils');
 setIoInstance(notificationNamespace);
 
-console.log('🔌 [Socket.IO] ✅ Socket.IO instance set in socketUtils');
-
 // Socket.IO event handlers for notifications namespace
 notificationNamespace.on('connection', (socket) => {
-    console.log(`🔌 [Socket.IO] ✅✅✅ SUCCESS: New client connected to /notification namespace: ${socket.id}`);
-    console.log(`🔌 [Socket.IO] Client transport: ${socket.conn.transport.name}`);
-    console.log(`🔌 [Socket.IO] Full connection details:`, {
-        socketId: socket.id,
-        transport: socket.conn.transport.name,
-        address: socket.handshake.address,
-        headers: {
-            origin: socket.handshake.headers.origin,
-            referer: socket.handshake.headers.referer
-        },
-        query: socket.handshake.query,
-        auth: socket.handshake.auth ? { 
-            hasToken: !!socket.handshake.auth.token,
-            tokenLength: socket.handshake.auth.token ? socket.handshake.auth.token.length : 0
-        } : null,
-        rooms: Array.from(socket.rooms)
-    });
-    
     // Send connection confirmation immediately
     socket.emit('connected', {
         socketId: socket.id,
@@ -245,27 +197,22 @@ notificationNamespace.on('connection', (socket) => {
         namespace: '/notification',
         timestamp: new Date().toISOString()
     });
-    
-    console.log(`🔌 [Socket.IO] ✅ Sent connection confirmation to ${socket.id}`);
 
     // Admin joins admin room
     socket.on('admin-join', (adminId) => {
         socket.join('admin-room');
         socket.join(`admin-${adminId}`);
-        console.log(`[Socket.IO] Admin ${adminId} joined notification rooms`);
         socket.emit('room-joined', { room: 'admin-room', adminId });
     });
 
     // Coach joins coach room
     socket.on('coach-join', (coachId) => {
         if (!coachId) {
-            console.warn(`[Socket.IO] ⚠️ Coach join called without coachId`);
             return;
         }
         socket.join('coach-room');
         socket.join(`user-${coachId}`);
         socket.join(`coach-${coachId}`);
-        console.log(`[Socket.IO] ✅ Coach ${coachId} joined notification rooms: coach-room, user-${coachId}, coach-${coachId}`);
         socket.emit('room-joined', { 
             room: 'coach-room', 
             coachId,
@@ -276,11 +223,9 @@ notificationNamespace.on('connection', (socket) => {
     // User joins specific user room
     socket.on('user-join', (userId) => {
         if (!userId) {
-            console.warn(`[Socket.IO] ⚠️ User join called without userId`);
             return;
         }
         socket.join(`user-${userId}`);
-        console.log(`[Socket.IO] ✅ User ${userId} joined user room: user-${userId}`);
         socket.emit('room-joined', { room: `user-${userId}`, userId });
     });
 
@@ -309,15 +254,13 @@ notificationNamespace.on('connection', (socket) => {
     });
 
     socket.on('disconnect', (reason) => {
-        console.log(`🔌 [Socket.IO] ❌ Client disconnected: ${socket.id}, reason: ${reason}`);
+        // Client disconnected
     });
 
     socket.on('error', (error) => {
-        console.error(`🔌 [Socket.IO] ❌ Socket error for ${socket.id}:`, error);
+        // Socket error handled silently
     });
 });
-
-console.log('🔌 [Socket.IO] ✅ Notification namespace ready and listening');
 
 // Create a single WebSocket server for log streaming
 const WebSocket = require('ws');
@@ -328,7 +271,7 @@ const { setWebSocketServer, getLogs } = require('./routes/logsRoutes');
 setWebSocketServer(logWSS);
 
 logWSS.on('connection', (ws) => {
-    console.log('📡 Log streaming client connected');
+    // Log streaming client connected
     
     // Send initial logs
     const initialLogs = getLogs(100);
@@ -338,11 +281,11 @@ logWSS.on('connection', (ws) => {
     }));
     
     ws.on('close', () => {
-        console.log('📡 Log streaming client disconnected');
+        // Log streaming client disconnected
     });
     
     ws.on('error', (error) => {
-        console.error('📡 Log streaming WebSocket error:', error);
+        // Log streaming WebSocket error
     });
 });
 
@@ -377,10 +320,7 @@ app.use((req, res, next) => {
     //     console.log(`[WhatsApp API] ${req.method} ${req.path} - Origin: ${req.headers.origin || 'No origin'} - User-Agent: ${req.headers['user-agent'] || 'No user-agent'}`);
     // }
     
-    // Log all requests in development
-    if (process.env.NODE_ENV === 'development') {
-        console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-    }
+    // Request logging disabled for cleaner output
     
     next();
 });
@@ -483,6 +423,10 @@ app.use('/api/coach-transactions', coachTransactionRoutes);
 // ===== MARKETING & ADVERTISING =====
 app.use('/api/ads', adsRoutes);
 app.use('/api/ai-ads', aiAdsRoutes);
+const pixelTrackingRoutes = require('./routes/pixelTrackingRoutes');
+app.use('/api/pixel', pixelTrackingRoutes);
+const coachAdDraftRoutes = require('./routes/coachAdDraftRoutes');
+app.use('/api/coach-ad-drafts', coachAdDraftRoutes);
 app.use('/api/ad-templates', adTemplateRoutes);
 app.use('/api/admin-automation-rules', adminAutomationRuleRoutes);
 app.use('/api/coach-marketing-credentials', coachMarketingCredentialsRoutes);
@@ -522,6 +466,11 @@ app.use('/api/messaging-channels', messagingChannelsRoutes);
 // Enhanced messaging system with multi-channel support and high-throughput worker
 // Features: Meta WhatsApp, Bailey's WhatsApp, Email, Credits, Templates, High-throughput
 app.use('/api/messaging/v3', messagingV3Routes);
+
+// ===== BAILEY'S WHATSAPP SYSTEM =====
+// New robust Bailey's WhatsApp scanner management
+app.use('/api/baileys', baileysRoutes);
+app.use('/api/waha', wahaRoutes);
 
 // ===== EMAIL CONFIGURATION SYSTEM =====
 // Email configuration management is now integrated into /api/whatsapp/v1
@@ -867,6 +816,9 @@ function printApiTable(title, routes, baseUrl) {
     const totalWidth = METHOD_WIDTH + PATH_WIDTH + DESC_WIDTH + 8;
     const hr = '─'.repeat(totalWidth);
 
+    // API documentation logging disabled for cleaner output
+    // Uncomment below to enable API route documentation
+    /*
     console.log(`\n\n--- ${title.toUpperCase()} ---`);
     console.log(`╭${hr}╮`);
     console.log(`│ ${'Method'.padEnd(METHOD_WIDTH)} │ ${'URL'.padEnd(PATH_WIDTH)} │ ${'Description'.padEnd(DESC_WIDTH)} │`);
@@ -881,6 +833,7 @@ function printApiTable(title, routes, baseUrl) {
     });
 
     console.log(`╰${hr}╯`);
+    */
 }
 // -----------------------------------------------------------------
 
@@ -889,18 +842,18 @@ function printApiTable(title, routes, baseUrl) {
  */
 const ensureAdminUser = async () => {
     try {
-        console.log('🔍 Checking for admin user...');
+        // Checking for admin user...
         
         // Check if any admin user exists
         const existingAdmin = await AdminUser.findOne({});
         
         if (existingAdmin) {
-            console.log('✅ Admin user already exists.');
+            // Admin user already exists
             return;
         }
         
         // Create default super admin user
-        console.log('🔧 Creating default admin user...');
+        // Creating default admin user...
         const admin = new AdminUser({
             email: 'admin@funnelseye.com',
             password: 'Admin@123',
@@ -930,10 +883,7 @@ const ensureAdminUser = async () => {
         });
         
         await admin.save();
-        console.log('✅ Default admin user created successfully!');
-        console.log('📧 Email: admin@funnelseye.com');
-        console.log('🔑 Password: Admin@123');
-        console.log('⚠️  Please change the default password after first login!');
+            console.log('✅ Default admin created - Email: admin@funnelseye.com | Password: Admin@123');
         
     } catch (error) {
         console.error('❌ Error creating admin user:', error.message);
@@ -960,37 +910,22 @@ const startServer = async () => {
         // Now initialize other services
         await init();
 
-        // --- Initialize message queue service ---
-        console.log('🔄 [MAIN] Initializing message queue service...');
+        // Initialize services
         await messageQueueService.initialize();
-        console.log('✅ [MAIN] Message queue service initialized');
-
-        // Initialize Advanced Message Queue for V2 Automations
         await advancedMessageQueue.initialize();
-        console.log('✅ [MAIN] Advanced message queue service initialized');
 
-        // --- Start all the worker processes here with await ---
+        // Start worker processes
         await initRulesEngineWorker();
         await initActionExecutorWorker();
         await initScheduledExecutorWorker();
         await initPaymentProcessorWorker();
         await initNurturingWorker();
-        
-        // --- Start message processor worker ---
-        console.log('🔄 [MAIN] Starting message processor worker...');
+        await automationGraphTrigger.init();
+        await initAutomationGraphWorker();
         await initMessageProcessorWorker();
-        console.log('✅ [MAIN] Message processor worker started');
 
         server.listen(PORT, () => {
-            console.log(`Local Development Base URL: http://localhost:${PORT}`);
-            console.log(`🔌 [Socket.IO] ==========================================`);
-            console.log(`🔌 [Socket.IO] Server listening on port ${PORT}`);
-            console.log(`🔌 [Socket.IO] Socket.IO handshake path: /socket.io`);
-            console.log(`🔌 [Socket.IO] Notification namespace: /notification`);
-            console.log(`🔌 [Socket.IO] Client should connect to: http://localhost:${PORT}/notification`);
-            console.log(`🔌 [Socket.IO] (Socket.IO will use /socket.io path automatically)`);
-            console.log(`🔌 [Socket.IO] Ready for WebSocket connections!`);
-            console.log(`🔌 [Socket.IO] ==========================================`);
+            console.log(`✅ Server running on http://localhost:${PORT}`);
 
             // --- Start the scheduled task ---
             checkInactiveCoaches.start();

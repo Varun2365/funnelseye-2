@@ -246,6 +246,232 @@ async function syncCampaignsToDB(coachId, coachMetaAccountId) {
     return campaigns.data.length;
 }
 
+// ===== ANDROMEDA ADS SUPPORT =====
+
+/**
+ * Create Andromeda ad creative (advanced Meta ad format)
+ * @param {String} coachId - Coach ID
+ * @param {String} adAccountId - Ad account ID
+ * @param {Object} andromedaData - Andromeda ad configuration
+ */
+async function createAndromedaAdCreative(coachId, adAccountId, andromedaData) {
+    try {
+        const accessToken = await getCoachAccessToken(coachId);
+        const {
+            format = 'single_image',
+            creativeType = 'image',
+            name,
+            imageUrls = [],
+            videoId = null,
+            headline,
+            description,
+            callToAction = 'LEARN_MORE',
+            linkUrl,
+            dynamicProductAds = false,
+            catalogId = null,
+            productSetId = null,
+            carouselSettings = {},
+            interactiveElements = {}
+        } = andromedaData;
+
+        let creativePayload = {
+            name: name || `Andromeda Ad - ${new Date().toISOString()}`,
+            object_story_spec: {}
+        };
+
+        // Handle different Andromeda formats
+        switch (format) {
+            case 'single_image':
+                if (imageUrls.length === 0) {
+                    throw new Error('At least one image URL is required for single_image format');
+                }
+                creativePayload.object_story_spec = {
+                    page_id: await getPageId(coachId, adAccountId),
+                    link_data: {
+                        image_url: imageUrls[0],
+                        link: linkUrl,
+                        message: description,
+                        name: headline,
+                        call_to_action: {
+                            type: callToAction
+                        }
+                    }
+                };
+                break;
+
+            case 'single_video':
+                if (!videoId) {
+                    throw new Error('Video ID is required for single_video format');
+                }
+                creativePayload.object_story_spec = {
+                    page_id: await getPageId(coachId, adAccountId),
+                    video_id: videoId,
+                    link_data: {
+                        link: linkUrl,
+                        message: description,
+                        name: headline,
+                        call_to_action: {
+                            type: callToAction
+                        }
+                    }
+                };
+                break;
+
+            case 'carousel':
+                if (imageUrls.length < 2) {
+                    throw new Error('At least 2 images are required for carousel format');
+                }
+                const carouselCards = imageUrls.slice(0, carouselSettings.maxCards || 10).map((imageUrl, index) => ({
+                    link: linkUrl,
+                    name: `${headline} - Card ${index + 1}`,
+                    description: description,
+                    image_url: imageUrl
+                }));
+
+                creativePayload.object_story_spec = {
+                    page_id: await getPageId(coachId, adAccountId),
+                    link_data: {
+                        link: linkUrl,
+                        message: description,
+                        name: headline,
+                        child_attachments: carouselCards,
+                        call_to_action: {
+                            type: callToAction
+                        }
+                    }
+                };
+                break;
+
+            case 'collection':
+                if (!catalogId) {
+                    throw new Error('Catalog ID is required for collection format');
+                }
+                creativePayload.object_story_spec = {
+                    page_id: await getPageId(coachId, adAccountId),
+                    collection_data: {
+                        collection_thumbnail_url: imageUrls[0],
+                        image_urls: imageUrls,
+                        link: linkUrl,
+                        name: headline,
+                        description: description
+                    }
+                };
+                break;
+
+            case 'dynamic':
+                if (!dynamicProductAds || !catalogId) {
+                    throw new Error('Dynamic product ads require catalogId and dynamicProductAds enabled');
+                }
+                creativePayload.object_story_spec = {
+                    page_id: await getPageId(coachId, adAccountId),
+                    product_set_id: productSetId,
+                    link_data: {
+                        link: linkUrl,
+                        message: description,
+                        name: headline,
+                        call_to_action: {
+                            type: callToAction
+                        }
+                    }
+                };
+                break;
+
+            default:
+                throw new Error(`Unsupported Andromeda format: ${format}`);
+        }
+
+        // Add interactive elements if enabled
+        if (interactiveElements.pollEnabled || interactiveElements.quizEnabled || interactiveElements.countdownEnabled) {
+            creativePayload.object_story_spec.interactive_components = {};
+            if (interactiveElements.pollEnabled) {
+                creativePayload.object_story_spec.interactive_components.poll = interactiveElements.pollData;
+            }
+            if (interactiveElements.quizEnabled) {
+                creativePayload.object_story_spec.interactive_components.quiz = interactiveElements.quizData;
+            }
+            if (interactiveElements.countdownEnabled) {
+                creativePayload.object_story_spec.interactive_components.countdown = interactiveElements.countdownData;
+            }
+        }
+
+        const url = `${META_ADS_API_BASE}/act_${adAccountId}/adcreatives?access_token=${accessToken}`;
+        const { data } = await axios.post(url, creativePayload);
+
+        return {
+            success: true,
+            creativeId: data.id,
+            creative: data
+        };
+    } catch (error) {
+        console.error('[metaAdsService] Error creating Andromeda ad creative:', error);
+        throw error;
+    }
+}
+
+/**
+ * Create ad set with pixel tracking and retargeting
+ */
+async function createAdSetWithPixel(coachId, campaignId, adSetData, pixelSettings = {}) {
+    try {
+        const accessToken = await getCoachAccessToken(coachId);
+        
+        // Prepare ad set data
+        let enhancedAdSetData = { ...adSetData };
+
+        // Add pixel tracking if configured
+        if (pixelSettings.pixelId) {
+            enhancedAdSetData.pixel_id = pixelSettings.pixelId;
+        }
+
+        // Add conversion events if specified
+        if (pixelSettings.conversionEvents && pixelSettings.conversionEvents.length > 0) {
+            enhancedAdSetData.promoted_object = {
+                pixel_id: pixelSettings.pixelId,
+                custom_event_type: pixelSettings.conversionEvents[0].eventName
+            };
+        }
+
+        // Add retargeting audience if enabled
+        if (pixelSettings.retargetingAudience?.enabled && pixelSettings.retargetingAudience?.audienceId) {
+            if (!enhancedAdSetData.targeting) {
+                enhancedAdSetData.targeting = {};
+            }
+            if (!enhancedAdSetData.targeting.custom_audiences) {
+                enhancedAdSetData.targeting.custom_audiences = [];
+            }
+            enhancedAdSetData.targeting.custom_audiences.push({
+                id: pixelSettings.retargetingAudience.audienceId
+            });
+        }
+
+        const url = `${META_ADS_API_BASE}/act_${campaignId}/adsets?access_token=${accessToken}`;
+        const { data } = await axios.post(url, enhancedAdSetData);
+
+        return data;
+    } catch (error) {
+        console.error('[metaAdsService] Error creating ad set with pixel:', error);
+        throw error;
+    }
+}
+
+/**
+ * Helper to get page ID for ad account
+ */
+async function getPageId(coachId, adAccountId) {
+    try {
+        const accessToken = await getCoachAccessToken(coachId);
+        const url = `${META_ADS_API_BASE}/act_${adAccountId}?access_token=${accessToken}&fields=page_id`;
+        const { data } = await axios.get(url);
+        return data.page_id;
+    } catch (error) {
+        console.error('[metaAdsService] Error getting page ID:', error);
+        // Return a default or throw based on requirements
+        throw new Error('Unable to retrieve page ID for ad account');
+    }
+}
+
+// Exports will be at the end of file
+
 // New method for complete URL campaign creation
 async function createCompleteUrlCampaign(coachId, campaignData, adSetData, creativeData, adData) {
     try {
@@ -296,6 +522,8 @@ async function verifyCoachCredentials(coachId) {
 }
 
 module.exports = {
+    getCoachAccessToken,
+    getCoachMetaAccountInfo,
     fetchCampaigns,
     fetchCampaignInsights,
     createCampaign,
@@ -303,7 +531,9 @@ module.exports = {
     pauseCampaign,
     resumeCampaign,
     createAdSet,
+    createAdSetWithPixel,
     createAdCreative,
+    createAndromedaAdCreative,
     createAd,
     uploadImage,
     fetchAdSets,
@@ -311,7 +541,5 @@ module.exports = {
     fetchAds,
     syncCampaignsToDB,
     createCompleteUrlCampaign,
-    verifyCoachCredentials,
-    getCoachAccessToken,
-    getCoachMetaAccountInfo
+    verifyCoachCredentials
 };

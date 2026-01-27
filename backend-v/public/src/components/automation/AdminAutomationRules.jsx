@@ -142,123 +142,138 @@ const AdminAutomationRules = () => {
   });
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Automation Rules</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage automation rules that can be assigned to subscription plans
-          </p>
+    <div className="w-full min-h-screen bg-background">
+      <div className="max-w-full">
+        {/* Header */}
+        <div className="bg-card border-b border-border/50 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold text-foreground tracking-tight">Automation Rules</h1>
+              <p className="text-muted-foreground">
+                Manage automation rules that can be assigned to subscription plans
+              </p>
+            </div>
+            <Button
+              onClick={() => window.location.href = '/automation-rules/create'}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create New Rule
+            </Button>
+          </div>
         </div>
-        <Button onClick={() => window.location.href = '/automation-rules/create'}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Rule
-        </Button>
-      </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">All Rules</TabsTrigger>
-          <TabsTrigger value="active">Active</TabsTrigger>
-          <TabsTrigger value="inactive">Inactive</TabsTrigger>
-          <TabsTrigger value="public">Public</TabsTrigger>
-        </TabsList>
+        {/* Tabs */}
+        <Tabs defaultValue="all" className="px-8 py-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6 bg-muted/50">
+            <TabsTrigger value="all" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">All Rules</TabsTrigger>
+            <TabsTrigger value="active" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Active</TabsTrigger>
+            <TabsTrigger value="inactive" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Inactive</TabsTrigger>
+            <TabsTrigger value="public" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Public</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>All Automation Rules</CardTitle>
-                  <CardDescription>
-                    View and manage all automation rules in the system
-                  </CardDescription>
+        <TabsContent value="all" className="space-y-0">
+          <div className="bg-card border-b border-border/50 px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold text-foreground">All Automation Rules</h2>
+                <p className="text-sm text-muted-foreground">
+                  View and manage all automation rules in the system
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search rules..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9 w-72 h-10 bg-background border-border/50 focus:border-primary/50 transition-colors"
+                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search rules..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 w-64"
-                    />
-                  </div>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="lead_management">Lead Management</SelectItem>
-                      <SelectItem value="communication">Communication</SelectItem>
-                      <SelectItem value="workflow">Workflow</SelectItem>
-                      <SelectItem value="payment">Payment</SelectItem>
-                      <SelectItem value="marketing">Marketing</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={workflowTypeFilter} onValueChange={setWorkflowTypeFilter}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="legacy">Legacy</SelectItem>
-                      <SelectItem value="graph">Graph</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-44 h-10 bg-background border-border/50 focus:border-primary/50">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    <SelectItem value="lead_management">Lead Management</SelectItem>
+                    <SelectItem value="communication">Communication</SelectItem>
+                    <SelectItem value="workflow">Workflow</SelectItem>
+                    <SelectItem value="payment">Payment</SelectItem>
+                    <SelectItem value="marketing">Marketing</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={workflowTypeFilter} onValueChange={setWorkflowTypeFilter}>
+                  <SelectTrigger className="w-40 h-10 bg-background border-border/50 focus:border-primary/50">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="legacy">Legacy</SelectItem>
+                    <SelectItem value="graph">Graph</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="px-8 py-8">
+            {loading ? (
+              <div className="flex items-center justify-center h-96">
+                <div className="text-center space-y-4">
+                  <Loader2 className="h-12 w-12 animate-spin text-muted-foreground mx-auto" />
+                  <p className="text-muted-foreground">Loading automation rules...</p>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center h-64">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            ) : filteredRules.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="mx-auto w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
+                  <Workflow className="h-10 w-10 text-muted-foreground" />
                 </div>
-              ) : filteredRules.length === 0 ? (
-                <div className="text-center py-12">
-                  <Workflow className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No automation rules found</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {searchQuery ? 'Try adjusting your search filters' : 'Get started by creating your first automation rule'}
-                  </p>
-                  <Button onClick={() => window.location.href = '/automation-rules/create'}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create New Rule
-                  </Button>
-                </div>
-              ) : (
+                <h3 className="text-xl font-semibold text-foreground mb-2">No automation rules found</h3>
+                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                  {searchQuery ? 'Try adjusting your search filters to find what you\'re looking for.' : 'Get started by creating your first automation rule to streamline your workflows.'}
+                </p>
+                <Button
+                  onClick={() => window.location.href = '/automation-rules/create'}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create New Rule
+                </Button>
+              </div>
+            ) : (
+              <div className="bg-card rounded-lg border border-border/50 overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Public</TableHead>
-                      <TableHead>Executions</TableHead>
-                      <TableHead>Last Executed</TableHead>
-                      <TableHead>Actions</TableHead>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30 border-border/50">
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Name</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Type</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Category</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Status</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Public</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Executions</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Last Executed</TableHead>
+                      <TableHead className="font-semibold text-foreground py-4 px-6">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredRules.map((rule) => (
-                      <TableRow key={rule._id}>
-                        <TableCell className="font-medium">
-                          <div>
-                            <div className="font-semibold">{rule.name}</div>
+                      <TableRow key={rule._id} className="hover:bg-muted/20 transition-colors border-border/30">
+                        <TableCell className="py-4 px-6">
+                          <div className="space-y-1">
+                            <div className="font-semibold text-foreground">{rule.name}</div>
                             {rule.description && (
-                              <div className="text-sm text-muted-foreground line-clamp-1">
+                              <div className="text-sm text-muted-foreground line-clamp-1 max-w-xs">
                                 {rule.description}
                               </div>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={rule.workflowType === 'graph' ? 'default' : 'secondary'}>
+                        <TableCell className="py-4 px-6">
+                          <Badge variant={rule.workflowType === 'graph' ? 'default' : 'secondary'} className="font-medium">
                             {rule.workflowType === 'graph' ? (
                               <>
                                 <Workflow className="mr-1 h-3 w-3" />
@@ -269,11 +284,13 @@ const AdminAutomationRules = () => {
                             )}
                           </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{rule.category || 'custom'}</Badge>
+                        <TableCell className="py-4 px-6">
+                          <Badge variant="outline" className="font-medium capitalize">
+                            {rule.category || 'custom'}
+                          </Badge>
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={rule.isActive ? 'default' : 'secondary'}>
+                        <TableCell className="py-4 px-6">
+                          <Badge variant={rule.isActive ? 'default' : 'secondary'} className="font-medium">
                             {rule.isActive ? (
                               <>
                                 <Play className="mr-1 h-3 w-3" />
@@ -287,36 +304,37 @@ const AdminAutomationRules = () => {
                             )}
                           </Badge>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-6">
                           {rule.isPublic ? (
-                            <Badge variant="default">Public</Badge>
+                            <Badge variant="default" className="font-medium">Public</Badge>
                           ) : (
-                            <Badge variant="outline">Private</Badge>
+                            <Badge variant="outline" className="font-medium">Private</Badge>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
+                        <TableCell className="py-4 px-6">
+                          <div className="flex items-center gap-2">
                             <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                            <span>{rule.executionCount || 0}</span>
+                            <span className="font-medium">{rule.executionCount || 0}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="py-4 px-6">
                           {rule.lastExecutedAt ? (
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Calendar className="h-4 w-4" />
-                              {new Date(rule.lastExecutedAt).toLocaleDateString()}
+                              <span>{new Date(rule.lastExecutedAt).toLocaleDateString()}</span>
                             </div>
                           ) : (
-                            <span className="text-sm text-muted-foreground">Never</span>
+                            <span className="text-sm text-muted-foreground font-medium">Never</span>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                        <TableCell className="py-4 px-6">
+                          <div className="flex items-center gap-1">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleToggleActive(rule)}
                               title={rule.isActive ? 'Deactivate' : 'Activate'}
+                              className="h-8 w-8 p-0 hover:bg-muted"
                             >
                               {rule.isActive ? (
                                 <Pause className="h-4 w-4" />
@@ -329,6 +347,7 @@ const AdminAutomationRules = () => {
                               size="sm"
                               onClick={() => window.location.href = `/automation-rules/${rule._id}/edit`}
                               title="Edit"
+                              className="h-8 w-8 p-0 hover:bg-muted"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -337,6 +356,7 @@ const AdminAutomationRules = () => {
                               size="sm"
                               onClick={() => handleDuplicate(rule)}
                               title="Duplicate"
+                              className="h-8 w-8 p-0 hover:bg-muted"
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
@@ -345,8 +365,9 @@ const AdminAutomationRules = () => {
                               size="sm"
                               onClick={() => handleDelete(rule._id)}
                               title="Delete"
+                              className="h-8 w-8 p-0 hover:bg-muted text-destructive hover:text-destructive"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -354,18 +375,21 @@ const AdminAutomationRules = () => {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="active" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Active Rules</CardTitle>
-              <CardDescription>Automation rules that are currently active</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <TabsContent value="active" className="space-y-0">
+          <div className="bg-card border-b border-border/50 px-8 py-6">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-foreground">Active Rules</h2>
+              <p className="text-sm text-muted-foreground">
+                Automation rules that are currently active
+              </p>
+            </div>
+          </div>
+          <div className="px-8 py-8">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -414,17 +438,19 @@ const AdminAutomationRules = () => {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="inactive" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inactive Rules</CardTitle>
-              <CardDescription>Automation rules that are currently disabled</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <TabsContent value="inactive" className="space-y-0">
+          <div className="bg-card border-b border-border/50 px-8 py-6">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-foreground">Inactive Rules</h2>
+              <p className="text-sm text-muted-foreground">
+                Automation rules that are currently disabled
+              </p>
+            </div>
+          </div>
+          <div className="px-8 py-8">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -473,17 +499,19 @@ const AdminAutomationRules = () => {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </TabsContent>
 
-        <TabsContent value="public" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Public Rules</CardTitle>
-              <CardDescription>Automation rules available for subscription plan assignment</CardDescription>
-            </CardHeader>
-            <CardContent>
+        <TabsContent value="public" className="space-y-0">
+          <div className="bg-card border-b border-border/50 px-8 py-6">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold text-foreground">Public Rules</h2>
+              <p className="text-sm text-muted-foreground">
+                Automation rules available for subscription plan assignment
+              </p>
+            </div>
+          </div>
+          <div className="px-8 py-8">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -536,10 +564,10 @@ const AdminAutomationRules = () => {
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
-          </Card>
+          </div>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 };

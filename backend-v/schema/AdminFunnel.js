@@ -148,6 +148,11 @@ const adminFunnelSchema = new mongoose.Schema({
         default: 'customer',        // <-- Default set to 'customer'
         required: true,             // <-- Added required: true as enum implies a choice must be made
     },
+    // Pixel capability flag (pixel-agnostic - no actual pixelId stored here)
+    pixelCapable: {
+        type: Boolean,
+        default: true // Indicates this funnel template can support pixel tracking
+    },
     stages: {
         type: [stageSchema],
         default: [],

@@ -3,6 +3,7 @@ const { getUserContext } = require('../middleware/unifiedCoachAuth');
 const CoachStaffService = require('../services/coachStaffService');
 const metaAdsService = require('../services/metaAdsService');
 const aiAdsAgentService = require('../services/aiAdsAgentService');
+const metaPixelService = require('../services/metaPixelService');
 const CoachMarketingCredentials = require('../schema/CoachMarketingCredentials');
 
 // List all campaigns for a coach
@@ -241,8 +242,57 @@ async function createCampaign(req, res) {
         if (campaignData.funnelId) campaignDoc.funnelId = campaignData.funnelId;
         if (campaignData.funnelUrl) campaignDoc.funnelUrl = campaignData.funnelUrl;
         
+        // Add pixel tracking settings if provided
+        if (campaignData.pixelSettings) {
+            campaignDoc.pixelTracking = {
+                pixelId: campaignData.pixelSettings.pixelId || null,
+                eventsTracked: [],
+                totalEventsForwarded: 0
+            };
+        }
+        
+        // Add Andromeda config if provided
+        if (campaignData.andromedaSettings?.enabled) {
+            campaignDoc.andromedaConfig = {
+                enabled: true,
+                format: campaignData.andromedaSettings.format || null,
+                dynamicProductAds: campaignData.andromedaSettings.dynamicProductAds?.enabled || false,
+                catalogId: campaignData.andromedaSettings.dynamicProductAds?.catalogId || null
+            };
+        }
+        
+        // Add template reference if provided
+        if (campaignData.templateId) {
+            campaignDoc.templateId = campaignData.templateId;
+        }
+        
         // Save to local database with all metadata
         const campaign = await AdCampaign.create(campaignDoc);
+        
+        // Create retargeting audience if pixel settings are configured
+        if (campaignData.pixelSettings?.enableRetargeting && campaignData.pixelSettings?.pixelId) {
+            try {
+                const audienceResult = await metaPixelService.createRetargetingAudience(
+                    coachId,
+                    campaignData.pixelSettings.pixelId,
+                    {
+                        name: `${campaignData.name} - Retargeting Audience`,
+                        eventType: campaignData.pixelSettings.conversionEvents?.[0]?.eventName || 'PageView',
+                        lookbackWindow: campaignData.pixelSettings.retargetingAudience?.lookbackWindow || 30,
+                        exclusionWindow: campaignData.pixelSettings.retargetingAudience?.exclusionWindow || 1,
+                        minFrequency: campaignData.pixelSettings.retargetingAudience?.minFrequency || 1,
+                        maxFrequency: campaignData.pixelSettings.retargetingAudience?.maxFrequency || null
+                    }
+                );
+                
+                // Update campaign with audience ID
+                campaign.pixelTracking.retargetingAudienceId = audienceResult.audienceId;
+                await campaign.save();
+            } catch (audienceError) {
+                console.warn('[CreateCampaign] Failed to create retargeting audience:', audienceError);
+                // Don't fail campaign creation if audience creation fails
+            }
+        }
         
         res.json({ 
             success: true, 

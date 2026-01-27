@@ -404,9 +404,6 @@ const getMe = async (req, res) => {
         const userData = user.toObject();
         delete userData.password;
 
-        // Log for debugging
-        console.log(`[getMe] Returning user data for ${userData.role}: ${userData.email || userData.name} (ID: ${userData._id})`);
-
         res.status(200).json({ success: true, user: userData });
     } catch (err) {
         console.error("GetMe error:", err);

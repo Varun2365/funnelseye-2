@@ -5,13 +5,18 @@ import { Badge } from './ui/badge';
 import { Progress } from './ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import { 
-    Users, 
-    DollarSign, 
-    TrendingUp, 
-    Activity, 
-    Shield, 
-    Settings, 
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from './ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Textarea } from './ui/textarea';
+import {
+    Users,
+    DollarSign,
+    TrendingUp,
+    Activity,
+    Shield,
+    Settings,
     AlertTriangle,
     CheckCircle,
     Clock,
@@ -25,7 +30,9 @@ import {
     Send,
     Eye,
     Play,
-    MessageSquare
+    MessageSquare,
+    MessageCircle,
+    Timer
 } from 'lucide-react';
 import adminApiService from '../services/adminApiService';
 
@@ -36,6 +43,19 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [lastUpdated, setLastUpdated] = useState(new Date());
+
+    // Send Message Dialog State
+    const [sendMessageDialogOpen, setSendMessageDialogOpen] = useState(false);
+    const [messagingChannels, setMessagingChannels] = useState([]);
+    const [templates, setTemplates] = useState([]);
+    const [sendMessageForm, setSendMessageForm] = useState({
+        channelId: '',
+        templateId: '',
+        message: '',
+        recipient: '',
+        delay: 0
+    });
+    const [sendingMessage, setSendingMessage] = useState(false);
 
     const fetchDashboardData = async () => {
         try {
@@ -81,6 +101,92 @@ const AdminDashboard = () => {
             </CardContent>
         </Card>
     );
+
+    // Send Message Functions
+    const loadMessagingChannels = async () => {
+        try {
+            const response = await fetch('/api/messaging/v3/channels', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                }
+            });
+            const result = await response.json();
+            if (result.success) {
+                setMessagingChannels(result.data);
+            }
+        } catch (error) {
+            console.error('Error loading messaging channels:', error);
+        }
+    };
+
+    const loadTemplates = async (channelId) => {
+        if (!channelId) return;
+
+        try {
+            const channel = messagingChannels.find(c => c._id === channelId);
+            if (channel && channel.type === 'whatsapp_api') {
+                const response = await fetch('/api/messaging/whatsapp/templates', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    setTemplates(result.data);
+                }
+            } else {
+                setTemplates([]);
+            }
+        } catch (error) {
+            console.error('Error loading templates:', error);
+            setTemplates([]);
+        }
+    };
+
+    const handleSendMessage = async () => {
+        try {
+            setSendingMessage(true);
+
+            const response = await fetch('/api/admin/send-message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                },
+                body: JSON.stringify(sendMessageForm)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                setSendMessageDialogOpen(false);
+                setSendMessageForm({
+                    channelId: '',
+                    templateId: '',
+                    message: '',
+                    recipient: '',
+                    delay: 0
+                });
+                alert('Message queued successfully!');
+            } else {
+                alert('Error queuing message: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Error sending message: ' + error.message);
+        } finally {
+            setSendingMessage(false);
+        }
+    };
+
+    const handleChannelChange = (channelId) => {
+        setSendMessageForm(prev => ({
+            ...prev,
+            channelId,
+            templateId: '' // Reset template when channel changes
+        }));
+        loadTemplates(channelId);
+    };
 
     const HealthIndicator = ({ status, label }) => {
         const getStatusColor = (status) => {
@@ -148,6 +254,128 @@ const AdminDashboard = () => {
                     </p>
                 </div>
                 <div className="flex space-x-2">
+                    <Dialog open={sendMessageDialogOpen} onOpenChange={setSendMessageDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" onClick={() => {
+                                loadMessagingChannels();
+                                setSendMessageDialogOpen(true);
+                            }}>
+                                <MessageCircle className="h-4 w-4 mr-2" />
+                                Send Message
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                                <DialogTitle>Send Message</DialogTitle>
+                                <DialogDescription>
+                                    Send a message through one of your messaging channels
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="channel" className="text-right">
+                                        Channel
+                                    </Label>
+                                    <Select value={sendMessageForm.channelId} onValueChange={handleChannelChange}>
+                                        <SelectTrigger className="col-span-3">
+                                            <SelectValue placeholder="Select a channel" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {messagingChannels.map(channel => (
+                                                <SelectItem key={channel._id} value={channel._id}>
+                                                    {channel.name} ({channel.type})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {templates.length > 0 && (
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="template" className="text-right">
+                                            Template
+                                        </Label>
+                                        <Select
+                                            value={sendMessageForm.templateId}
+                                            onValueChange={(value) => setSendMessageForm(prev => ({ ...prev, templateId: value }))}
+                                        >
+                                            <SelectTrigger className="col-span-3">
+                                                <SelectValue placeholder="Select a template (optional)" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {templates.map(template => (
+                                                    <SelectItem key={template.id} value={template.id}>
+                                                        {template.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="recipient" className="text-right">
+                                        Recipient
+                                    </Label>
+                                    <Input
+                                        id="recipient"
+                                        placeholder="Phone number (e.g., +1234567890)"
+                                        className="col-span-3"
+                                        value={sendMessageForm.recipient}
+                                        onChange={(e) => setSendMessageForm(prev => ({ ...prev, recipient: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="message" className="text-right">
+                                        Message
+                                    </Label>
+                                    <Textarea
+                                        id="message"
+                                        placeholder="Enter your message..."
+                                        className="col-span-3"
+                                        rows={4}
+                                        value={sendMessageForm.message}
+                                        onChange={(e) => setSendMessageForm(prev => ({ ...prev, message: e.target.value }))}
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="delay" className="text-right">
+                                        Delay (sec)
+                                    </Label>
+                                    <Input
+                                        id="delay"
+                                        type="number"
+                                        placeholder="0"
+                                        className="col-span-3"
+                                        value={sendMessageForm.delay}
+                                        onChange={(e) => setSendMessageForm(prev => ({ ...prev, delay: parseInt(e.target.value) || 0 }))}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button
+                                    type="submit"
+                                    onClick={handleSendMessage}
+                                    disabled={sendingMessage || !sendMessageForm.channelId || !sendMessageForm.message || !sendMessageForm.recipient}
+                                >
+                                    {sendingMessage ? (
+                                        <>
+                                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                            Queuing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Send Message
+                                        </>
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
                     <Button variant="outline" onClick={fetchDashboardData}>
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Refresh

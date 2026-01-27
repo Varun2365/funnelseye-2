@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const MessagingChannel = require('../schema/MessagingChannel');
 const Message = require('../schema/Message');
+const MessageTask = require('../schema/MessageTask');
 const Template = require('../schema/MessageTemplate');
 const User = require('../schema/User');
 const {
@@ -53,7 +54,6 @@ class MessagingV3Worker {
             this.startHealthMonitoring();
 
             this.isRunning = true;
-            console.log('✅ Messaging v3 Worker initialized successfully');
         } catch (error) {
             console.error('❌ Failed to initialize Messaging v3 Worker:', error);
             throw error;
@@ -74,6 +74,21 @@ class MessagingV3Worker {
             // Declare queues
             await this.channel.assertQueue('messaging_v3_single', { durable: true });
             await this.channel.assertQueue('messaging_v3_bulk', { durable: true });
+            await this.channel.assertQueue('message_queue', { durable: true });
+
+            // Consume from message_queue for admin-sent messages
+            this.channel.consume('message_queue', async (msg) => {
+                if (msg) {
+                    try {
+                        const messageData = JSON.parse(msg.content.toString());
+                        await this.processAdminMessage(messageData);
+                        this.channel.ack(msg);
+                    } catch (error) {
+                        console.error('❌ Error processing admin message:', error);
+                        this.channel.nack(msg, false, false); // Don't requeue on error
+                    }
+                }
+            });
 
             console.log('📡 Connected to RabbitMQ for Messaging v3');
         } catch (error) {
@@ -932,6 +947,174 @@ class MessagingV3Worker {
                 ...this.stats,
                 rabbitmqConnected: this.connection ? true : false
             };
+        }
+    }
+
+    /**
+     * Process admin-sent message from queue
+     */
+    async processAdminMessage(messageData) {
+        const startTime = Date.now();
+        console.log(`📨 Processing admin message for ${messageData.recipient}`);
+
+        try {
+            const MessageTask = mongoose.model('MessageTask');
+
+            // Update task status to processing
+            await MessageTask.findByIdAndUpdate(messageData.taskId, {
+                status: 'processing',
+                updatedAt: new Date()
+            });
+
+            // Get messaging channel
+            const channel = await MessagingChannel.findById(messageData.channelId);
+            if (!channel || !channel.isActive) {
+                throw new Error('Messaging channel not found or inactive');
+            }
+
+            let success = false;
+            let error = null;
+
+            // Send message based on channel type
+            switch (messageData.channelType) {
+                case 'whatsapp_api':
+                    success = await this.sendWhatsAppAPIMessage(channel, messageData);
+                    break;
+                case 'whatsapp_bailey':
+                    success = await this.sendBaileyMessage(channel, messageData);
+                    break;
+                case 'whatsapp_waha':
+                    success = await this.sendWahaMessage(channel, messageData);
+                    break;
+                case 'email_smtp':
+                    success = await this.sendEmailMessage(channel, messageData);
+                    break;
+                default:
+                    throw new Error(`Unsupported channel type: ${messageData.channelType}`);
+            }
+
+            // Update task status
+            const updateData = {
+                status: success ? 'sent' : 'failed',
+                sentAt: success ? new Date() : undefined,
+                error: error,
+                updatedAt: new Date()
+            };
+
+            await MessageTask.findByIdAndUpdate(messageData.taskId, updateData);
+
+            const processingTime = Date.now() - startTime;
+            console.log(`✅ Admin message ${success ? 'sent' : 'failed'} in ${processingTime}ms`);
+
+            // Update stats
+            this.stats.processed++;
+            if (!success) this.stats.failed++;
+
+        } catch (error) {
+            console.error('❌ Error processing admin message:', error);
+
+            // Update task status to failed
+            try {
+                const MessageTask = mongoose.model('MessageTask');
+                await MessageTask.findByIdAndUpdate(messageData.taskId, {
+                    status: 'failed',
+                    error: error.message,
+                    updatedAt: new Date()
+                });
+            } catch (updateError) {
+                console.error('❌ Error updating task status:', updateError);
+            }
+
+            this.stats.failed++;
+        }
+    }
+
+    /**
+     * Send WhatsApp API message
+     */
+    async sendWhatsAppAPIMessage(channel, messageData) {
+        try {
+            const whatsappService = require('../services/whatsappService');
+            await whatsappService.sendMessage(
+                channel.config.whatsappApi.phoneNumberId,
+                messageData.recipient,
+                { text: messageData.message }
+            );
+            return true;
+        } catch (error) {
+            console.error('WhatsApp API send error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Send Bailey's WhatsApp message
+     */
+    async sendBaileyMessage(channel, messageData) {
+        try {
+            // Get Bailey's session
+            const baileysManager = require('../controllers/baileysController').baileysManager;
+            const session = baileysManager.getSession(channel.config.whatsappBailey.sessionId);
+
+            if (!session || session.status !== 'connected') {
+                throw new Error('Bailey session not connected');
+            }
+
+            // Send message via socket
+            await session.socket.sendMessage(messageData.recipient + '@s.whatsapp.net', {
+                text: messageData.message
+            });
+
+            return true;
+        } catch (error) {
+            console.error('Bailey send error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Send Email message
+     */
+    async sendEmailMessage(channel, messageData) {
+        try {
+            const emailService = require('../services/emailService');
+            await emailService.sendEmail({
+                to: messageData.recipient,
+                subject: 'Message from FunnelsEye',
+                text: messageData.message,
+                html: `<p>${messageData.message.replace(/\n/g, '<br>')}</p>`
+            });
+            return true;
+        } catch (error) {
+            console.error('Email send error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Send WAHA WhatsApp message
+     */
+    async sendWahaMessage(channel, messageData) {
+        try {
+            const { wahaManager } = require('../controllers/wahaController');
+
+            // Convert phone number to chat ID format if needed
+            let chatId = messageData.recipient;
+            if (!chatId.includes('@')) {
+                // Assume it's a phone number, convert to WhatsApp format
+                chatId = chatId.replace(/^\+/, '') + '@c.us';
+            }
+
+            const result = await wahaManager.sendMessage(
+                channel.config.whatsappWaha.sessionId,
+                chatId,
+                messageData.message
+            );
+
+            return result.success;
+        } catch (error) {
+            console.error('WAHA send error:', error);
+            return false;
         }
     }
 

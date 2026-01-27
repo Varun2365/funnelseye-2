@@ -172,13 +172,15 @@ const automationRunSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+}, {
+  suppressReservedKeysWarning: true
 });
 
 // Indexes
+// Note: runId index is already defined in field definition (unique: true)
 automationRunSchema.index({ coachId: 1, status: 1 });
 automationRunSchema.index({ sequenceId: 1, status: 1 });
 automationRunSchema.index({ leadId: 1, status: 1 });
-automationRunSchema.index({ runId: 1 }, { unique: true });
 automationRunSchema.index({ lastActivityAt: 1 });
 
 module.exports = mongoose.model('AutomationRun', automationRunSchema);

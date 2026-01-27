@@ -4,6 +4,7 @@ const { Lead, Funnel, Coach, FormSubmissionMessage } = require('../schema');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const funnelseyeEventEmitter = require('../services/eventEmitterService');
+const { publishEvent } = require('../services/rabbitmqProducer');
 
 /**
  * Helper function to determine lead temperature based on submitted data.
@@ -217,6 +218,25 @@ const captureLead = async (req, res) => {
                 .then(() => console.log(`[PUBLIC_CAPTURE] Published event: ${eventName}`))
                 .catch(err => console.error(`[PUBLIC_CAPTURE] Failed to publish event: ${eventName}`, err));
             
+            // Also publish form_submitted event for automation rules if this is a form submission
+            if (funnelId && eventName === 'lead_updated') {
+                const formSubmittedPayload = {
+                    eventName: 'form_submitted',
+                    payload: {
+                        leadId: existingLead._id,
+                        leadData: updatedLead.toObject(),
+                        coachId: coachId,
+                        funnelId: funnelId,
+                        formType: 'funnel_form',
+                        source: 'funnel_form',
+                        hasBookingForm: !!(clientQuestions || coachQuestions)
+                    }
+                };
+                publishEvent('form_submitted', formSubmittedPayload)
+                    .then(() => console.log(`[PUBLIC_CAPTURE] Published event: form_submitted`))
+                    .catch(err => console.error(`[PUBLIC_CAPTURE] Failed to publish event: form_submitted`, err));
+            }
+            
             return res.status(200).json({
                 success: true,
                 message: 'Lead updated successfully with new information.',
@@ -313,6 +333,25 @@ const captureLead = async (req, res) => {
             publishEvent(eventName, eventPayload)
                 .then(() => console.log(`[PUBLIC_CAPTURE] Published event: ${eventName}`))
                 .catch(err => console.error(`[PUBLIC_CAPTURE] Failed to publish event: ${eventName}`, err));
+            
+            // Also publish form_submitted event for automation rules
+            if (funnelId) {
+                const formSubmittedPayload = {
+                    eventName: 'form_submitted',
+                    payload: {
+                        leadId: newLead._id,
+                        leadData: newLead.toObject(),
+                        coachId: coachId,
+                        funnelId: funnelId,
+                        formType: 'funnel_form',
+                        source: 'funnel_form',
+                        hasBookingForm: !!(clientQuestions || coachQuestions)
+                    }
+                };
+                publishEvent('form_submitted', formSubmittedPayload)
+                    .then(() => console.log(`[PUBLIC_CAPTURE] Published event: form_submitted`))
+                    .catch(err => console.error(`[PUBLIC_CAPTURE] Failed to publish event: form_submitted`, err));
+            }
 
             return res.status(201).json({
                 success: true,

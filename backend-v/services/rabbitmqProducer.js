@@ -113,6 +113,45 @@ const closeConnection = async () => {
     }
 };
 
+/**
+ * Publishes a message to a specific queue
+ * @param {string} queueName - The queue name
+ * @param {object} message - The message payload
+ * @param {object} options - Additional options
+ */
+const publishToQueue = async (queueName, message, options = {}) => {
+    if (!channel) {
+        console.error(`[RabbitMQ Service] Channel not initialized. Cannot publish to queue.`);
+        return;
+    }
+
+    try {
+        // Assert queue exists
+        await channel.assertQueue(queueName, { durable: true });
+
+        // Publish message
+        const published = channel.sendToQueue(
+            queueName,
+            Buffer.from(JSON.stringify(message)),
+            {
+                persistent: true,
+                ...options
+            }
+        );
+
+        if (published) {
+            console.log(`📨 Message published to queue: ${queueName}`);
+        } else {
+            console.warn(`⚠️ Message not published to queue: ${queueName} (queue full?)`);
+        }
+
+        return published;
+    } catch (error) {
+        console.error(`[RabbitMQ Service] Error publishing to queue ${queueName}:`, error.message);
+        return false;
+    }
+};
+
 process.on('beforeExit', closeConnection);
 process.on('SIGINT', closeConnection);
 
@@ -120,4 +159,5 @@ module.exports = {
     init,
     publishEvent,
     consumeEvents,
+    publishToQueue,
 };

@@ -15,16 +15,12 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/Funnel
 // Initialize message processor worker
 const initMessageProcessorWorker = async () => {
     try {
-        logger.info('[MESSAGE_WORKER] Initializing message processor worker...');
-
         // Connect to MongoDB
         await mongoose.connect(MONGODB_URI);
-        logger.info('[MESSAGE_WORKER] Connected to MongoDB');
 
         // Connect to RabbitMQ
         const connection = await amqp.connect(RABBITMQ_URL);
         const channel = await connection.createChannel();
-        logger.info('[MESSAGE_WORKER] Connected to RabbitMQ');
 
         // Ensure queues exist with same options as messageQueueService
         const queues = {
@@ -227,7 +223,7 @@ const initMessageProcessorWorker = async () => {
             }
         }, { noAck: false });
 
-        logger.info('[MESSAGE_WORKER] Message processor worker started and listening for messages...');
+        // Message processor worker started
 
         // Handle graceful shutdown
         process.on('SIGINT', async () => {

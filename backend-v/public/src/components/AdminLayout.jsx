@@ -164,7 +164,11 @@ const AdminLayout = () => {
                 {/* Group Items */}
                 <div className="space-y-1">
                   {group.items.map((item) => {
-                    const isActive = location.pathname === item.href;
+                    // For Automation Rules, check if pathname starts with the href
+                    // For other items, use exact match
+                    const isActive = item.name === 'Automation Rules' 
+                      ? location.pathname.startsWith(item.href)
+                      : location.pathname === item.href;
                     
                     // Special handling for Course Creation with collapsible submenu
                     if (item.hasDropdown && item.name === 'Course Creation') {
@@ -360,7 +364,7 @@ const AdminLayout = () => {
       {/* Main content */}
       <div className="flex-1 lg:ml-64">
         {/* Page content */}
-        <main className="p-6">
+        <main className="p-0">
           <Outlet />
         </main>
       </div>

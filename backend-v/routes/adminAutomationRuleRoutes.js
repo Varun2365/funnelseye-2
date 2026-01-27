@@ -12,6 +12,7 @@ const {
     getEventsAndActions,
     getFlows,
     getRuns,
+    getRunDetails,
     getAnalytics,
     assignFunnel,
     startAutomationRun,
@@ -28,6 +29,7 @@ router.get('/builder-resources', getBuilderResources);
 router.get('/events-actions', getEventsAndActions);
 router.get('/flows', getFlows);
 router.get('/runs', getRuns);
+router.get('/runs/:executionId', getRunDetails);
 router.get('/analytics', getAnalytics);
 router.post('/run', startAutomationRun);
 router.post('/validate-graph', validateWorkflow);

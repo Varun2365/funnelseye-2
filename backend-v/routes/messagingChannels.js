@@ -119,51 +119,7 @@ router.get('/:id/stats',
 );
 
 // ===== BAILEY'S WHATSAPP SCANNER ROUTES =====
-
-// @route   POST /api/messaging-channels/bailey/init
-// @desc    Initialize Bailey's WhatsApp scanner session
-// @access  Private (Admin)
-router.post('/bailey/init',
-    verifyAdminToken,
-    requirePermission('systemSettings'),
-    messagingChannelController.initBaileySession
-);
-
-// @route   GET /api/messaging-channels/bailey/:sessionId/qr
-// @desc    Get QR code for Bailey's WhatsApp scanner
-// @access  Private (Admin)
-router.get('/bailey/:sessionId/qr',
-    verifyAdminToken,
-    requirePermission('systemSettings'),
-    messagingChannelController.getBaileyQR
-);
-
-// @route   GET /api/messaging-channels/bailey/:sessionId/status
-// @desc    Get Bailey's WhatsApp scanner connection status
-// @access  Private (Admin)
-router.get('/bailey/:sessionId/status',
-    verifyAdminToken,
-    requirePermission('systemSettings'),
-    noLogActivity,
-    messagingChannelController.getBaileyStatus
-);
-
-// @route   POST /api/messaging-channels/bailey/:sessionId/connect
-// @desc    Connect Bailey's WhatsApp scanner after QR scan
-// @access  Private (Admin)
-router.post('/bailey/:sessionId/connect',
-    verifyAdminToken,
-    requirePermission('systemSettings'),
-    messagingChannelController.connectBaileyDevice
-);
-
-// @route   DELETE /api/messaging-channels/bailey/:sessionId
-// @desc    Disconnect and cleanup Bailey's WhatsApp scanner session
-// @access  Private (Admin)
-router.delete('/bailey/:sessionId',
-    verifyAdminToken,
-    requirePermission('systemSettings'),
-    messagingChannelController.disconnectBaileySession
-);
+// Note: Bailey's routes have been moved to /api/baileys/ for better organization
+// Use /api/baileys/init, /api/baileys/:sessionId/* endpoints instead
 
 module.exports = router;

@@ -1,5 +1,7 @@
 const AdminAutomationRule = require('../schema/AdminAutomationRule');
 const asyncHandler = require('../middleware/async');
+const automationMessagingService = require('../services/automationMessagingService');
+const mongoose = require('mongoose');
 
 /**
  * @desc Get all admin automation rules
@@ -207,9 +209,26 @@ exports.duplicateRule = asyncHandler(async (req, res) => {
 exports.getBuilderResources = asyncHandler(async (req, res) => {
     const AdminFunnel = require('../schema/AdminFunnel');
 
+    // Get funnels
     const funnels = await AdminFunnel.find({ isActive: true })
         .select('_id name funnelUrl')
         .sort({ name: 1 });
+
+    // Get messaging channels (admin can see all)
+    const messagingChannels = await automationMessagingService.getAvailableChannels(
+        req.admin.id,
+        'admin',
+        null, // All channel types
+        false // Only active channels
+    );
+
+    // Get message templates (admin can see all, but we'll filter by admin's own templates)
+    const messageTemplates = await automationMessagingService.getAvailableTemplates(
+        req.admin.id
+    );
+
+    // Get channel categories info
+    const channelCategories = automationMessagingService.getChannelCategories();
 
     res.status(200).json({
         success: true,
@@ -218,7 +237,10 @@ exports.getBuilderResources = asyncHandler(async (req, res) => {
                 id: funnel._id,
                 name: funnel.name,
                 funnelUrl: funnel.funnelUrl
-            }))
+            })),
+            messagingChannels,
+            messageTemplates,
+            channelCategories
         }
     });
 });
@@ -244,6 +266,7 @@ exports.getEventsAndActions = asyncHandler(async (req, res) => {
     const actions = [
         { value: 'send_email', label: 'Send Email', description: 'Send an email to the lead', category: 'Communication' },
         { value: 'send_sms', label: 'Send SMS', description: 'Send an SMS message', category: 'Communication' },
+        { value: 'send_whatsapp_message', label: 'Send WhatsApp Message', description: 'Send a WhatsApp message to the lead', category: 'Communication' },
         { value: 'update_lead_status', label: 'Update Lead Status', description: 'Change the lead\'s status', category: 'Lead Management' },
         { value: 'create_task', label: 'Create Task', description: 'Create a task for the team', category: 'Task Management' },
         { value: 'send_webhook', label: 'Send Webhook', description: 'Send data to external service', category: 'System Integration' },
@@ -291,11 +314,132 @@ exports.getFlows = asyncHandler(async (req, res) => {
  * @access Private (Admin only)
  */
 exports.getRuns = asyncHandler(async (req, res) => {
-    // Return empty array for now - runs would be execution history
-    res.status(200).json({
-        success: true,
-        data: []
-    });
+    try {
+        // Get AutomationExecutionState model
+        const AutomationExecutionState = mongoose.models.AutomationExecutionState || 
+            mongoose.model('AutomationExecutionState', new mongoose.Schema({}, { strict: false, collection: 'automation_execution_states' }));
+        
+        // Fetch all execution states with populated data
+        const executions = await AutomationExecutionState.find({})
+            .populate('automationRuleId', 'name description')
+            .populate('leadId', 'name email phone')
+            .populate('coachId', 'name email')
+            .populate('funnelId', 'name')
+            .sort({ startedAt: -1 })
+            .limit(100); // Limit to last 100 runs
+        
+        // Transform data for frontend
+        const runs = executions.map(execution => ({
+            _id: execution._id,
+            executionId: execution.executionId,
+            automationRuleId: execution.automationRuleId?._id,
+            ruleName: execution.automationRuleId?.name || 'Unknown Rule',
+            leadId: execution.leadId?._id,
+            leadName: execution.leadId?.name || 'Unknown Lead',
+            leadEmail: execution.leadId?.email,
+            leadPhone: execution.leadId?.phone,
+            coachId: execution.coachId?._id,
+            coachName: execution.coachId?.name || 'Unknown Coach',
+            funnelId: execution.funnelId?._id,
+            funnelName: execution.funnelId?.name,
+            triggerEvent: execution.triggerEvent,
+            triggerNodeId: execution.triggerNodeId,
+            status: execution.status,
+            currentNodeId: execution.currentNodeId,
+            startedAt: execution.startedAt,
+            lastActivityAt: execution.lastActivityAt,
+            completedAt: execution.completedAt,
+            metrics: execution.metrics || {},
+            executionHistory: execution.executionHistory || [],
+            errorLogs: execution.errorLogs || [],
+            visitedNodes: execution.visitedNodes || [],
+            completedNodes: execution.completedNodes || []
+        }));
+        
+        res.status(200).json({
+            success: true,
+            data: runs
+        });
+    } catch (error) {
+        console.error('Error fetching runs:', error);
+        res.status(200).json({
+            success: true,
+            data: [] // Return empty array on error
+        });
+    }
+});
+
+/**
+ * @desc Get detailed execution logs for a specific run
+ * @route GET /api/admin-automation-rules/runs/:executionId
+ * @access Private (Admin only)
+ */
+exports.getRunDetails = asyncHandler(async (req, res) => {
+    try {
+        const { executionId } = req.params;
+        
+        // Get AutomationExecutionState model
+        const AutomationExecutionState = mongoose.models.AutomationExecutionState || 
+            mongoose.model('AutomationExecutionState', new mongoose.Schema({}, { strict: false, collection: 'automation_execution_states' }));
+        
+        // Fetch execution state with all details
+        const execution = await AutomationExecutionState.findOne({ executionId })
+            .populate('automationRuleId', 'name description nodes edges')
+            .populate('leadId', 'name email phone status score')
+            .populate('coachId', 'name email')
+            .populate('funnelId', 'name funnelUrl');
+        
+        if (!execution) {
+            return res.status(404).json({
+                success: false,
+                message: 'Execution not found'
+            });
+        }
+        
+        // Get the automation rule to map node IDs to node details
+        const rule = execution.automationRuleId;
+        const nodeMap = {};
+        if (rule && rule.nodes) {
+            rule.nodes.forEach(node => {
+                nodeMap[node.id] = {
+                    id: node.id,
+                    type: node.type,
+                    nodeType: node.nodeType,
+                    label: node.label,
+                    config: node.config || {}
+                };
+            });
+        }
+        
+        // Enrich execution history with node details
+        const enrichedHistory = (execution.executionHistory || []).map(entry => ({
+            ...entry.toObject(),
+            nodeDetails: nodeMap[entry.nodeId] || null
+        }));
+        
+        // Enrich error logs with node details
+        const enrichedErrorLogs = (execution.errorLogs || []).map(entry => ({
+            ...entry.toObject(),
+            nodeDetails: nodeMap[entry.nodeId] || null
+        }));
+        
+        res.status(200).json({
+            success: true,
+            data: {
+                ...execution.toObject(),
+                executionHistory: enrichedHistory,
+                errorLogs: enrichedErrorLogs,
+                nodeMap: nodeMap
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching run details:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch run details',
+            error: error.message
+        });
+    }
 });
 
 /**
@@ -342,8 +486,18 @@ exports.assignFunnel = asyncHandler(async (req, res) => {
         });
     }
 
-    rule.funnelId = funnelId || null;
+    // Convert funnelId to ObjectId if provided, otherwise set to null
+    const mongoose = require('mongoose');
+    if (funnelId && mongoose.Types.ObjectId.isValid(funnelId)) {
+        rule.funnelId = new mongoose.Types.ObjectId(funnelId);
+    } else {
+        rule.funnelId = null;
+    }
+    
     await rule.save();
+
+    // Populate funnelId for response
+    await rule.populate('funnelId', 'name funnelUrl');
 
     res.status(200).json({
         success: true,

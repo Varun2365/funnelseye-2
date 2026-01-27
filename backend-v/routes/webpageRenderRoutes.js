@@ -4,14 +4,145 @@ const express = require('express');
 const AdminFunnel = require('../schema/AdminFunnel');
 const CoachSubscription = require('../schema/CoachSubscription');
 const SubscriptionPlan = require('../schema/SubscriptionPlan');
+const CoachMarketingCredentials = require('../schema/CoachMarketingCredentials');
 const asyncHandler = require('../middleware/async');
 const mongoose = require('mongoose');
 
 const router = express.Router();
 
+// Helper function to generate Meta Pixel code
+const generateMetaPixelCode = (pixelId, coachId, funnelId, pageId, stageName = '', stage = null) => {
+    if (!pixelId) return '';
+    const safeStageName = (stageName || '').replace(/'/g, "\\'");
+    const stageOrder = stage?.order || 0;
+    
+    return `
+    <!-- Meta Pixel Code -->
+    <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '${pixelId}');
+        fbq('track', 'PageView');
+    </script>
+    <noscript><img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=${pixelId}&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- End Meta Pixel Code -->
+    
+    <!-- Meta Pixel Server-Side Tracking with Stage Info -->
+    <script>
+        // Track page view to our server (for Conversions API)
+        (function() {
+            const pixelData = {
+                pixelId: '${pixelId}',
+                coachId: '${coachId || ''}',
+                funnelId: '${funnelId || ''}',
+                pageId: '${pageId || ''}',
+                eventName: 'PageView',
+                eventTime: Math.floor(Date.now() / 1000),
+                actionSource: 'website',
+                userData: {
+                    client_ip_address: '',
+                    client_user_agent: navigator.userAgent
+                },
+                customData: {
+                    content_name: '${safeStageName}',
+                    content_category: 'funnel_page',
+                    funnel_stage: '${pageId || ''}',
+                    funnel_stage_name: '${safeStageName}',
+                    funnel_stage_order: ${stageOrder}
+                }
+            };
+            
+            // Track FunnelStageViewed custom event (REQUIRED for stage-wise retargeting)
+            // CRITICAL: Fires ONCE per stage per session (Meta best practice)
+            // This is the ONLY custom event we use for segmentation
+            const stageViewKey = 'funnel_stage_viewed_${pageId || ''}';
+            const hasViewed = sessionStorage.getItem(stageViewKey);
+            
+            if (!hasViewed && typeof fbq !== 'undefined') {
+                sessionStorage.setItem(stageViewKey, 'true');
+                
+                // Client-side Meta Pixel tracking
+                fbq('trackCustom', 'FunnelStageViewed', {
+                    funnel_id: '${funnelId || ''}',
+                    stage_id: '${pageId || ''}',
+                    stage_order: ${stageOrder}
+                });
+                
+                // Server-side tracking (for Conversions API)
+                fetch(window.location.origin + '/api/pixel/track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...pixelData,
+                        eventName: 'FunnelStageViewed',
+                        customData: {
+                            ...pixelData.customData,
+                            funnel_id: '${funnelId || ''}',
+                            stage_id: '${pageId || ''}',
+                            stage_order: ${stageOrder}
+                        }
+                    })
+                }).catch(err => console.debug('Pixel tracking error:', err));
+            }
+            
+            // Send PageView to our backend for server-side tracking
+            fetch(window.location.origin + '/api/pixel/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pixelData)
+            }).catch(err => console.debug('Pixel tracking error:', err));
+        })();
+    </script>
+    `;
+};
+
+/**
+ * Resolve coach's pixel settings at runtime
+ * CRITICAL: Pixel resolution happens at runtime based on coachId from URL
+ * AdminFunnel is pixel-agnostic - no static pixelId stored there
+ */
+async function resolveCoachPixelSettings(coachId) {
+    if (!coachId || !mongoose.Types.ObjectId.isValid(coachId)) {
+        return { pixelId: null, enabled: false, exitIntentEnabled: false };
+    }
+    
+    try {
+        const credentials = await CoachMarketingCredentials.findOne({ coachId })
+            .select('metaAds.pixelId metaAds.pixelEnabled metaAds.isConnected metaAds.exitIntentTrackingEnabled');
+        
+        if (!credentials || !credentials.metaAds?.isConnected) {
+            return { pixelId: null, enabled: false, exitIntentEnabled: false };
+        }
+        
+        const pixelId = credentials.metaAds?.pixelId;
+        const enabled = credentials.metaAds?.pixelEnabled && !!pixelId;
+        const exitIntentEnabled = credentials.metaAds?.exitIntentTrackingEnabled || false;
+        
+        return { pixelId, enabled, exitIntentEnabled };
+    } catch (error) {
+        console.error(`[resolveCoachPixelSettings] Error resolving pixel for coach ${coachId}:`, error);
+        return { pixelId: null, enabled: false, exitIntentEnabled: false };
+    }
+}
+
 // Helper function to render funnel page
-const renderFunnelPage = (funnel, stage, coachId = null) => {
+const renderFunnelPage = async (funnel, stage, coachId = null, coachPixelSettings = null) => {
     const basicInfo = stage.basicInfo || {};
+    
+    // Resolve pixel settings at runtime from coach's Meta account
+    // NEVER read from AdminFunnel - it's pixel-agnostic
+    const pixelSettings = coachPixelSettings || await resolveCoachPixelSettings(coachId);
+    const pixelId = pixelSettings.pixelId;
+    const pixelEnabled = pixelSettings.enabled && !!pixelId;
+    const exitIntentEnabled = pixelSettings.exitIntentEnabled || false;
     
     return `
 <!DOCTYPE html>
@@ -29,6 +160,8 @@ const renderFunnelPage = (funnel, stage, coachId = null) => {
     ${basicInfo.socialImage ? `<meta property="og:image" content="${basicInfo.socialImage}">` : ''}
     <meta property="og:type" content="website">
     
+    ${pixelEnabled ? generateMetaPixelCode(pixelId, coachId, funnel._id.toString(), stage.pageId, stage.name, stage) : ''}
+    
     ${basicInfo.customHtmlHead || ''}
 
     <style>
@@ -40,6 +173,173 @@ const renderFunnelPage = (funnel, stage, coachId = null) => {
     ${stage.html || ''}
 
     ${basicInfo.customHtmlBody || ''}
+    
+    ${pixelEnabled ? `
+    <script>
+        // Meta Pixel Best Practices: Standard Events + Minimal Custom Events
+        (function() {
+            const funnelData = {
+                funnelId: '${funnel._id.toString()}',
+                stageId: '${stage.pageId || ''}',
+                stageOrder: ${stage.order || 0},
+                coachId: '${coachId || ''}',
+                pixelId: '${pixelId}',
+                exitIntentEnabled: ${exitIntentEnabled}
+            };
+            
+            // Track Lead event when form is submitted (STANDARD Meta event)
+            // Also track CompleteRegistration for non-paid conversions (webinar/call signups)
+            document.addEventListener('submit', function(e) {
+                const form = e.target;
+                if (form.tagName === 'FORM') {
+                    const formType = form.getAttribute('data-form-type') || 'lead'; // 'lead', 'webinar', 'call', 'course'
+                    const isNonPaidConversion = ['webinar', 'call', 'course'].includes(formType);
+                    
+                    // Standard Lead event (Meta-optimized) - for all form submissions
+                    if (typeof fbq !== 'undefined') {
+                        fbq('track', 'Lead', {
+                            content_name: '${(stage.name || '').replace(/'/g, "\\'")}',
+                            content_category: 'form_submission',
+                            funnel_stage: funnelData.stageId,
+                            funnel_stage_order: funnelData.stageOrder
+                        });
+                        
+                        // Track CompleteRegistration for non-paid conversions (webinar/call/course)
+                        if (isNonPaidConversion) {
+                            fbq('track', 'CompleteRegistration', {
+                                content_name: '${(stage.name || '').replace(/'/g, "\\'")}',
+                                content_category: formType,
+                                funnel_stage: funnelData.stageId,
+                                funnel_stage_order: funnelData.stageOrder
+                            });
+                        }
+                    }
+                    
+                    // Server-side tracking
+                    fetch(window.location.origin + '/api/pixel/track', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            pixelId: funnelData.pixelId,
+                            coachId: funnelData.coachId,
+                            funnelId: funnelData.funnelId,
+                            pageId: funnelData.stageId,
+                            eventName: 'Lead',
+                            eventTime: Math.floor(Date.now() / 1000),
+                            actionSource: 'website',
+                            customData: {
+                                content_name: '${(stage.name || '').replace(/'/g, "\\'")}',
+                                content_category: 'form_submission',
+                                funnel_stage: funnelData.stageId,
+                                funnel_stage_order: funnelData.stageOrder,
+                                form_type: formType
+                            }
+                        })
+                    }).catch(err => console.debug('Pixel tracking error:', err));
+                    
+                    // Also track CompleteRegistration server-side if non-paid conversion
+                    if (isNonPaidConversion) {
+                        fetch(window.location.origin + '/api/pixel/track', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                pixelId: funnelData.pixelId,
+                                coachId: funnelData.coachId,
+                                funnelId: funnelData.funnelId,
+                                pageId: funnelData.stageId,
+                                eventName: 'CompleteRegistration',
+                                eventTime: Math.floor(Date.now() / 1000),
+                                actionSource: 'website',
+                                customData: {
+                                    content_name: '${(stage.name || '').replace(/'/g, "\\'")}',
+                                    content_category: formType,
+                                    funnel_stage: funnelData.stageId,
+                                    funnel_stage_order: funnelData.stageOrder
+                                }
+                            })
+                        }).catch(err => console.debug('Pixel tracking error:', err));
+                    }
+                }
+            });
+            
+            // Track ViewContent for product/service pages (STANDARD Meta event)
+            if (document.querySelector('[data-pixel-event="ViewContent"]')) {
+                if (typeof fbq !== 'undefined') {
+                    fbq('track', 'ViewContent', {
+                        content_name: '${(stage.name || '').replace(/'/g, "\\'")}',
+                        content_category: 'funnel_page',
+                        funnel_stage: funnelData.stageId
+                    });
+                }
+            }
+            
+            // Track exit intent (OPTIONAL custom event - only if enabled)
+            if (funnelData.exitIntentEnabled) {
+                let exitIntentTracked = false;
+                document.addEventListener('mouseleave', function(e) {
+                    if (e.clientY <= 0 && !exitIntentTracked) {
+                        exitIntentTracked = true;
+                        if (typeof fbq !== 'undefined') {
+                            fbq('trackCustom', 'ExitIntent', {
+                                funnel_id: funnelData.funnelId,
+                                stage_id: funnelData.stageId,
+                                stage_order: funnelData.stageOrder
+                            });
+                        }
+                    }
+                }, { once: true });
+            }
+            
+            // Internal analytics only (NOT sent to Meta Pixel)
+            // Tracked for dashboard analytics but don't clutter Meta events
+            const internalAnalytics = {
+                timeSpent: 0,
+                maxScroll: 0,
+                buttonClicks: []
+            };
+            
+            const startTime = Date.now();
+            
+            // Track time spent (internal only - sent to /api/funnels/track)
+            setTimeout(function() {
+                internalAnalytics.timeSpent = Math.floor((Date.now() - startTime) / 1000);
+                fetch(window.location.origin + '/api/funnels/track', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        funnelId: funnelData.funnelId,
+                        stageId: funnelData.stageId,
+                        eventType: 'PageEngaged',
+                        sessionId: localStorage.getItem('funnel_session_id') || 'unknown',
+                        metadata: {
+                            time_spent: internalAnalytics.timeSpent,
+                            stage_name: '${(stage.name || '').replace(/'/g, "\\'")}'
+                        }
+                    })
+                }).catch(() => {});
+            }, 10000);
+            
+            // Track scroll depth (internal only)
+            window.addEventListener('scroll', function() {
+                const scrollPercent = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+                if (scrollPercent > internalAnalytics.maxScroll) {
+                    internalAnalytics.maxScroll = scrollPercent;
+                }
+            });
+            
+            // Track button clicks (internal only)
+            document.addEventListener('click', function(e) {
+                const button = e.target.closest('button, a[data-pixel-track]');
+                if (button) {
+                    internalAnalytics.buttonClicks.push({
+                        text: button.textContent.trim() || button.getAttribute('aria-label') || 'Unknown',
+                        timestamp: Date.now()
+                    });
+                }
+            });
+        })();
+    </script>
+    ` : ''}
 
     <script>
         // Store coachId in localStorage for lead tracking
@@ -131,8 +431,8 @@ router.get('/preview/funnels/:funnelSlug/:pageSlug', asyncHandler(async (req, re
         return next();
     }
 
-    // Render page without coachId (preview mode)
-    const fullHtmlContent = renderFunnelPage(funnel, stage, null);
+    // Render page without coachId (preview mode) - NO PIXEL INJECTION
+    const fullHtmlContent = await renderFunnelPage(funnel, stage, null, { pixelId: null, enabled: false });
     res.set('Content-Type', 'text/html');
     res.send(fullHtmlContent);
 }));
@@ -221,8 +521,11 @@ router.get('/:coachId/funnels/:funnelSlug/:pageSlug', asyncHandler(async (req, r
         return next();
     }
 
-    // 5. Render the funnel page with coachId
-    const fullHtmlContent = renderFunnelPage(funnel, stage, coachId);
+    // 5. Resolve coach's pixel settings at runtime
+    const coachPixelSettings = await resolveCoachPixelSettings(coachId);
+    
+    // 6. Render the funnel page with coachId and resolved pixel settings
+    const fullHtmlContent = await renderFunnelPage(funnel, stage, coachId, coachPixelSettings);
     res.set('Content-Type', 'text/html');
     res.send(fullHtmlContent);
 }));

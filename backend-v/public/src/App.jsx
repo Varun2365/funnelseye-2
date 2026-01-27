@@ -78,10 +78,9 @@ function ProtectedRoute({ children, requiredRole }) {
 function AppContent() {
   const { isAuthenticated, loading, admin } = useAuth();
   
-  console.log('🔐 [APP_CONTENT] Rendering with state:', { isAuthenticated, loading, admin: admin ? 'exists' : 'null' });
-
+ 
   if (loading) {
-    console.log('🔐 [APP_CONTENT] Still loading, showing spinner');
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="flex flex-col items-center space-y-4 reveal-fade">
@@ -91,8 +90,7 @@ function AppContent() {
       </div>
     );
   }
-  
-  console.log('🔐 [APP_CONTENT] Not loading, isAuthenticated:', isAuthenticated);
+
 
   return (
     <Router>

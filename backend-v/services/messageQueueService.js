@@ -37,7 +37,6 @@ class MessageQueueService {
             });
             
             this.isConnected = true;
-            logger.info('[MESSAGE_QUEUE] Successfully connected to RabbitMQ');
             
             return true;
         } catch (error) {

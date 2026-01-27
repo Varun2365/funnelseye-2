@@ -254,60 +254,79 @@ const aiService = {
 // =======================================================================
 
 /**
- * Sends a WhatsApp message to a lead.
+ * Sends a WhatsApp message to a lead using the messaging v3 worker.
  */
 async function sendWhatsAppMessage(config, eventPayload) {
-    // Corrected to use relatedDoc
-    const leadData = eventPayload.relatedDoc;
-    const coachId = leadData.coachId;
-    const recipientNumber = leadData.phone;
-    if (!recipientNumber) { throw new Error('Recipient phone number not found in event payload.'); }
-
-    // Get message content from config
-    let messageContent = config.messageTemplate || config.message || `Hi {{lead.name}}, this is an automated message.`;
-
-    // Process template variables in the message using comprehensive parser
-    const { parseTemplateString } = require('../utils/templateParser');
-    const templateData = {
-        lead: {
-            name: leadData.name,
-            firstName: leadData.firstName,
-            lastName: leadData.lastName,
-            email: leadData.email,
-            phone: leadData.phone,
-            source: leadData.source,
-            status: leadData.status,
-            temperature: leadData.temperature,
-            score: leadData.score,
-            createdAt: leadData.createdAt,
-            updatedAt: leadData.updatedAt,
-            created_at: leadData.createdAt,
-            updated_at: leadData.updatedAt
-        },
-        coach: {
-            name: eventPayload.coach?.name,
-            email: eventPayload.coach?.email
-        }
-    };
-
-    messageContent = parseTemplateString(messageContent, templateData);
-    
-    // Apply delay if specified
-    if (config.delayMinutes && config.delayMinutes > 0) {
-        console.log(`[ActionExecutor] WhatsApp message scheduled with ${config.delayMinutes} minute delay to ${recipientNumber}`);
-        // In a real implementation, you'd schedule this message
-        // For now, we'll send it immediately
-    }
-    
-    // Send the message
     try {
-        // WhatsApp functionality moved to dustbin/whatsapp-dump/
-        console.log(`[ActionExecutor] WhatsApp functionality moved to dustbin/whatsapp-dump/`);
-        console.log(`[ActionExecutor] Would have sent WhatsApp message to ${recipientNumber}: ${messageContent}`);
+        // Get lead data and coach info
+        const leadData = eventPayload.relatedDoc || eventPayload.payload?.relatedDoc || eventPayload.payload?.leadData;
+        const coachId = leadData?.coachId || eventPayload.coachId || eventPayload.payload?.coachId;
+        const recipientNumber = config.to || leadData?.phone || eventPayload.payload?.leadData?.phone;
+
+        if (!recipientNumber) {
+            throw new Error('Recipient phone number not found in event payload or config.');
+        }
+
+        // Get message content from config
+        let messageContent = config.messageTemplate || config.message || config.messageContent || `Hi {{lead.name}}, this is an automated message.`;
+
+        // Process template variables in the message using comprehensive parser
+        const { parseTemplateString } = require('../utils/templateParser');
+        const templateData = {
+            lead: {
+                name: leadData?.name,
+                firstName: leadData?.firstName,
+                lastName: leadData?.lastName,
+                email: leadData?.email,
+                phone: leadData?.phone,
+                source: leadData?.source,
+                status: leadData?.status,
+                temperature: leadData?.temperature,
+                score: leadData?.score,
+                createdAt: leadData?.createdAt,
+                updatedAt: leadData?.updatedAt,
+                created_at: leadData?.createdAt,
+                updated_at: leadData?.updatedAt
+            },
+            coach: {
+                name: eventPayload.coach?.name,
+                email: eventPayload.coach?.email
+            }
+        };
+
+        messageContent = parseTemplateString(messageContent, templateData);
+
+        // Prepare message data for messaging v3 worker
+        const messageData = {
+            id: `automation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            channelCategory: config.channelCategory || 'meta_whatsapp', // Default to Meta WhatsApp
+            channelId: config.channelId, // Specific channel if provided
+            to: recipientNumber,
+            message: messageContent,
+            useTemplate: config.useTemplate || false,
+            templateId: config.templateId,
+            templateParams: config.templateParams || {},
+            mediaUrl: config.mediaUrl,
+            mediaType: config.mediaType,
+            priority: config.priority || 'normal',
+            scheduledAt: config.delayMinutes ? new Date(Date.now() + (config.delayMinutes * 60 * 1000)) : null,
+            userId: coachId || 'system',
+            userRole: 'coach'
+        };
+
+        // Get messaging worker instance
+        const messagingV3Worker = require('../workers/messagingV3Worker');
+
+        // Queue the message
+        await messagingV3Worker.queueMessage(messageData);
+
+        console.log(`[ActionExecutor] ✅ WhatsApp message queued successfully to ${recipientNumber} via ${messageData.channelCategory}`);
+        console.log(`[ActionExecutor] Message ID: ${messageData.id}`);
+
     } catch (error) {
-        console.error(`[ActionExecutor] Unable to send WhatsApp message to ${recipientNumber}:`, error.message);
+        console.error(`[ActionExecutor] ❌ Failed to send WhatsApp message:`, error.message);
         console.log(`[ActionExecutor] WhatsApp message failed but continuing to prevent infinite loops`);
-        // Don't throw error - just log and continue
+        // Don't throw error - just log and continue to prevent infinite loops
     }
 }
 
@@ -1575,8 +1594,7 @@ async function executeAutomationAction(payload) {
     try {
         switch (actionType) {
             case 'send_whatsapp_message':
-                // WhatsApp functionality moved to dustbin/whatsapp-dump/
-                console.log('[ActionExecutor] WhatsApp functionality moved to dustbin/whatsapp-dump/');
+                await sendWhatsAppMessage(config, eventPayload);
                 break;
             case 'send_email':
             case 'send_email_message':
