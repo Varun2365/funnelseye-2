@@ -39,6 +39,8 @@ import FunnelEditor from './components/funnels/FunnelEditor';
 import AISettingsPanel from './components/ai/AISettingsPanel';
 import AdTemplatesManagement from './components/ads/AdTemplatesManagement';
 import AdminAutomationRules from './components/automation/AdminAutomationRules';
+import AutomationRulesDashboard from './components/automation-rules/index';
+import AutomationRulesGraphBuilder from './components/automation-rules/AutomationRulesGraphBuilder';
 import { Toaster } from 'sonner';
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -137,7 +139,9 @@ function AppContent() {
           <Route path="funnels/manage/:funnelId" element={<FunnelManagement />} />
           <Route path="ai-features" element={<AISettingsPanel />} />
           <Route path="ads-campaigns" element={<AdTemplatesManagement />} />
-          <Route path="automation-rules" element={<AdminAutomationRules />} />
+          <Route path="automation-rules" element={<AutomationRulesDashboard />} />
+          <Route path="automation-rules/create" element={<AutomationRulesGraphBuilder />} />
+          <Route path="automation-rules/:id/edit" element={<AutomationRulesGraphBuilder />} />
         </Route>
         {/* Standalone Editor Route - No Sidebar/Topbar */}
         <Route path="funnel_edit/:funnelId/:stageId" element={<ProtectedRoute><FunnelEditor /></ProtectedRoute>} />
