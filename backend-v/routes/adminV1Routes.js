@@ -1774,11 +1774,37 @@ router.delete('/courses/folders/:folderId',
  * @example PUT /api/admin/v1/courses/files/64a1b2c3d4e5f6789012345/move
  * @body { "folderId": "64a1b2c3d4e5f6789012346" }
  */
-router.put('/courses/files/:fileId/move', 
-    verifyAdminToken, 
-    checkAdminPermission('contentManagement'), 
+router.put('/courses/files/:fileId/move',
+    verifyAdminToken,
+    checkAdminPermission('contentManagement'),
     adminRateLimit(15, 60 * 1000), // 15 requests per minute
     courseManagementController.moveFile
+);
+
+// ===== MESSAGING =====
+
+/**
+ * @route POST /api/admin/v1/send-message
+ * @desc Queue a message to be sent through a messaging channel
+ * @access Private (Admin)
+ * @body channelId: Messaging channel ID
+ * @body templateId: Template ID (optional, for WhatsApp API)
+ * @body message: Message content
+ * @body recipient: Recipient phone number
+ * @body delay: Delay in seconds before sending (optional)
+ * @example POST /api/admin/v1/send-message
+ * @body {
+ *   "channelId": "64a1b2c3d4e5f6789012345",
+ *   "templateId": "welcome_template",
+ *   "message": "Hello from FunnelsEye!",
+ *   "recipient": "+1234567890",
+ *   "delay": 30
+ * }
+ */
+router.post('/send-message',
+    verifyAdminToken,
+    checkAdminPermission('systemSettings'),
+    adminV1Controller.sendMessage
 );
 
 module.exports = router;

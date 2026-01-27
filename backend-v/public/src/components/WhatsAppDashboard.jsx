@@ -230,6 +230,7 @@ const WhatsAppDashboard = () => {
   const [baileyQR, setBaileyQR] = useState(null);
   const [baileyStatus, setBaileyStatus] = useState('disconnected');
   const [baileyLoading, setBaileyLoading] = useState(false);
+  const [baileyRetryInfo, setBaileyRetryInfo] = useState(null);
   const [channelForm, setChannelForm] = useState({
     name: '',
     type: 'whatsapp_api',
@@ -1210,7 +1211,7 @@ const WhatsAppDashboard = () => {
   const initBaileySession = async () => {
     try {
       setBaileyLoading(true);
-      const response = await fetch('/api/messaging-channels/bailey/init', {
+      const response = await fetch('/api/baileys/init', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1242,7 +1243,7 @@ const WhatsAppDashboard = () => {
   const pollBaileyStatus = (sessionId) => {
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/messaging-channels/bailey/${sessionId}/status`, {
+        const response = await fetch(`/api/baileys/${sessionId}/status`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
           }
@@ -1254,9 +1255,18 @@ const WhatsAppDashboard = () => {
           const status = result.data.status;
           setBaileyStatus(status);
 
+          // Update retry information
+          if (result.data.retryCount !== undefined) {
+            setBaileyRetryInfo({
+              retryCount: result.data.retryCount,
+              maxRetries: result.data.maxRetries,
+              isRetrying: result.data.isRetrying
+            });
+          }
+
           if (status === 'qr_ready') {
             // Get QR code
-            const qrResponse = await fetch(`/api/messaging-channels/bailey/${sessionId}/qr`, {
+            const qrResponse = await fetch(`/api/baileys/${sessionId}/qr`, {
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
               }
@@ -1323,7 +1333,7 @@ const WhatsAppDashboard = () => {
   const disconnectBaileySession = async () => {
     if (baileySession?.sessionId) {
       try {
-        await fetch(`/api/messaging-channels/bailey/${baileySession.sessionId}`, {
+        await fetch(`/api/baileys/${baileySession.sessionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -3298,7 +3308,7 @@ const WhatsAppDashboard = () => {
           }
         `
       }} />
-      <div className="space-y-8">
+      <div className="space-y-8 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -4692,6 +4702,51 @@ const WhatsAppDashboard = () => {
                               </div>
                             )}
 
+                            {baileyStatus === 'connecting' && (
+                              <div className="py-8">
+                                <Loader2 className="h-10 w-10 animate-spin mx-auto text-blue-600 mb-4" />
+                                <p className="text-sm text-gray-600">Connecting to WhatsApp...</p>
+                              </div>
+                            )}
+
+                            {baileyStatus === 'retrying' && baileyRetryInfo && (
+                              <div className="py-8">
+                                <Loader2 className="h-10 w-10 animate-spin mx-auto text-orange-600 mb-4" />
+                                <p className="text-sm font-semibold text-orange-800 mb-2">Reconnecting...</p>
+                                <p className="text-xs text-gray-600">
+                                  Attempt {baileyRetryInfo.retryCount} of {baileyRetryInfo.maxRetries}
+                                </p>
+                                <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+                                    style={{ width: `${(baileyRetryInfo.retryCount / baileyRetryInfo.maxRetries) * 100}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            )}
+
+                            {baileyStatus === 'error' && (
+                              <div className="py-8">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <XCircle className="h-8 w-8 text-red-600" />
+                                </div>
+                                <p className="text-sm font-semibold text-red-800 mb-2">Connection Failed</p>
+                                <p className="text-xs text-gray-600 mb-4">Unable to connect to WhatsApp. Please try again.</p>
+                                <Button
+                                  onClick={() => {
+                                    disconnectBaileySession();
+                                    setTimeout(() => initBaileySession(), 1000);
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Try Again
+                                </Button>
+                              </div>
+                            )}
+
                             {baileyStatus === 'connected' && (
                               <div className="py-8">
                                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -4699,6 +4754,28 @@ const WhatsAppDashboard = () => {
                                 </div>
                                 <p className="text-sm font-semibold text-green-800 mb-2">Connected Successfully!</p>
                                 <p className="text-xs text-gray-600">Your WhatsApp scanner is now ready to use.</p>
+                              </div>
+                            )}
+
+                            {baileyStatus === 'logged_out' && (
+                              <div className="py-8">
+                                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <XCircle className="h-8 w-8 text-red-600" />
+                                </div>
+                                <p className="text-sm font-semibold text-red-800 mb-2">Session Logged Out</p>
+                                <p className="text-xs text-gray-600 mb-4">Your WhatsApp session has been logged out. Please scan QR code again.</p>
+                                <Button
+                                  onClick={() => {
+                                    disconnectBaileySession();
+                                    setTimeout(() => initBaileySession(), 1000);
+                                  }}
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                >
+                                  <RefreshCw className="h-4 w-4 mr-2" />
+                                  Start New Session
+                                </Button>
                               </div>
                             )}
 

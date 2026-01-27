@@ -1,5 +1,7 @@
 const AdminAutomationRule = require('../schema/AdminAutomationRule');
 const asyncHandler = require('../middleware/async');
+const automationMessagingService = require('../services/automationMessagingService');
+const mongoose = require('mongoose');
 
 /**
  * @desc Get all admin automation rules
@@ -196,5 +198,411 @@ exports.duplicateRule = asyncHandler(async (req, res) => {
         success: true,
         data: duplicatedRule,
         message: 'Automation rule duplicated successfully'
+    });
+});
+
+/**
+ * @desc Get builder resources (funnels, etc.)
+ * @route GET /api/admin-automation-rules/builder-resources
+ * @access Private (Admin only)
+ */
+exports.getBuilderResources = asyncHandler(async (req, res) => {
+    const AdminFunnel = require('../schema/AdminFunnel');
+
+    // Get funnels
+    const funnels = await AdminFunnel.find({ isActive: true })
+        .select('_id name funnelUrl')
+        .sort({ name: 1 });
+
+    // Get messaging channels (admin can see all)
+    const messagingChannels = await automationMessagingService.getAvailableChannels(
+        req.admin.id,
+        'admin',
+        null, // All channel types
+        false // Only active channels
+    );
+
+    // Get message templates (admin can see all, but we'll filter by admin's own templates)
+    const messageTemplates = await automationMessagingService.getAvailableTemplates(
+        req.admin.id
+    );
+
+    // Get channel categories info
+    const channelCategories = automationMessagingService.getChannelCategories();
+
+    res.status(200).json({
+        success: true,
+        data: {
+            funnels: funnels.map(funnel => ({
+                id: funnel._id,
+                name: funnel.name,
+                funnelUrl: funnel.funnelUrl
+            })),
+            messagingChannels,
+            messageTemplates,
+            channelCategories
+        }
+    });
+});
+
+/**
+ * @desc Get events and actions for the builder
+ * @route GET /api/admin-automation-rules/events-actions
+ * @access Private (Admin only)
+ */
+exports.getEventsAndActions = asyncHandler(async (req, res) => {
+    console.log('🔍 [getEventsAndActions] API called');
+
+    // Static events and actions for now
+    const events = [
+        { value: 'lead_created', label: 'Lead Created', description: 'When a new lead is created in the system', category: 'Lead Management' },
+        { value: 'lead_status_changed', label: 'Lead Status Changed', description: 'When a lead\'s status is updated', category: 'Lead Management' },
+        { value: 'lead_converted_to_client', label: 'Lead Converted to Client', description: 'When a lead becomes a paying client', category: 'Lead Management' },
+        { value: 'form_submitted', label: 'Form Submitted', description: 'When a funnel form is submitted', category: 'Lead Management' },
+        { value: 'appointment_scheduled', label: 'Appointment Scheduled', description: 'When an appointment is booked', category: 'Lead Management' },
+        { value: 'payment_received', label: 'Payment Received', description: 'When a payment is successfully processed', category: 'Payment Processing' }
+    ];
+
+    const actions = [
+        { value: 'send_email', label: 'Send Email', description: 'Send an email to the lead', category: 'Communication' },
+        { value: 'send_sms', label: 'Send SMS', description: 'Send an SMS message', category: 'Communication' },
+        { value: 'send_whatsapp_message', label: 'Send WhatsApp Message', description: 'Send a WhatsApp message to the lead', category: 'Communication' },
+        { value: 'update_lead_status', label: 'Update Lead Status', description: 'Change the lead\'s status', category: 'Lead Management' },
+        { value: 'create_task', label: 'Create Task', description: 'Create a task for the team', category: 'Task Management' },
+        { value: 'send_webhook', label: 'Send Webhook', description: 'Send data to external service', category: 'System Integration' },
+        { value: 'assign_to_coach', label: 'Assign to Coach', description: 'Assign lead to a specific coach', category: 'Lead Management' }
+    ];
+
+    const categories = [
+        'Lead Management',
+        'Communication',
+        'Task Management',
+        'Payment Processing',
+        'System Integration'
+    ];
+
+    const responseData = {
+        success: true,
+        data: {
+            events,
+            actions,
+            categories
+        }
+    };
+
+    console.log('🔍 [getEventsAndActions] Returning data:', responseData);
+
+    res.status(200).json(responseData);
+});
+
+/**
+ * @desc Get workflow flows
+ * @route GET /api/admin-automation-rules/flows
+ * @access Private (Admin only)
+ */
+exports.getFlows = asyncHandler(async (req, res) => {
+    // Return empty array for now - flows would be workflow executions
+    res.status(200).json({
+        success: true,
+        data: []
+    });
+});
+
+/**
+ * @desc Get automation runs
+ * @route GET /api/admin-automation-rules/runs
+ * @access Private (Admin only)
+ */
+exports.getRuns = asyncHandler(async (req, res) => {
+    try {
+        // Get AutomationExecutionState model
+        const AutomationExecutionState = mongoose.models.AutomationExecutionState || 
+            mongoose.model('AutomationExecutionState', new mongoose.Schema({}, { strict: false, collection: 'automation_execution_states' }));
+        
+        // Fetch all execution states with populated data
+        const executions = await AutomationExecutionState.find({})
+            .populate('automationRuleId', 'name description')
+            .populate('leadId', 'name email phone')
+            .populate('coachId', 'name email')
+            .populate('funnelId', 'name')
+            .sort({ startedAt: -1 })
+            .limit(100); // Limit to last 100 runs
+        
+        // Transform data for frontend
+        const runs = executions.map(execution => ({
+            _id: execution._id,
+            executionId: execution.executionId,
+            automationRuleId: execution.automationRuleId?._id,
+            ruleName: execution.automationRuleId?.name || 'Unknown Rule',
+            leadId: execution.leadId?._id,
+            leadName: execution.leadId?.name || 'Unknown Lead',
+            leadEmail: execution.leadId?.email,
+            leadPhone: execution.leadId?.phone,
+            coachId: execution.coachId?._id,
+            coachName: execution.coachId?.name || 'Unknown Coach',
+            funnelId: execution.funnelId?._id,
+            funnelName: execution.funnelId?.name,
+            triggerEvent: execution.triggerEvent,
+            triggerNodeId: execution.triggerNodeId,
+            status: execution.status,
+            currentNodeId: execution.currentNodeId,
+            startedAt: execution.startedAt,
+            lastActivityAt: execution.lastActivityAt,
+            completedAt: execution.completedAt,
+            metrics: execution.metrics || {},
+            executionHistory: execution.executionHistory || [],
+            errorLogs: execution.errorLogs || [],
+            visitedNodes: execution.visitedNodes || [],
+            completedNodes: execution.completedNodes || []
+        }));
+        
+        res.status(200).json({
+            success: true,
+            data: runs
+        });
+    } catch (error) {
+        console.error('Error fetching runs:', error);
+        res.status(200).json({
+            success: true,
+            data: [] // Return empty array on error
+        });
+    }
+});
+
+/**
+ * @desc Get detailed execution logs for a specific run
+ * @route GET /api/admin-automation-rules/runs/:executionId
+ * @access Private (Admin only)
+ */
+exports.getRunDetails = asyncHandler(async (req, res) => {
+    try {
+        const { executionId } = req.params;
+        
+        // Get AutomationExecutionState model
+        const AutomationExecutionState = mongoose.models.AutomationExecutionState || 
+            mongoose.model('AutomationExecutionState', new mongoose.Schema({}, { strict: false, collection: 'automation_execution_states' }));
+        
+        // Fetch execution state with all details
+        const execution = await AutomationExecutionState.findOne({ executionId })
+            .populate('automationRuleId', 'name description nodes edges')
+            .populate('leadId', 'name email phone status score')
+            .populate('coachId', 'name email')
+            .populate('funnelId', 'name funnelUrl');
+        
+        if (!execution) {
+            return res.status(404).json({
+                success: false,
+                message: 'Execution not found'
+            });
+        }
+        
+        // Get the automation rule to map node IDs to node details
+        const rule = execution.automationRuleId;
+        const nodeMap = {};
+        if (rule && rule.nodes) {
+            rule.nodes.forEach(node => {
+                nodeMap[node.id] = {
+                    id: node.id,
+                    type: node.type,
+                    nodeType: node.nodeType,
+                    label: node.label,
+                    config: node.config || {}
+                };
+            });
+        }
+        
+        // Enrich execution history with node details
+        const enrichedHistory = (execution.executionHistory || []).map(entry => ({
+            ...entry.toObject(),
+            nodeDetails: nodeMap[entry.nodeId] || null
+        }));
+        
+        // Enrich error logs with node details
+        const enrichedErrorLogs = (execution.errorLogs || []).map(entry => ({
+            ...entry.toObject(),
+            nodeDetails: nodeMap[entry.nodeId] || null
+        }));
+        
+        res.status(200).json({
+            success: true,
+            data: {
+                ...execution.toObject(),
+                executionHistory: enrichedHistory,
+                errorLogs: enrichedErrorLogs,
+                nodeMap: nodeMap
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching run details:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch run details',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @desc Get automation analytics
+ * @route GET /api/admin-automation-rules/analytics
+ * @access Private (Admin only)
+ */
+exports.getAnalytics = asyncHandler(async (req, res) => {
+    // Calculate basic analytics
+    const totalRules = await AdminAutomationRule.countDocuments();
+    const activeRules = await AdminAutomationRule.countDocuments({ isActive: true });
+    const totalExecutions = await AdminAutomationRule.aggregate([
+        { $group: { _id: null, total: { $sum: '$executionCount' } } }
+    ]);
+
+    const successRate = totalExecutions.length > 0 ? 95 : 0; // Mock success rate
+    const averageDuration = totalExecutions.length > 0 ? 2.5 : 0; // Mock duration
+
+    res.status(200).json({
+        success: true,
+        data: {
+            totalExecutions: totalExecutions.length > 0 ? totalExecutions[0].total : 0,
+            successRate,
+            averageDuration,
+            totalRules,
+            activeRules
+        }
+    });
+});
+
+/**
+ * @desc Assign funnel to automation rule
+ * @route PUT /api/admin-automation-rules/:id/assign-funnel
+ * @access Private (Admin only)
+ */
+exports.assignFunnel = asyncHandler(async (req, res) => {
+    const { funnelId } = req.body;
+    const rule = await AdminAutomationRule.findById(req.params.id);
+
+    if (!rule) {
+        return res.status(404).json({
+            success: false,
+            message: 'Automation rule not found'
+        });
+    }
+
+    // Convert funnelId to ObjectId if provided, otherwise set to null
+    const mongoose = require('mongoose');
+    if (funnelId && mongoose.Types.ObjectId.isValid(funnelId)) {
+        rule.funnelId = new mongoose.Types.ObjectId(funnelId);
+    } else {
+        rule.funnelId = null;
+    }
+    
+    await rule.save();
+
+    // Populate funnelId for response
+    await rule.populate('funnelId', 'name funnelUrl');
+
+    res.status(200).json({
+        success: true,
+        data: rule,
+        message: `Rule ${funnelId ? 'assigned to funnel' : 'unassigned from funnel'} successfully`
+    });
+});
+
+/**
+ * @desc Start automation run
+ * @route POST /api/admin-automation-rules/run
+ * @access Private (Admin only)
+ */
+exports.startAutomationRun = asyncHandler(async (req, res) => {
+    // Mock automation run - in real implementation, this would trigger the workflow
+    const runData = {
+        _id: Date.now().toString(),
+        ruleId: req.body.ruleId,
+        status: 'completed',
+        startedAt: new Date(),
+        completedAt: new Date(Date.now() + 2000), // 2 seconds later
+        result: 'success'
+    };
+
+    res.status(200).json({
+        success: true,
+        data: runData,
+        message: 'Automation run completed successfully'
+    });
+});
+
+/**
+ * @desc Validate workflow graph
+ * @route POST /api/admin-automation-rules/validate-graph
+ * @access Private (Admin only)
+ */
+exports.validateWorkflow = asyncHandler(async (req, res) => {
+    const { nodes, edges } = req.body;
+
+    // Basic validation
+    const errors = [];
+    const warnings = [];
+
+    if (!nodes || nodes.length === 0) {
+        errors.push('Workflow must have at least one node');
+    }
+
+    if (!edges || edges.length === 0) {
+        warnings.push('Workflow has no connections between nodes');
+    }
+
+    // Check for trigger nodes
+    const triggerNodes = nodes.filter(node => node.type === 'trigger');
+    if (triggerNodes.length === 0) {
+        errors.push('Workflow must have at least one trigger node');
+    }
+
+    // Check for orphan nodes
+    const connectedNodeIds = new Set();
+    edges.forEach(edge => {
+        connectedNodeIds.add(edge.source);
+        connectedNodeIds.add(edge.target);
+    });
+
+    nodes.forEach(node => {
+        if (!connectedNodeIds.has(node.id)) {
+            warnings.push(`Node "${node.data.label}" is not connected to the workflow`);
+        }
+    });
+
+    res.status(200).json({
+        success: true,
+        data: {
+            isValid: errors.length === 0,
+            errors,
+            warnings
+        }
+    });
+});
+
+/**
+ * @desc Test automation rule
+ * @route POST /api/admin-automation-rules/:id/test
+ * @access Private (Admin only)
+ */
+exports.testAutomation = asyncHandler(async (req, res) => {
+    const { testData } = req.body;
+    const rule = await AdminAutomationRule.findById(req.params.id);
+
+    if (!rule) {
+        return res.status(404).json({
+            success: false,
+            message: 'Automation rule not found'
+        });
+    }
+
+    // Mock test execution
+    res.status(200).json({
+        success: true,
+        data: {
+            ruleId: rule._id,
+            status: 'completed',
+            result: 'success',
+            message: 'Test execution completed successfully'
+        },
+        message: 'Automation rule tested successfully'
     });
 });

@@ -519,7 +519,7 @@ const AISettingsPanel = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white p-6">
       <div className="mx-auto w-full max-w-full px-4 lg:px-8 md:px-6 sm:px-4">
         {/* Header */}
         <div className="mb-8">

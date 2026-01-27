@@ -79,12 +79,33 @@ exports.getTemplate = asyncHandler(async (req, res) => {
 exports.createTemplate = asyncHandler(async (req, res) => {
     const adminId = req.admin?._id;
     
-    const templateData = {
-        ...req.body,
-        createdBy: adminId
+    // SAFETY: Remove any pixel/account/budget/audience fields from template data
+    // Templates are structural blueprints only
+    const {
+        pixelSettings,
+        pixelId,
+        adAccountId,
+        accessToken,
+        budget,
+        audienceConfig,
+        retargetingAudience,
+        ...templateData
+    } = req.body;
+    
+    // Ensure template only contains structural fields
+    const cleanTemplateData = {
+        ...templateData,
+        createdBy: adminId,
+        // Ensure flags are set correctly
+        flags: {
+            supportsRetargeting: templateData.flags?.supportsRetargeting ?? true,
+            supportsDynamicAds: templateData.flags?.supportsDynamicAds ?? false,
+            supportsAndromeda: templateData.flags?.supportsAndromeda ?? false,
+            supportsStageWiseRetargeting: templateData.flags?.supportsStageWiseRetargeting ?? true
+        }
     };
     
-    const template = await AdTemplate.create(templateData);
+    const template = await AdTemplate.create(cleanTemplateData);
     
     res.status(201).json({
         success: true,
@@ -115,7 +136,20 @@ exports.updateTemplate = asyncHandler(async (req, res) => {
         });
     }
     
-    Object.assign(template, req.body);
+    // SAFETY: Remove any pixel/account/budget/audience fields
+    const {
+        pixelSettings,
+        pixelId,
+        adAccountId,
+        accessToken,
+        budget,
+        audienceConfig,
+        retargetingAudience,
+        ...updateData
+    } = req.body;
+    
+    // Only update structural fields
+    Object.assign(template, updateData);
     await template.save();
     
     res.json({

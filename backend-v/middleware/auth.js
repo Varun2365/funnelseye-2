@@ -213,7 +213,6 @@ const protect = async (req, res, next) => {
 
                 // Add subscription info to request for potential use in routes
                 req.subscription = subscription;
-                console.log(`✅ [Protect Middleware] Subscription check passed for coach ${user._id}. Status: ${subscription.status}`);
             }
         } else {
             // Non-coach roles don't need subscription checks

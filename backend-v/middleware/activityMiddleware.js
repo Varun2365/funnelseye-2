@@ -15,7 +15,6 @@ exports.updateLastActive = async (req, res, next) => {
             );
             
             await Promise.race([updatePromise, timeoutPromise]);
-            console.log('✅ Updated last active timestamp for user:', userId);
 
         } catch (err) {
             console.error('🔄 Error updating last active timestamp:', err.message);

@@ -7,32 +7,42 @@ const {
     updateRule,
     deleteRule,
     toggleActive,
-    duplicateRule
+    duplicateRule,
+    getBuilderResources,
+    getEventsAndActions,
+    getFlows,
+    getRuns,
+    getRunDetails,
+    getAnalytics,
+    assignFunnel,
+    startAutomationRun,
+    validateWorkflow,
+    testAutomation
 } = require('../controllers/adminAutomationRuleController');
-const { unifiedCoachAuth } = require('../middleware/unifiedCoachAuth');
+const { verifyAdminToken } = require('../middleware/adminAuth');
 
 // All routes require admin authentication
-router.use(unifiedCoachAuth);
+router.use(verifyAdminToken);
 
-// Get all rules
+// Specific routes (must come before generic :id routes)
+router.get('/builder-resources', getBuilderResources);
+router.get('/events-actions', getEventsAndActions);
+router.get('/flows', getFlows);
+router.get('/runs', getRuns);
+router.get('/runs/:executionId', getRunDetails);
+router.get('/analytics', getAnalytics);
+router.post('/run', startAutomationRun);
+router.post('/validate-graph', validateWorkflow);
+
+// Basic CRUD operations (generic :id routes)
 router.get('/', getRules);
-
-// Get single rule
 router.get('/:id', getRuleById);
-
-// Create new rule
 router.post('/', createRule);
-
-// Update rule
 router.put('/:id', updateRule);
-
-// Delete rule
 router.delete('/:id', deleteRule);
-
-// Toggle active status
 router.put('/:id/toggle', toggleActive);
-
-// Duplicate rule
 router.post('/:id/duplicate', duplicateRule);
+router.put('/:id/assign-funnel', assignFunnel);
+router.post('/:id/test', testAutomation);
 
 module.exports = router;

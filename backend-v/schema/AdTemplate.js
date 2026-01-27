@@ -18,125 +18,67 @@ const AdTemplateSchema = new mongoose.Schema({
         default: 'other'
     },
     
-    // Campaign settings
-    objective: {
-        type: String,
-        enum: ['OUTCOME_TRAFFIC', 'OUTCOME_LEADS', 'OUTCOME_ENGAGEMENT', 'OUTCOME_APP_PROMOTION', 'OUTCOME_SALES', 'OUTCOME_AWARENESS'],
-        default: 'OUTCOME_LEADS'
-    },
-    
-    // Ad content (prefilled)
-    adTitle: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    adDescription: {
-        type: String,
-        required: true,
-        trim: true
-    },
-    adHeadline: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    adText: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    adImageUrl: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    adVideoUrl: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    callToAction: {
-        type: String,
-        enum: ['LEARN_MORE', 'SHOP_NOW', 'SIGN_UP', 'DOWNLOAD', 'BOOK_TRAVEL', 'CONTACT_US', 'GET_QUOTE', 'APPLY_NOW', 'SUBSCRIBE'],
-        default: 'LEARN_MORE'
-    },
-    
-    // Targeting (prefilled)
-    targeting: {
-        ageMin: { type: Number, default: null },
-        ageMax: { type: Number, default: null },
-        genders: [{ type: String, enum: ['male', 'female', 'all'] }],
-        locations: {
-            countries: [{ type: String }],
-            regions: [{ type: String }],
-            cities: [{ type: String }]
-        },
-        interests: [{ type: String }],
-        behaviors: [{ type: String }],
-        customAudiences: [{ type: String }],
-        lookalikeAudiences: [{ type: String }]
-    },
-    
-    // Budget settings (prefilled)
-    budget: {
-        type: {
-            type: String,
-            enum: ['daily', 'lifetime'],
-            default: 'daily'
-        },
-        amount: { type: Number, default: null },
-        currency: { type: String, default: 'USD' }
-    },
-    
-    // Scheduling (prefilled)
-    schedule: {
-        startDate: { type: Date, default: null },
-        endDate: { type: Date, default: null },
-        timezone: { type: String, default: 'UTC' }
-    },
-    
-    // Funnel/Product linking
-    funnelId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Funnel',
-        default: null
-    },
-    funnelUrl: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    productInfo: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    targetAudience: {
-        type: String,
-        trim: true,
-        default: ''
-    },
-    
-    // Placement settings
-    placements: {
+    // Supported objectives (template capability)
+    supportedObjectives: {
         type: [String],
-        enum: ['facebook_feed', 'instagram_feed', 'instagram_stories', 'messenger', 'audience_network', 'all'],
-        default: ['all']
+        enum: ['OUTCOME_TRAFFIC', 'OUTCOME_LEADS', 'OUTCOME_ENGAGEMENT', 'OUTCOME_APP_PROMOTION', 'OUTCOME_SALES', 'OUTCOME_AWARENESS'],
+        default: ['OUTCOME_LEADS']
     },
     
-    // Optimization settings
-    optimization: {
-        optimizationGoal: {
-            type: String,
-            enum: ['LINK_CLICKS', 'IMPRESSIONS', 'REACH', 'LANDING_PAGE_VIEWS', 'OFFSITE_CONVERSIONS', 'POST_ENGAGEMENT'],
-            default: 'LINK_CLICKS'
+    // Supported formats (template capability)
+    supportedFormats: {
+        type: [String],
+        enum: ['single_image', 'single_video', 'carousel', 'collection', 'slideshow', 'dynamic'],
+        default: ['single_image']
+    },
+    
+    // Required fields structure (what coach must provide)
+    requiredFields: {
+        headline: { type: Boolean, default: true },
+        primaryText: { type: Boolean, default: true },
+        mediaSlots: {
+            image: { type: Number, default: 1, min: 0 },
+            video: { type: Number, default: 0, min: 0 }
         },
-        bidStrategy: {
-            type: String,
-            enum: ['LOWEST_COST', 'COST_CAP', 'BID_CAP'],
-            default: 'LOWEST_COST'
+        callToActionType: { type: Boolean, default: true },
+        destinationUrl: { type: Boolean, default: true }
+    },
+    
+    // Validation rules (template constraints)
+    validationRules: {
+        maxHeadlineLength: { type: Number, default: 40 },
+        maxPrimaryTextLength: { type: Number, default: 125 },
+        requiredImageDimensions: {
+            width: { type: Number, default: 1200 },
+            height: { type: Number, default: 628 }
+        },
+        supportedCTATypes: {
+            type: [String],
+            enum: ['LEARN_MORE', 'SHOP_NOW', 'SIGN_UP', 'DOWNLOAD', 'BOOK_TRAVEL', 'CONTACT_US', 'GET_QUOTE', 'APPLY_NOW', 'SUBSCRIBE'],
+            default: ['LEARN_MORE', 'SIGN_UP', 'SHOP_NOW']
         }
+    },
+    
+    // Default content examples (optional guidance)
+    defaultContent: {
+        exampleHeadline: { type: String, trim: true, default: '' },
+        examplePrimaryText: { type: String, trim: true, default: '' },
+        exampleCTA: { type: String, trim: true, default: '' }
+    },
+    
+    // Supported conversion events (template capability)
+    supportedConversionEvents: {
+        type: [String],
+        enum: ['PageView', 'ViewContent', 'Search', 'AddToCart', 'InitiateCheckout', 'AddPaymentInfo', 'Purchase', 'Lead', 'CompleteRegistration', 'Subscribe', 'StartTrial'],
+        default: ['PageView', 'Lead']
+    },
+    
+    // Feature flags (template capabilities)
+    flags: {
+        supportsRetargeting: { type: Boolean, default: true },
+        supportsDynamicAds: { type: Boolean, default: false },
+        supportsAndromeda: { type: Boolean, default: false },
+        supportsStageWiseRetargeting: { type: Boolean, default: true }
     },
     
     // Template metadata
@@ -168,6 +110,7 @@ const AdTemplateSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    
     
     // Additional custom fields
     customFields: {

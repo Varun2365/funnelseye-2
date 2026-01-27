@@ -36,7 +36,9 @@ exports.setupMetaAdsCredentials = asyncHandler(async (req, res, next) => {
         businessAccountId,
         adAccountId,
         facebookPageId,
-        instagramAccountId
+        instagramAccountId,
+        pixelId,
+        pixelEnabled
     } = req.body;
 
     // Validate required fields
@@ -64,6 +66,8 @@ exports.setupMetaAdsCredentials = asyncHandler(async (req, res, next) => {
         adAccountId,
         facebookPageId,
         instagramAccountId,
+        pixelId: pixelId || null,
+        pixelEnabled: pixelEnabled || false,
         isConnected: false,
         lastVerified: null,
         permissions: []

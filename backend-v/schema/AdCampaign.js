@@ -37,6 +37,37 @@ const AdCampaignSchema = new mongoose.Schema({
     funnelUrl: { type: String, default: null },
     targetAudience: { type: String, default: null },
     productInfo: { type: String, default: null },
+    
+    // Meta Pixel & Retargeting Tracking
+    pixelTracking: {
+        pixelId: { type: String, default: null },
+        eventsTracked: [{
+            eventName: { type: String },
+            eventId: { type: String },
+            timestamp: { type: Date, default: Date.now },
+            value: { type: Number, default: null },
+            currency: { type: String, default: 'USD' },
+            userData: { type: mongoose.Schema.Types.Mixed, default: {} },
+            customData: { type: mongoose.Schema.Types.Mixed, default: {} },
+            forwardedToMeta: { type: Boolean, default: false },
+            forwardedAt: { type: Date, default: null }
+        }],
+        retargetingAudienceId: { type: String, default: null },
+        totalEventsForwarded: { type: Number, default: 0 },
+        lastEventForwarded: { type: Date, default: null }
+    },
+    
+    // Andromeda Ads Configuration
+    andromedaConfig: {
+        enabled: { type: Boolean, default: false },
+        format: { type: String, default: null },
+        creativeId: { type: String, default: null },
+        dynamicProductAds: { type: Boolean, default: false },
+        catalogId: { type: String, default: null }
+    },
+    
+    // Template reference
+    templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'AdTemplate', default: null }
 }, { timestamps: true });
 
 module.exports = mongoose.models.AdCampaign || mongoose.model('AdCampaign', AdCampaignSchema);

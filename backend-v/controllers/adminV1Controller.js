@@ -4243,17 +4243,12 @@ exports.getRevenueTrends = asyncHandler(async (req, res) => {
             ]);
         }
 
-        console.log(`Revenue trends data found: ${revenueData.length} records`);
-
         // Format data for frontend chart
         const chartData = revenueData.map(item => ({
             date: item._id,
             revenue: item.revenue, // Keep in rupees (already converted in aggregation)
             transactions: item.transactions
         }));
-
-        console.log(`Revenue trends API response: ${chartData.length} data points`);
-        console.log('Sample data point:', chartData[0]);
 
         // If no real data, generate sample data for demonstration
         let finalChartData = chartData;
@@ -4536,6 +4531,116 @@ exports.getSystemHealth = asyncHandler(async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error retrieving system health',
+            error: error.message
+        });
+    }
+});
+
+// ===== MESSAGING =====
+
+/**
+ * @desc    Queue a message to be sent through a messaging channel
+ * @route   POST /api/admin/v1/send-message
+ * @access  Private (Admin)
+ */
+exports.sendMessage = asyncHandler(async (req, res) => {
+    try {
+        const { channelId, templateId, message, recipient, delay = 0 } = req.body;
+        const adminId = req.admin.id;
+
+        // Validate required fields
+        if (!channelId || !message || !recipient) {
+            return res.status(400).json({
+                success: false,
+                message: 'Channel ID, message, and recipient are required'
+            });
+        }
+
+        // Validate recipient phone number format
+        const phoneRegex = /^\+\d{10,15}$/;
+        if (!phoneRegex.test(recipient)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid recipient phone number format. Must start with + and contain 10-15 digits'
+            });
+        }
+
+        // Get messaging channel
+        const MessagingChannel = mongoose.model('MessagingChannel');
+        const channel = await MessagingChannel.findById(channelId);
+
+        if (!channel) {
+            return res.status(404).json({
+                success: false,
+                message: 'Messaging channel not found'
+            });
+        }
+
+        if (!channel.isActive) {
+            return res.status(400).json({
+                success: false,
+                message: 'Messaging channel is not active'
+            });
+        }
+
+        // Create message task
+        const MessageTask = mongoose.model('MessageTask') || mongoose.model('MessageTask', new mongoose.Schema({
+            channelId: { type: mongoose.Schema.Types.ObjectId, ref: 'MessagingChannel', required: true },
+            channelType: { type: String, required: true },
+            templateId: { type: String },
+            message: { type: String, required: true },
+            recipient: { type: String, required: true },
+            status: { type: String, enum: ['queued', 'processing', 'sent', 'failed'], default: 'queued' },
+            scheduledAt: { type: Date, default: Date.now },
+            sentAt: { type: Date },
+            error: { type: String },
+            createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'AdminUser' },
+            createdAt: { type: Date, default: Date.now },
+            updatedAt: { type: Date, default: Date.now }
+        }));
+
+        // Calculate scheduled time
+        const scheduledAt = new Date(Date.now() + (delay * 1000));
+
+        const messageTask = await MessageTask.create({
+            channelId,
+            channelType: channel.type,
+            templateId,
+            message,
+            recipient,
+            scheduledAt,
+            createdBy: adminId
+        });
+
+        // Queue the message for processing
+        const { publishToQueue } = require('../services/rabbitmqProducer');
+        await publishToQueue('message_queue', {
+            taskId: messageTask._id,
+            channelId,
+            channelType: channel.type,
+            templateId,
+            message,
+            recipient,
+            scheduledAt: scheduledAt.toISOString()
+        });
+
+        console.log(`📨 Message queued for ${recipient} via ${channel.name} (delay: ${delay}s)`);
+
+        res.json({
+            success: true,
+            message: 'Message queued successfully',
+            data: {
+                taskId: messageTask._id,
+                scheduledAt,
+                estimatedDelivery: new Date(scheduledAt.getTime() + 5000) // Rough estimate
+            }
+        });
+
+    } catch (error) {
+        console.error('Error queuing message:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error queuing message',
             error: error.message
         });
     }

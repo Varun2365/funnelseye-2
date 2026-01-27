@@ -264,16 +264,24 @@ const createChannel = async (req, res) => {
  */
 const getAvailableChannels = async (req, res) => {
     try {
-        const userId = req.user.id;
-        const userRole = req.user.role;
+        const userId = req.user?.id || req.user?._id || req.userId;
+        // Check if user is admin - use req.role (set by protect middleware) or req.admin
+        const userRole = req.role || req.user?.role || (req.admin ? 'admin' : null);
+
+        console.log('🔍 [getAvailableChannels] User ID:', userId);
+        console.log('🔍 [getAvailableChannels] User Role:', userRole);
+        console.log('🔍 [getAvailableChannels] Is Admin:', !!req.admin);
 
         let channels = [];
 
-        if (userRole === 'admin') {
-            // Admin can use all channels
-            channels = await MessagingChannel.find({ isActive: true });
+        // Admin can see all channels (including inactive ones for management)
+        if (userRole === 'admin' || userRole === 'super_admin' || req.admin) {
+            console.log('🔍 [getAvailableChannels] Fetching all channels for admin...');
+            channels = await MessagingChannel.find({});
+            console.log('🔍 [getAvailableChannels] Found', channels.length, 'channels');
         } else {
-            // Coach can use their own channels or public ones
+            // Coach can use their own channels or public ones (only active)
+            console.log('🔍 [getAvailableChannels] Fetching active channels for coach...');
             channels = await MessagingChannel.find({
                 $or: [
                     { configuredBy: userId },
@@ -281,6 +289,7 @@ const getAvailableChannels = async (req, res) => {
                 ],
                 isActive: true
             });
+            console.log('🔍 [getAvailableChannels] Found', channels.length, 'channels for coach');
         }
 
         // Group by category
@@ -289,6 +298,12 @@ const getAvailableChannels = async (req, res) => {
             baileys_whatsapp: channels.filter(c => c.type === 'whatsapp_bailey'),
             email: channels.filter(c => c.type === 'email_smtp')
         };
+
+        console.log('🔍 [getAvailableChannels] Grouped channels:', {
+            meta_whatsapp: groupedChannels.meta_whatsapp.length,
+            baileys_whatsapp: groupedChannels.baileys_whatsapp.length,
+            email: groupedChannels.email.length
+        });
 
         res.json({
             success: true,

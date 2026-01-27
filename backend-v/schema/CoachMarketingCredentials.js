@@ -36,6 +36,20 @@ const coachMarketingCredentialsSchema = new mongoose.Schema({
             trim: true,
             required: false
         },
+        pixelId: {
+            type: String,
+            trim: true,
+            required: false,
+            default: null
+        },
+        pixelEnabled: {
+            type: Boolean,
+            default: false
+        },
+        exitIntentTrackingEnabled: {
+            type: Boolean,
+            default: false // Feature flag for exit intent tracking
+        },
         facebookPageId: {
             type: String,
             trim: true,

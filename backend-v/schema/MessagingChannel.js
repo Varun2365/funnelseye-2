@@ -287,8 +287,7 @@ const messagingChannelSchema = new mongoose.Schema({
 
 // Indexes for performance
 messagingChannelSchema.index({ type: 1, isActive: 1 });
-messagingChannelSchema.index({ 'whatsappApi.phoneNumberId': 1 }, { unique: true, sparse: true });
-messagingChannelSchema.index({ 'whatsappBailey.deviceId': 1 }, { unique: true, sparse: true });
+// Note: whatsappApi.phoneNumberId and whatsappBailey.deviceId indexes are already defined in field definitions (unique: true, sparse: true)
 messagingChannelSchema.index({ 'emailSmtp.auth.user': 1 }, { unique: true, sparse: true });
 messagingChannelSchema.index({ priority: -1 });
 messagingChannelSchema.index({ 'templates.templateId': 1 });

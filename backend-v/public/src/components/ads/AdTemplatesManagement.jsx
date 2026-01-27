@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '../ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Switch } from '../ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import {
   Plus,
   Edit,
@@ -28,7 +30,16 @@ import {
   Calendar,
   Globe,
   Lock,
-  TrendingUp
+  TrendingUp,
+  Zap,
+  BarChart,
+  Palette,
+  Users,
+  MapPin,
+  Wallet,
+  CheckCircle2,
+  Workflow,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 import adminApiService from '../../services/adminApiService';
@@ -47,56 +58,59 @@ const AdTemplatesManagement = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
+  const [activeTab, setActiveTab] = useState('basics');
   
-  // Form state
+  // Funnel and stage data
+  const [funnels, setFunnels] = useState([]);
+  const [funnelStages, setFunnelStages] = useState([]);
+  const [loadingFunnels, setLoadingFunnels] = useState(false);
+  
+  // Form state - New structure matching requirements
   const [templateForm, setTemplateForm] = useState({
+    // Tab 1: Template Basics
     name: '',
     description: '',
-    category: 'other',
+    funnelType: 'lead_gen',
+    stageId: '',
     objective: 'OUTCOME_LEADS',
-    adTitle: '',
-    adDescription: '',
-    adHeadline: '',
-    adText: '',
-    adImageUrl: '',
-    adVideoUrl: '',
-    callToAction: 'LEARN_MORE',
-    targeting: {
-      ageMin: null,
-      ageMax: null,
-      genders: [],
-      locations: {
-        countries: [],
-        regions: [],
-        cities: []
-      },
-      interests: [],
-      behaviors: [],
-      customAudiences: [],
-      lookalikeAudiences: []
+    status: 'active', // 'active' or 'draft'
+    
+    // Tab 2: Ad Creative
+    creative: {
+      primaryText: '',
+      headline: '',
+      description: '',
+      cta: 'LEARN_MORE',
+      type: 'image' // 'image' or 'video'
     },
+    
+    // Tab 3: Targeting & Audiences
+    audienceRules: {
+      triggerTypes: [], // ['FunnelStageViewed', 'FormFilled', 'PageEngaged', 'ExitIntent']
+      rules: [{
+        eventType: '',
+        stageId: '',
+        lookbackDays: 30,
+        intentLabel: ''
+      }]
+    },
+    
+    // Tab 4: Funnel & Events Mapping
+    funnelMapping: {
+      triggerEvent: 'FunnelStageViewed',
+      redirectStageId: '',
+      showSameStage: false,
+      metaEventName: '',
+      customEventKey: ''
+    },
+    
+    // Tab 5: Budget & Delivery
     budget: {
-      type: 'daily',
+      type: 'daily', // 'daily' or 'lifetime'
       amount: null,
-      currency: 'USD'
-    },
-    schedule: {
-      startDate: null,
-      endDate: null,
-      timezone: 'UTC'
-    },
-    funnelId: null,
-    funnelUrl: '',
-    productInfo: '',
-    targetAudience: '',
-    placements: ['all'],
-    optimization: {
-      optimizationGoal: 'LINK_CLICKS',
-      bidStrategy: 'LOWEST_COST'
-    },
-    tags: [],
-    isActive: true,
-    isPublic: false
+      optimizationGoal: 'LANDING_PAGE_VIEWS',
+      placementStrategy: 'advantage_plus' // 'advantage_plus' or 'manual'
+    }
   });
 
   // Load templates
@@ -123,25 +137,111 @@ const AdTemplatesManagement = () => {
     }
   };
 
-  // Load templates on mount
+  // Load funnels and stages
+  const loadFunnels = async () => {
+    try {
+      setLoadingFunnels(true);
+      const response = await adminApiService.apiCall('/funnels');
+      if (response.success) {
+        setFunnels(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading funnels:', error);
+    } finally {
+      setLoadingFunnels(false);
+    }
+  };
+
+  // Load stages when funnel is selected
+  const handleFunnelTypeChange = (funnelType) => {
+    setTemplateForm(prev => ({ ...prev, funnelType, stageId: '' }));
+    // Load stages based on funnel type (for now, we'll load all stages)
+    loadFunnelStages();
+  };
+
+  const loadFunnelStages = async () => {
+    try {
+      // Fetch stages from all funnels or a specific funnel
+      // For now, we'll create a generic list of common stages
+      const commonStages = [
+        { pageId: 'landing-page', name: 'Landing Page', order: 0 },
+        { pageId: 'lead-form', name: 'Lead Form', order: 1 },
+        { pageId: 'thank-you', name: 'Thank You', order: 2 },
+        { pageId: 'upsell', name: 'Upsell', order: 3 },
+        { pageId: 'webinar', name: 'Webinar', order: 4 },
+        { pageId: 'coaching-call', name: 'Coaching Call', order: 5 }
+      ];
+      setFunnelStages(commonStages);
+    } catch (error) {
+      console.error('Error loading stages:', error);
+    }
+  };
+
+  // Generate custom event key
+  const generateCustomEventKey = () => {
+    const { name, funnelMapping } = templateForm;
+    if (name && funnelMapping?.metaEventName) {
+      const key = `${name.toLowerCase().replace(/\s+/g, '_')}_${funnelMapping.metaEventName.toLowerCase()}`;
+      setTemplateForm(prev => ({
+        ...prev,
+        funnelMapping: { 
+          ...(prev.funnelMapping || {}), 
+          customEventKey: key 
+        }
+      }));
+    }
+  };
+
+  // Validation for preview tab
+  const validateForm = () => {
+    const errors = [];
+    if (!templateForm.stageId) errors.push('Funnel stage must be selected');
+    if (!templateForm.funnelMapping?.triggerEvent) errors.push('At least one event must be mapped');
+    if (!templateForm.objective) errors.push('Objective must be selected');
+    return errors;
+  };
+
+  // Load templates and funnels on mount
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       loadTemplates();
+      loadFunnels();
+      loadFunnelStages();
     }
   }, [authLoading, isAuthenticated, categoryFilter, statusFilter, searchQuery]);
 
+  // Generate custom event key when meta event name changes
+  useEffect(() => {
+    if (templateForm.funnelMapping?.metaEventName) {
+      generateCustomEventKey();
+    }
+  }, [templateForm.funnelMapping?.metaEventName, templateForm.name]);
+
   // Handle create/edit
-  const handleSave = async () => {
+  const handleSave = async (saveAsDraft = false) => {
     try {
+      // Validate required fields
+      const errors = validateForm();
+      if (errors.length > 0 && !saveAsDraft) {
+        toast.error(`Please fix the following: ${errors.join(', ')}`);
+        setActiveTab('preview');
+        return;
+      }
+
       const url = editingTemplate 
         ? `/ad-templates/${editingTemplate._id}`
         : '/ad-templates';
       
       const method = editingTemplate ? 'PUT' : 'POST';
       
+      const payload = {
+        ...templateForm,
+        status: saveAsDraft ? 'draft' : templateForm.status
+      };
+      
       const response = await adminApiService.apiCall(url, {
         method,
-        body: templateForm
+        body: payload
       });
       
       if (response.success) {
@@ -201,40 +301,54 @@ const AdTemplatesManagement = () => {
   // Reset form
   const resetForm = () => {
     setTemplateForm({
+      // Tab 1: Template Basics
       name: '',
       description: '',
-      category: 'other',
+      funnelType: 'lead_gen',
+      stageId: '',
       objective: 'OUTCOME_LEADS',
-      adTitle: '',
-      adDescription: '',
-      adHeadline: '',
-      adText: '',
-      adImageUrl: '',
-      adVideoUrl: '',
-      callToAction: 'LEARN_MORE',
-      targeting: {
-        ageMin: null,
-        ageMax: null,
-        genders: [],
-        locations: { countries: [], regions: [], cities: [] },
-        interests: [],
-        behaviors: [],
-        customAudiences: [],
-        lookalikeAudiences: []
+      status: 'active',
+      
+      // Tab 2: Ad Creative
+      creative: {
+        primaryText: '',
+        headline: '',
+        description: '',
+        cta: 'LEARN_MORE',
+        type: 'image'
       },
-      budget: { type: 'daily', amount: null, currency: 'USD' },
-      schedule: { startDate: null, endDate: null, timezone: 'UTC' },
-      funnelId: null,
-      funnelUrl: '',
-      productInfo: '',
-      targetAudience: '',
-      placements: ['all'],
-      optimization: { optimizationGoal: 'LINK_CLICKS', bidStrategy: 'LOWEST_COST' },
-      tags: [],
-      isActive: true,
-      isPublic: false
+      
+      // Tab 3: Targeting & Audiences
+      audienceRules: {
+        triggerTypes: [],
+        rules: [{
+          eventType: '',
+          stageId: '',
+          lookbackDays: 30,
+          intentLabel: ''
+        }]
+      },
+      
+      // Tab 4: Funnel & Events Mapping
+      funnelMapping: {
+        triggerEvent: 'FunnelStageViewed',
+        redirectStageId: '',
+        showSameStage: false,
+        metaEventName: '',
+        customEventKey: ''
+      },
+      
+      // Tab 5: Budget & Delivery
+      budget: {
+        type: 'daily',
+        amount: null,
+        optimizationGoal: 'LANDING_PAGE_VIEWS',
+        placementStrategy: 'advantage_plus'
+      }
     });
     setEditingTemplate(null);
+    setActiveTab('basics');
+    setFunnelStages([]);
   };
 
   // Open edit dialog
@@ -306,7 +420,7 @@ const AdTemplatesManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white p-6">
       <div className="mx-auto w-full max-w-full px-4 lg:px-8 md:px-6 sm:px-4">
         {/* Header */}
         <div className="mb-8">
@@ -476,322 +590,847 @@ const AdTemplatesManagement = () => {
         </Card>
       </div>
 
-      {/* Create/Edit Template Dialog */}
-      <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+      {/* Create/Edit Template Dialog - New Vertical Tab Layout */}
+      <Dialog open={showTemplateDialog} onOpenChange={(open) => {
+        setShowTemplateDialog(open);
+        if (!open) resetForm();
+      }}>
         <DialogContent
-          className="!max-w-none sm:!max-w-none p-0 overflow-hidden border-0 shadow-2xl flex flex-col"
-          style={{ width: '70vw', maxHeight: '90vh' }}
+          className="!max-w-none sm:!max-w-none p-0 overflow-hidden border-0 shadow-2xl flex flex-col !top-[50%] !left-[50%] !-translate-x-1/2 !-translate-y-1/2"
+          style={{ width: '1400px', height: '850px' }}
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-slate-900">
-              {editingTemplate ? 'Edit Template' : 'Create New Template'}
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-purple-50">
+            <DialogTitle className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-blue-600" />
+              {editingTemplate ? 'Edit Ad Template' : 'Create New Ad Template'}
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-600">
-              {editingTemplate ? 'Update the template details' : 'Fill in the template information to prefill ad campaigns'}
+            <DialogDescription className="text-sm text-slate-600 mt-2">
+              {editingTemplate 
+                ? 'Update the template structure and logic. Coaches will use their own accounts, pixels, and budgets.'
+                : 'Define reusable ad template structure. Coaches will connect their Meta accounts, pixels, and budgets later.'}
             </DialogDescription>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 max-h-[calc(90vh-180px)] overflow-y-auto">
-            <div className="px-6 py-4">
-              <div className="grid grid-cols-2 gap-6">
-                {/* Left Column */}
-                <div className="space-y-6">
-                  {/* Basic Information */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                      <FileText className="h-4 w-4 text-slate-600" />
-                      <h3 className="text-base font-semibold text-slate-900">Basic Information</h3>
-                    </div>
-                    <div className="space-y-4 pt-2">
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left Sidebar - Vertical Tabs */}
+            <div className="w-64 border-r border-slate-200 bg-white flex flex-col">
+              <div className="p-4 space-y-1">
+                {[
+                  { id: 'basics', label: 'Template Basics', icon: FileText, color: 'blue' },
+                  { id: 'creative', label: 'Ad Creative', icon: Palette, color: 'purple' },
+                  { id: 'targeting', label: 'Targeting & Audiences', icon: Users, color: 'green' },
+                  { id: 'mapping', label: 'Events Mapping', icon: MapPin, color: 'orange' },
+                  { id: 'budget', label: 'Budget & Delivery', icon: Wallet, color: 'amber' },
+                  { id: 'preview', label: 'Preview & Save', icon: CheckCircle2, color: 'emerald' }
+                ].map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 text-left ${
+                        isActive
+                          ? 'bg-blue-600 text-white rounded-[5px]'
+                          : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900 rounded-lg'
+                      }`}
+                    >
+                      <Icon className={`h-5 w-5 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                      <span className="font-medium text-sm">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Main Content Area */}
+            <ScrollArea className="flex-1 overflow-y-auto">
+              <div className="p-8">
+
+                {/* Tab 1: Template Basics */}
+                {activeTab === 'basics' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                      </div>
                       <div>
-                        <Label htmlFor="name" className="text-sm font-medium text-slate-700 mb-1.5 block">Template Name *</Label>
+                        <h3 className="text-lg font-semibold text-slate-900">Template Basics</h3>
+                        <p className="text-sm text-slate-500">Define the identity and scope of the ad template</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5 pt-4">
+                      <div>
+                        <Label htmlFor="name" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Template Name *
+                        </Label>
                         <Input
                           id="name"
                           value={templateForm.name}
                           onChange={(e) => setTemplateForm({ ...templateForm, name: e.target.value })}
                           placeholder="e.g., Lead Generation Template"
-                          className="h-10"
+                          className="h-11"
                         />
                       </div>
+
                       <div>
-                        <Label htmlFor="description" className="text-sm font-medium text-slate-700 mb-1.5 block">Description</Label>
+                        <Label htmlFor="description" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Template Description
+                        </Label>
                         <Textarea
                           id="description"
                           value={templateForm.description}
                           onChange={(e) => setTemplateForm({ ...templateForm, description: e.target.value })}
                           placeholder="Describe what this template is used for..."
-                          rows={3}
+                          rows={4}
                           className="resize-none"
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+
+                      <div className="grid grid-cols-2 gap-5">
                         <div>
-                          <Label htmlFor="category" className="text-sm font-medium text-slate-700 mb-1.5 block">Category</Label>
+                          <Label htmlFor="funnelType" className="text-sm font-semibold text-slate-700 mb-2 block">
+                            Funnel Type *
+                          </Label>
                           <Select
-                            value={templateForm.category}
-                            onValueChange={(value) => setTemplateForm({ ...templateForm, category: value })}
+                            value={templateForm.funnelType}
+                            onValueChange={handleFunnelTypeChange}
                           >
-                            <SelectTrigger className="h-10">
+                            <SelectTrigger className="h-11">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="lead_generation">Lead Generation</SelectItem>
-                              <SelectItem value="sales">Sales</SelectItem>
-                              <SelectItem value="awareness">Awareness</SelectItem>
-                              <SelectItem value="engagement">Engagement</SelectItem>
-                              <SelectItem value="conversion">Conversion</SelectItem>
-                              <SelectItem value="retargeting">Retargeting</SelectItem>
-                              <SelectItem value="other">Other</SelectItem>
+                              <SelectItem value="lead_gen">Lead Gen</SelectItem>
+                              <SelectItem value="webinar">Webinar</SelectItem>
+                              <SelectItem value="coaching_call">Coaching Call</SelectItem>
+                              <SelectItem value="course_sale">Course Sale</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
+
                         <div>
-                          <Label htmlFor="objective" className="text-sm font-medium text-slate-700 mb-1.5 block">Campaign Objective</Label>
+                          <Label htmlFor="stageId" className="text-sm font-semibold text-slate-700 mb-2 block">
+                            Funnel Stage *
+                          </Label>
+                          <Select
+                            value={templateForm.stageId}
+                            onValueChange={(value) => setTemplateForm({ ...templateForm, stageId: value })}
+                            disabled={loadingFunnels}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder={loadingFunnels ? "Loading stages..." : "Select stage"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {funnelStages.map((stage) => (
+                                <SelectItem key={stage.pageId} value={stage.pageId}>
+                                  {stage.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-5">
+                        <div>
+                          <Label htmlFor="objective" className="text-sm font-semibold text-slate-700 mb-2 block">
+                            Objective *
+                          </Label>
                           <Select
                             value={templateForm.objective}
                             onValueChange={(value) => setTemplateForm({ ...templateForm, objective: value })}
                           >
-                            <SelectTrigger className="h-10">
+                            <SelectTrigger className="h-11">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="OUTCOME_TRAFFIC">Traffic</SelectItem>
                               <SelectItem value="OUTCOME_LEADS">Leads</SelectItem>
-                              <SelectItem value="OUTCOME_ENGAGEMENT">Engagement</SelectItem>
-                              <SelectItem value="OUTCOME_APP_PROMOTION">App Promotion</SelectItem>
-                              <SelectItem value="OUTCOME_SALES">Sales</SelectItem>
-                              <SelectItem value="OUTCOME_AWARENESS">Awareness</SelectItem>
+                              <SelectItem value="OUTCOME_SALES">Conversions</SelectItem>
                             </SelectContent>
                           </Select>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="status" className="text-sm font-semibold text-slate-700 mb-2 block">
+                            Status
+                          </Label>
+                          <div className="flex items-center gap-3 h-11">
+                            <Switch
+                              id="status"
+                              checked={templateForm.status === 'active'}
+                              onCheckedChange={(checked) => 
+                                setTemplateForm({ ...templateForm, status: checked ? 'active' : 'draft' })
+                              }
+                            />
+                            <span className="text-sm text-slate-600">
+                              {templateForm.status === 'active' ? 'Active' : 'Draft'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  {/* Ad Content */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                      <Target className="h-4 w-4 text-slate-600" />
-                      <h3 className="text-base font-semibold text-slate-900">Ad Content</h3>
-                    </div>
-                    <div className="space-y-4 pt-2">
-                      <div>
-                        <Label htmlFor="adTitle" className="text-sm font-medium text-slate-700 mb-1.5 block">Ad Title *</Label>
-                        <Input
-                          id="adTitle"
-                          value={templateForm.adTitle}
-                          onChange={(e) => setTemplateForm({ ...templateForm, adTitle: e.target.value })}
-                          placeholder="Enter the ad title"
-                          className="h-10"
-                        />
+                {/* Tab 2: Ad Creative */}
+                {activeTab === 'creative' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <Palette className="h-5 w-5 text-purple-600" />
                       </div>
                       <div>
-                        <Label htmlFor="adDescription" className="text-sm font-medium text-slate-700 mb-1.5 block">Ad Description *</Label>
+                        <h3 className="text-lg font-semibold text-slate-900">Ad Creative</h3>
+                        <p className="text-sm text-slate-500">Define reusable creative structure (content, not assets)</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5 pt-4">
+                      <div>
+                        <Label htmlFor="primaryText" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Primary Text *
+                        </Label>
                         <Textarea
-                          id="adDescription"
-                          value={templateForm.adDescription}
-                          onChange={(e) => setTemplateForm({ ...templateForm, adDescription: e.target.value })}
-                          placeholder="Enter the ad description"
-                          rows={4}
+                          id="primaryText"
+                          value={templateForm.creative?.primaryText || ''}
+                          onChange={(e) => setTemplateForm({
+                            ...templateForm,
+                            creative: { ...(templateForm.creative || {}), primaryText: e.target.value }
+                          })}
+                          placeholder="Enter primary ad text. Use {{variable}} for dynamic content..."
+                          rows={5}
                           className="resize-none"
                         />
+                        <p className="text-xs text-slate-500 mt-1.5">
+                          Supports dynamic variables like {"{{name}}"}, {"{{offer}}"}, etc.
+                        </p>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+
+                      <div>
+                        <Label htmlFor="headline" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Headline *
+                        </Label>
+                        <Input
+                          id="headline"
+                          value={templateForm.creative?.headline || ''}
+                          onChange={(e) => setTemplateForm({
+                            ...templateForm,
+                            creative: { ...(templateForm.creative || {}), headline: e.target.value }
+                          })}
+                          placeholder="Enter headline"
+                          className="h-11"
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="description" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Description (Optional)
+                        </Label>
+                        <Input
+                          id="description"
+                          value={templateForm.creative?.description || ''}
+                          onChange={(e) => setTemplateForm({
+                            ...templateForm,
+                            creative: { ...(templateForm.creative || {}), description: e.target.value }
+                          })}
+                          placeholder="Optional description"
+                          className="h-11"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-5">
                         <div>
-                          <Label htmlFor="adHeadline" className="text-sm font-medium text-slate-700 mb-1.5 block">Headline</Label>
-                          <Input
-                            id="adHeadline"
-                            value={templateForm.adHeadline}
-                            onChange={(e) => setTemplateForm({ ...templateForm, adHeadline: e.target.value })}
-                            placeholder="Optional headline"
-                            className="h-10"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="callToAction" className="text-sm font-medium text-slate-700 mb-1.5 block">Call to Action</Label>
+                          <Label htmlFor="cta" className="text-sm font-semibold text-slate-700 mb-2 block">
+                            CTA Button *
+                          </Label>
                           <Select
-                            value={templateForm.callToAction}
-                            onValueChange={(value) => setTemplateForm({ ...templateForm, callToAction: value })}
+                            value={templateForm.creative?.cta || 'LEARN_MORE'}
+                            onValueChange={(value) => setTemplateForm({
+                              ...templateForm,
+                              creative: { ...(templateForm.creative || {}), cta: value }
+                            })}
                           >
-                            <SelectTrigger className="h-10">
+                            <SelectTrigger className="h-11">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="LEARN_MORE">Learn More</SelectItem>
-                              <SelectItem value="SHOP_NOW">Shop Now</SelectItem>
                               <SelectItem value="SIGN_UP">Sign Up</SelectItem>
-                              <SelectItem value="DOWNLOAD">Download</SelectItem>
-                              <SelectItem value="BOOK_TRAVEL">Book Travel</SelectItem>
-                              <SelectItem value="CONTACT_US">Contact Us</SelectItem>
+                              <SelectItem value="BOOK_NOW">Book Now</SelectItem>
+                              <SelectItem value="SHOP_NOW">Shop Now</SelectItem>
                               <SelectItem value="GET_QUOTE">Get Quote</SelectItem>
                               <SelectItem value="APPLY_NOW">Apply Now</SelectItem>
-                              <SelectItem value="SUBSCRIBE">Subscribe</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="adText" className="text-sm font-medium text-slate-700 mb-1.5 block">Ad Text</Label>
-                        <Textarea
-                          id="adText"
-                          value={templateForm.adText}
-                          onChange={(e) => setTemplateForm({ ...templateForm, adText: e.target.value })}
-                          placeholder="Additional ad text"
-                          rows={3}
-                          className="resize-none"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
+
                         <div>
-                          <Label htmlFor="adImageUrl" className="text-sm font-medium text-slate-700 mb-1.5 block">Image URL</Label>
-                          <Input
-                            id="adImageUrl"
-                            value={templateForm.adImageUrl}
-                            onChange={(e) => setTemplateForm({ ...templateForm, adImageUrl: e.target.value })}
-                            placeholder="https://example.com/image.jpg"
-                            className="h-10"
-                          />
+                          <Label htmlFor="creativeType" className="text-sm font-semibold text-slate-700 mb-2 block">
+                            Creative Type
+                          </Label>
+                          <div className="flex gap-4 h-11 items-center">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="creativeType"
+                                value="image"
+                                checked={(templateForm.creative?.type || 'image') === 'image'}
+                                onChange={(e) => setTemplateForm({
+                                  ...templateForm,
+                                  creative: { ...(templateForm.creative || {}), type: e.target.value }
+                                })}
+                                className="w-4 h-4 text-purple-600"
+                              />
+                              <span className="text-sm text-slate-700">Image</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="creativeType"
+                                value="video"
+                                checked={(templateForm.creative?.type || 'image') === 'video'}
+                                onChange={(e) => setTemplateForm({
+                                  ...templateForm,
+                                  creative: { ...(templateForm.creative || {}), type: e.target.value }
+                                })}
+                                className="w-4 h-4 text-purple-600"
+                              />
+                              <span className="text-sm text-slate-700">Video</span>
+                            </label>
+                          </div>
                         </div>
-                        <div>
-                          <Label htmlFor="adVideoUrl" className="text-sm font-medium text-slate-700 mb-1.5 block">Video URL</Label>
-                          <Input
-                            id="adVideoUrl"
-                            value={templateForm.adVideoUrl}
-                            onChange={(e) => setTemplateForm({ ...templateForm, adVideoUrl: e.target.value })}
-                            placeholder="https://example.com/video.mp4"
-                            className="h-10"
-                          />
-                        </div>
+                      </div>
+
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-sm text-amber-800 flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          <strong>Note:</strong> Coach will replace assets inside Meta Ads Manager. This template defines structure only.
+                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Right Column */}
-                <div className="space-y-6">
-                  {/* Budget & Settings */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                      <DollarSign className="h-4 w-4 text-slate-600" />
-                      <h3 className="text-base font-semibold text-slate-900">Budget & Settings</h3>
+                {/* Tab 3: Targeting & Audiences */}
+                {activeTab === 'targeting' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                      <div className="p-2 bg-green-100 rounded-lg">
+                        <Users className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">Targeting & Audiences</h3>
+                        <p className="text-sm text-slate-500">Define retargeting logic, not final audience IDs</p>
+                      </div>
                     </div>
-                    <div className="space-y-4 pt-2">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="budgetType" className="text-sm font-medium text-slate-700 mb-1.5 block">Budget Type</Label>
-                          <Select
-                            value={templateForm.budget.type}
-                            onValueChange={(value) => setTemplateForm({
-                              ...templateForm,
-                              budget: { ...templateForm.budget, type: value }
-                            })}
-                          >
-                            <SelectTrigger className="h-10">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="daily">Daily Budget</SelectItem>
-                              <SelectItem value="lifetime">Lifetime Budget</SelectItem>
-                            </SelectContent>
-                          </Select>
+
+                    <div className="space-y-5 pt-4">
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+                          Audience Trigger Type (Multi-select)
+                        </Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {['FunnelStageViewed', 'FormFilled', 'PageEngaged', 'ExitIntent'].map((trigger) => (
+                            <label key={trigger} className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                              <input
+                                type="checkbox"
+                                checked={(templateForm.audienceRules?.triggerTypes || []).includes(trigger)}
+                                onChange={(e) => {
+                                  const current = templateForm.audienceRules?.triggerTypes || [];
+                                  const updated = e.target.checked
+                                    ? [...current, trigger]
+                                    : current.filter(t => t !== trigger);
+                                  setTemplateForm({
+                                    ...templateForm,
+                                    audienceRules: { ...(templateForm.audienceRules || {}), triggerTypes: updated }
+                                  });
+                                }}
+                                className="w-4 h-4 text-green-600"
+                              />
+                              <span className="text-sm text-slate-700">{trigger}</span>
+                            </label>
+                          ))}
                         </div>
-                        <div>
-                          <Label htmlFor="budgetAmount" className="text-sm font-medium text-slate-700 mb-1.5 block">Budget Amount (USD)</Label>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+                          Audience Rule Builder
+                        </Label>
+                        {(templateForm.audienceRules?.rules || []).map((rule, index) => (
+                          <div key={index} className="p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-4 mb-4">
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <Label className="text-xs font-medium text-slate-600 mb-1.5 block">IF Event</Label>
+                                <Select
+                                  value={rule.eventType}
+                                  onValueChange={(value) => {
+                                    const newRules = [...(templateForm.audienceRules?.rules || [])];
+                                    newRules[index].eventType = value;
+                                    setTemplateForm({
+                                      ...templateForm,
+                                      audienceRules: { ...(templateForm.audienceRules || {}), rules: newRules }
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Select event" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="FunnelStageViewed">FunnelStageViewed</SelectItem>
+                                    <SelectItem value="FormFilled">FormFilled</SelectItem>
+                                    <SelectItem value="PageEngaged">PageEngaged</SelectItem>
+                                    <SelectItem value="ExitIntent">ExitIntent</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label className="text-xs font-medium text-slate-600 mb-1.5 block">AND Stage</Label>
+                                <Select
+                                  value={rule.stageId}
+                                  onValueChange={(value) => {
+                                    const newRules = [...(templateForm.audienceRules?.rules || [])];
+                                    newRules[index].stageId = value;
+                                    setTemplateForm({
+                                      ...templateForm,
+                                      audienceRules: { ...(templateForm.audienceRules || {}), rules: newRules }
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="h-10">
+                                    <SelectValue placeholder="Select stage" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {funnelStages.map((stage) => (
+                                      <SelectItem key={stage.pageId} value={stage.pageId}>
+                                        {stage.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label className="text-xs font-medium text-slate-600 mb-1.5 block">Lookback (days)</Label>
+                                <Input
+                                  type="number"
+                                  value={rule.lookbackDays}
+                                  onChange={(e) => {
+                                    const newRules = [...(templateForm.audienceRules?.rules || [])];
+                                    newRules[index].lookbackDays = parseInt(e.target.value) || 30;
+                                    setTemplateForm({
+                                      ...templateForm,
+                                      audienceRules: { ...(templateForm.audienceRules || {}), rules: newRules }
+                                    });
+                                  }}
+                                  className="h-10"
+                                  min="1"
+                                  max="90"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label className="text-xs font-medium text-slate-600 mb-1.5 block">Audience Intent Label</Label>
+                              <Input
+                                value={rule.intentLabel}
+                                onChange={(e) => {
+                                  const newRules = [...(templateForm.audienceRules?.rules || [])];
+                                  newRules[index].intentLabel = e.target.value;
+                                  setTemplateForm({
+                                    ...templateForm,
+                                    audienceRules: { ...(templateForm.audienceRules || {}), rules: newRules }
+                                  });
+                                }}
+                                placeholder="e.g., Landing Page - Viewed but Not Filled"
+                                className="h-10"
+                              />
+                            </div>
+                          </div>
+                        ))}
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setTemplateForm({
+                              ...templateForm,
+                              audienceRules: {
+                                ...(templateForm.audienceRules || {}),
+                                rules: [...(templateForm.audienceRules?.rules || []), {
+                                  eventType: '',
+                                  stageId: '',
+                                  lookbackDays: 30,
+                                  intentLabel: ''
+                                }]
+                              }
+                            });
+                          }}
+                          className="mt-2"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Rule
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 4: Funnel & Events Mapping */}
+                {activeTab === 'mapping' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                      <div className="p-2 bg-orange-100 rounded-lg">
+                        <MapPin className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">Funnel & Events Mapping</h3>
+                        <p className="text-sm text-slate-500">Connect ads to stage-wise funnel progression</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5 pt-4">
+                      <div>
+                        <Label htmlFor="triggerEvent" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Trigger Event *
+                        </Label>
+                        <Select
+                          value={templateForm.funnelMapping?.triggerEvent || 'FunnelStageViewed'}
+                          onValueChange={(value) => setTemplateForm({
+                            ...templateForm,
+                            funnelMapping: { ...(templateForm.funnelMapping || {}), triggerEvent: value }
+                          })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="FunnelStageViewed">FunnelStageViewed</SelectItem>
+                            <SelectItem value="FormFilled">FormFilled</SelectItem>
+                            <SelectItem value="ButtonClicked">ButtonClicked</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+                          Next Funnel Action
+                        </Label>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input
+                              type="radio"
+                              name="funnelAction"
+                              checked={!templateForm.funnelMapping?.showSameStage}
+                              onChange={() => setTemplateForm({
+                                ...templateForm,
+                                funnelMapping: { ...(templateForm.funnelMapping || {}), showSameStage: false }
+                              })}
+                              className="w-4 h-4 text-orange-600"
+                            />
+                            <span className="text-sm text-slate-700">Redirect To Stage</span>
+                          </label>
+                          {!templateForm.funnelMapping?.showSameStage && (
+                            <Select
+                              value={templateForm.funnelMapping?.redirectStageId || ''}
+                              onValueChange={(value) => setTemplateForm({
+                                ...templateForm,
+                                funnelMapping: { ...(templateForm.funnelMapping || {}), redirectStageId: value }
+                              })}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Select stage" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {funnelStages.map((stage) => (
+                                  <SelectItem key={stage.pageId} value={stage.pageId}>
+                                    {stage.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+
+                          <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50">
+                            <input
+                              type="radio"
+                              name="funnelAction"
+                              checked={templateForm.funnelMapping?.showSameStage || false}
+                              onChange={() => setTemplateForm({
+                                ...templateForm,
+                                funnelMapping: { ...(templateForm.funnelMapping || {}), showSameStage: true }
+                              })}
+                              className="w-4 h-4 text-orange-600"
+                            />
+                            <span className="text-sm text-slate-700">Show Same Stage</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <Label htmlFor="metaEventName" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Pixel Event Fired - Meta Event Name *
+                        </Label>
+                        <Input
+                          id="metaEventName"
+                          value={templateForm.funnelMapping?.metaEventName || ''}
+                          onChange={(e) => {
+                            setTemplateForm({
+                              ...templateForm,
+                              funnelMapping: { 
+                                ...(templateForm.funnelMapping || {}), 
+                                metaEventName: e.target.value 
+                              }
+                            });
+                            generateCustomEventKey();
+                          }}
+                          placeholder="e.g., Lead, ViewContent, CompleteRegistration"
+                          className="h-11"
+                        />
+                        <p className="text-xs text-slate-500 mt-1.5">
+                          Standard Meta event name that will be fired
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="customEventKey" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Custom Event Key (Auto-generated)
+                        </Label>
+                        <Input
+                          id="customEventKey"
+                          value={templateForm.funnelMapping?.customEventKey || ''}
+                          readOnly
+                          className="h-11 bg-slate-50"
+                        />
+                        <p className="text-xs text-slate-500 mt-1.5">
+                          Auto-generated from template name and event name
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab 5: Budget & Delivery */}
+                {activeTab === 'budget' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                      <div className="p-2 bg-amber-100 rounded-lg">
+                        <Wallet className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">Budget & Delivery</h3>
+                        <p className="text-sm text-slate-500">Define default delivery behavior (coach can edit later)</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5 pt-4">
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+                          Budget Type
+                        </Label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 flex-1">
+                            <input
+                              type="radio"
+                              name="budgetType"
+                              value="daily"
+                              checked={(templateForm.budget?.type || 'daily') === 'daily'}
+                              onChange={(e) => setTemplateForm({
+                                ...templateForm,
+                                budget: { ...(templateForm.budget || {}), type: e.target.value }
+                              })}
+                              className="w-4 h-4 text-amber-600"
+                            />
+                            <span className="text-sm text-slate-700 font-medium">Daily</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 flex-1">
+                            <input
+                              type="radio"
+                              name="budgetType"
+                              value="lifetime"
+                              checked={(templateForm.budget?.type || 'daily') === 'lifetime'}
+                              onChange={(e) => setTemplateForm({
+                                ...templateForm,
+                                budget: { ...(templateForm.budget || {}), type: e.target.value }
+                              })}
+                              className="w-4 h-4 text-amber-600"
+                            />
+                            <span className="text-sm text-slate-700 font-medium">Lifetime</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="budgetAmount" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Default Budget Amount (USD)
+                        </Label>
                           <Input
                             id="budgetAmount"
                             type="number"
-                            value={templateForm.budget.amount || ''}
+                            value={templateForm.budget?.amount || ''}
                             onChange={(e) => setTemplateForm({
                               ...templateForm,
-                              budget: { ...templateForm.budget, amount: e.target.value ? parseFloat(e.target.value) : null }
+                              budget: { ...(templateForm.budget || {}), amount: e.target.value ? parseFloat(e.target.value) : null }
                             })}
                             placeholder="0.00"
                             min="0"
                             step="0.01"
-                            className="h-10"
+                            className="h-11"
                           />
-                        </div>
+                        <p className="text-xs text-slate-500 mt-1.5">
+                          Coach can edit this amount after importing
+                        </p>
                       </div>
-                      <div>
-                        <Label htmlFor="funnelUrl" className="text-sm font-medium text-slate-700 mb-1.5 block">Funnel URL</Label>
-                        <Input
-                          id="funnelUrl"
-                          value={templateForm.funnelUrl}
-                          onChange={(e) => setTemplateForm({ ...templateForm, funnelUrl: e.target.value })}
-                          placeholder="https://yourfunnel.com/landing-page"
-                          className="h-10"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Target Audience & Product Info */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                      <TrendingUp className="h-4 w-4 text-slate-600" />
-                      <h3 className="text-base font-semibold text-slate-900">Targeting & Product</h3>
-                    </div>
-                    <div className="space-y-4 pt-2">
                       <div>
-                        <Label htmlFor="targetAudience" className="text-sm font-medium text-slate-700 mb-1.5 block">Target Audience Description</Label>
-                        <Textarea
-                          id="targetAudience"
-                          value={templateForm.targetAudience}
-                          onChange={(e) => setTemplateForm({ ...templateForm, targetAudience: e.target.value })}
-                          placeholder="Describe your target audience..."
-                          rows={3}
-                          className="resize-none"
-                        />
+                        <Label htmlFor="optimizationGoal" className="text-sm font-semibold text-slate-700 mb-2 block">
+                          Optimization Goal
+                        </Label>
+                        <Select
+                          value={templateForm.budget?.optimizationGoal || 'LANDING_PAGE_VIEWS'}
+                          onValueChange={(value) => setTemplateForm({
+                            ...templateForm,
+                            budget: { ...(templateForm.budget || {}), optimizationGoal: value }
+                          })}
+                        >
+                          <SelectTrigger className="h-11">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="LANDING_PAGE_VIEWS">Landing Page Views</SelectItem>
+                            <SelectItem value="LEADS">Leads</SelectItem>
+                            <SelectItem value="CONVERSIONS">Conversions</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                      <div>
-                        <Label htmlFor="productInfo" className="text-sm font-medium text-slate-700 mb-1.5 block">Product/Service Information</Label>
-                        <Textarea
-                          id="productInfo"
-                          value={templateForm.productInfo}
-                          onChange={(e) => setTemplateForm({ ...templateForm, productInfo: e.target.value })}
-                          placeholder="Describe your product or service..."
-                          rows={3}
-                          className="resize-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Visibility Settings */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
-                      <Eye className="h-4 w-4 text-slate-600" />
-                      <h3 className="text-base font-semibold text-slate-900">Visibility Settings</h3>
-                    </div>
-                    <div className="space-y-4 pt-2">
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <div>
-                          <Label htmlFor="isActive" className="text-sm font-medium text-slate-700">Active</Label>
-                          <p className="text-xs text-slate-500 mt-0.5">Template will be available for use</p>
+                      <div>
+                        <Label className="text-sm font-semibold text-slate-700 mb-3 block">
+                          Placement Strategy
+                        </Label>
+                        <div className="flex gap-4">
+                          <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 flex-1">
+                            <input
+                              type="radio"
+                              name="placementStrategy"
+                              value="advantage_plus"
+                              checked={(templateForm.budget?.placementStrategy || 'advantage_plus') === 'advantage_plus'}
+                              onChange={(e) => setTemplateForm({
+                                ...templateForm,
+                                budget: { ...(templateForm.budget || {}), placementStrategy: e.target.value }
+                              })}
+                              className="w-4 h-4 text-amber-600"
+                            />
+                            <span className="text-sm text-slate-700 font-medium">Advantage+</span>
+                          </label>
+                          <label className="flex items-center gap-2 p-3 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 flex-1">
+                            <input
+                              type="radio"
+                              name="placementStrategy"
+                              value="manual"
+                              checked={(templateForm.budget?.placementStrategy || 'advantage_plus') === 'manual'}
+                              onChange={(e) => setTemplateForm({
+                                ...templateForm,
+                                budget: { ...(templateForm.budget || {}), placementStrategy: e.target.value }
+                              })}
+                              className="w-4 h-4 text-amber-600"
+                            />
+                            <span className="text-sm text-slate-700 font-medium">Manual</span>
+                          </label>
                         </div>
-                        <Switch
-                          id="isActive"
-                          checked={templateForm.isActive}
-                          onCheckedChange={(checked) => setTemplateForm({ ...templateForm, isActive: checked })}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-200">
-                        <div>
-                          <Label htmlFor="isPublic" className="text-sm font-medium text-slate-700">Public</Label>
-                          <p className="text-xs text-slate-500 mt-0.5">Make this template available to all users</p>
-                        </div>
-                        <Switch
-                          id="isPublic"
-                          checked={templateForm.isPublic}
-                          onCheckedChange={(checked) => setTemplateForm({ ...templateForm, isPublic: checked })}
-                        />
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {/* Tab 6: Preview & Save */}
+                {activeTab === 'preview' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-3 pb-4 border-b border-slate-200">
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">Preview & Save</h3>
+                        <p className="text-sm text-slate-500">Review your template before publishing</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-5 pt-4">
+                      {/* Validation Checklist */}
+                      <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <h4 className="text-sm font-semibold text-slate-900 mb-3">Validation Checklist</h4>
+                        <div className="space-y-2">
+                          {[
+                            { label: 'Funnel stage selected', valid: !!templateForm.stageId },
+                            { label: 'At least one event mapped', valid: !!templateForm.funnelMapping?.triggerEvent },
+                            { label: 'Objective selected', valid: !!templateForm.objective },
+                            { label: 'Template name provided', valid: !!templateForm.name },
+                            { label: 'Creative content provided', valid: !!templateForm.creative?.headline && !!templateForm.creative?.primaryText }
+                          ].map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              {item.valid ? (
+                                <CheckCircle className="h-4 w-4 text-emerald-600" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-red-500" />
+                              )}
+                              <span className={`text-sm ${item.valid ? 'text-slate-700' : 'text-slate-500'}`}>
+                                {item.label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Preview Sections */}
+                      <div className="space-y-4">
+                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <h4 className="text-sm font-semibold text-slate-900 mb-2">Ad Copy Preview</h4>
+                          <div className="space-y-2 text-sm text-slate-700">
+                            <p><strong>Headline:</strong> {templateForm.creative?.headline || 'Not set'}</p>
+                            <p><strong>Primary Text:</strong> {templateForm.creative?.primaryText || 'Not set'}</p>
+                            <p><strong>CTA:</strong> {templateForm.creative?.cta || 'Not set'}</p>
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                          <h4 className="text-sm font-semibold text-slate-900 mb-2">Target Audience Logic</h4>
+                          <div className="space-y-1 text-sm text-slate-700">
+                            {(templateForm.audienceRules?.rules || []).map((rule, idx) => (
+                              <p key={idx}>
+                                IF {rule.eventType || 'Event'} on {rule.stageId ? funnelStages.find(s => s.pageId === rule.stageId)?.name : 'Stage'} 
+                                {' '}within {rule.lookbackDays} days → {rule.intentLabel || 'No label'}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                          <h4 className="text-sm font-semibold text-slate-900 mb-2">Funnel Stage Mapping</h4>
+                          <div className="space-y-1 text-sm text-slate-700">
+                            <p><strong>Trigger:</strong> {templateForm.funnelMapping?.triggerEvent || 'Not set'}</p>
+                            <p><strong>Action:</strong> {templateForm.funnelMapping?.showSameStage 
+                              ? 'Show Same Stage' 
+                              : `Redirect to ${funnelStages.find(s => s.pageId === templateForm.funnelMapping?.redirectStageId)?.name || 'Stage'}`}
+                            </p>
+                            <p><strong>Meta Event:</strong> {templateForm.funnelMapping?.metaEventName || 'Not set'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
-          </ScrollArea>
+            </ScrollArea>
+          </div>
 
           <DialogFooter className="px-6 py-4 border-t border-slate-200 bg-slate-50/50">
             <Button
@@ -800,16 +1439,23 @@ const AdTemplatesManagement = () => {
                 setShowTemplateDialog(false);
                 resetForm();
               }}
-              className="h-10"
+              className="h-11"
             >
               Cancel
             </Button>
             <Button
-              onClick={handleSave}
-              disabled={!templateForm.name || !templateForm.adTitle || !templateForm.adDescription}
-              className="bg-slate-900 hover:bg-slate-800 h-10"
+              variant="outline"
+              onClick={() => handleSave(true)}
+              className="h-11"
             >
-              {editingTemplate ? 'Update Template' : 'Create Template'}
+              Save as Draft
+            </Button>
+            <Button
+              onClick={() => handleSave(false)}
+              disabled={!templateForm.name || !templateForm.stageId || !templateForm.objective}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white h-11"
+            >
+              {editingTemplate ? 'Update Template' : 'Publish Template'}
             </Button>
           </DialogFooter>
         </DialogContent>

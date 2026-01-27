@@ -125,6 +125,22 @@ const processIncomingMessage = async (message, contacts, metadata) => {
             await whatsappAIAutoReplyService.sendAIReply(messageData, aiResponse);
         }
 
+        // Handle automation reply if lead exists
+        if (messageData.leadId) {
+            try {
+                const automationGraphTrigger = require('../services/automationGraphTrigger');
+                await automationGraphTrigger.handleReplyReceived(messageData.leadId, {
+                    text: messageData.content?.text || messageData.content,
+                    body: messageData.content?.text || messageData.content,
+                    channel: 'whatsapp',
+                    from: messageData.senderPhone,
+                    timestamp: messageData.sentAt || new Date()
+                });
+            } catch (error) {
+                console.error('📱 [WEBHOOK] Error handling automation reply:', error);
+            }
+        }
+
         console.log('📱 [WEBHOOK] Message processed successfully:', message.id);
 
     } catch (error) {

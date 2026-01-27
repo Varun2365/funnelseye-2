@@ -39,6 +39,8 @@ import FunnelEditor from './components/funnels/FunnelEditor';
 import AISettingsPanel from './components/ai/AISettingsPanel';
 import AdTemplatesManagement from './components/ads/AdTemplatesManagement';
 import AdminAutomationRules from './components/automation/AdminAutomationRules';
+import AutomationRulesDashboard from './components/automation-rules/index';
+import AutomationRulesGraphBuilder from './components/automation-rules/AutomationRulesGraphBuilder';
 import { Toaster } from 'sonner';
 import { ToastProvider } from './contexts/ToastContext';
 
@@ -76,10 +78,9 @@ function ProtectedRoute({ children, requiredRole }) {
 function AppContent() {
   const { isAuthenticated, loading, admin } = useAuth();
   
-  console.log('🔐 [APP_CONTENT] Rendering with state:', { isAuthenticated, loading, admin: admin ? 'exists' : 'null' });
-
+ 
   if (loading) {
-    console.log('🔐 [APP_CONTENT] Still loading, showing spinner');
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="flex flex-col items-center space-y-4 reveal-fade">
@@ -89,8 +90,7 @@ function AppContent() {
       </div>
     );
   }
-  
-  console.log('🔐 [APP_CONTENT] Not loading, isAuthenticated:', isAuthenticated);
+
 
   return (
     <Router>
@@ -137,7 +137,9 @@ function AppContent() {
           <Route path="funnels/manage/:funnelId" element={<FunnelManagement />} />
           <Route path="ai-features" element={<AISettingsPanel />} />
           <Route path="ads-campaigns" element={<AdTemplatesManagement />} />
-          <Route path="automation-rules" element={<AdminAutomationRules />} />
+          <Route path="automation-rules" element={<AutomationRulesDashboard />} />
+          <Route path="automation-rules/create" element={<AutomationRulesGraphBuilder />} />
+          <Route path="automation-rules/:id/edit" element={<AutomationRulesGraphBuilder />} />
         </Route>
         {/* Standalone Editor Route - No Sidebar/Topbar */}
         <Route path="funnel_edit/:funnelId/:stageId" element={<ProtectedRoute><FunnelEditor /></ProtectedRoute>} />
